@@ -106,7 +106,11 @@ function App() {
       )
     );
 
-    // Close the modal and reset training agent
+    // Don't close the modal automatically - let user continue adding samples
+    // The modal will be closed when user clicks "Done" or "Close"
+  };
+
+  const handleCloseTrainingModal = () => {
     setTrainingModalOpen(false);
     setTrainingAgent(null);
   };
@@ -184,10 +188,7 @@ function App() {
         <TrainingModal
           agent={trainingAgent}
           isOpen={trainingModalOpen}
-          onClose={() => {
-            setTrainingModalOpen(false);
-            setTrainingAgent(null);
-          }}
+          onClose={handleCloseTrainingModal}
           onSave={handleSaveTraining}
         />
       )}

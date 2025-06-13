@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Upload, BookOpen, Link, FileText } from 'lucide-react';
+import { X, Plus, Trash2, Upload, BookOpen, Link, FileText, Check } from 'lucide-react';
 import { Agent, WritingSample, TrainingData } from '../types';
 
 interface TrainingModalProps {
@@ -23,6 +23,8 @@ export const TrainingModal: React.FC<TrainingModalProps> = ({
     voice: 'mixed' as const
   });
   const [activeTab, setActiveTab] = useState<'samples' | 'preferences'>('samples');
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
 
   // Load existing training data when modal opens
   useEffect(() => {
@@ -34,6 +36,7 @@ export const TrainingModal: React.FC<TrainingModalProps> = ({
         length: 'balanced',
         voice: 'mixed'
       });
+      setLastSaved(agent.trainingData.lastUpdated || null);
     } else if (isOpen) {
       // Reset to defaults if no training data exists
       setSamples([]);
@@ -43,7 +46,9 @@ export const TrainingModal: React.FC<TrainingModalProps> = ({
         length: 'balanced',
         voice: 'mixed'
       });
+      setLastSaved(null);
     }
+    setShowSaveConfirmation(false);
   }, [isOpen, agent]);
 
   if (!isOpen) return null;
@@ -73,17 +78,28 @@ export const TrainingModal: React.FC<TrainingModalProps> = ({
 
   const handleSave = () => {
     const validSamples = samples.filter(sample => sample.text.trim());
-    onSave({
+    const trainingData = {
       samples: validSamples,
       preferences,
       lastUpdated: new Date()
-    });
+    };
+    
+    onSave(trainingData);
+    setLastSaved(new Date());
+    setShowSaveConfirmation(true);
+    
+    // Hide confirmation after 3 seconds
+    setTimeout(() => {
+      setShowSaveConfirmation(false);
+    }, 3000);
   };
 
   const sampleCategories = [
     'Email', 'Blog Post', 'Social Media', 'Report', 'Proposal', 
     'Marketing Copy', 'Technical Writing', 'Creative Writing', 'Other'
   ];
+
+  const validSampleCount = samples.filter(s => s.text.trim()).length;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -109,20 +125,30 @@ export const TrainingModal: React.FC<TrainingModalProps> = ({
         </div>
 
         {/* Training Status */}
-        {agent.trainingData && (
-          <div className="px-6 py-3 bg-blue-50 border-b border-blue-100">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-blue-700">
-                Currently trained with {agent.trainingData.samples.length} samples
-              </span>
+        <div className="px-6 py-3 bg-blue-50 border-b border-blue-100">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-blue-700">
+              Currently {validSampleCount} training samples
+            </span>
+            {lastSaved && (
               <span className="text-blue-600">
-                Last updated: {new Intl.DateTimeFormat('en-US', { 
+                Last saved: {new Intl.DateTimeFormat('en-US', { 
                   month: 'short', 
                   day: 'numeric',
                   hour: 'numeric',
                   minute: '2-digit'
-                }).format(agent.trainingData.lastUpdated)}
+                }).format(lastSaved)}
               </span>
+            )}
+          </div>
+        </div>
+
+        {/* Save Confirmation */}
+        {showSaveConfirmation && (
+          <div className="px-6 py-2 bg-green-50 border-b border-green-100">
+            <div className="flex items-center space-x-2 text-sm text-green-700">
+              <Check className="w-4 h-4" />
+              <span>Training data saved successfully!</span>
             </div>
           </div>
         )}
@@ -139,7 +165,7 @@ export const TrainingModal: React.FC<TrainingModalProps> = ({
           >
             <div className="flex items-center space-x-2">
               <FileText className="w-4 h-4" />
-              <span>Writing Samples ({samples.length})</span>
+              <span>Writing Samples ({validSampleCount})</span>
             </div>
           </button>
           <button
@@ -400,7 +426,7 @@ export const TrainingModal: React.FC<TrainingModalProps> = ({
         <div className="flex justify-between items-center p-6 border-t border-gray-200">
           <div className="text-sm text-gray-500">
             {activeTab === 'samples' && (
-              <span>{samples.filter(s => s.text.trim()).length} valid samples ready</span>
+              <span>{validSampleCount} valid samples ready</span>
             )}
           </div>
           <div className="flex space-x-3">
@@ -408,11 +434,12 @@ export const TrainingModal: React.FC<TrainingModalProps> = ({
               onClick={onClose}
               className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              Cancel
+              Done
             </button>
             <button
               onClick={handleSave}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              disabled={validSampleCount === 0 && !preferences.tone.trim()}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Save Training Data
             </button>
