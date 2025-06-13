@@ -100,6 +100,7 @@ export const TrainingModal: React.FC<TrainingModalProps> = ({
   ];
 
   const validSampleCount = samples.filter(s => s.text.trim()).length;
+  const canSave = validSampleCount > 0 || preferences.tone.trim();
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -438,7 +439,7 @@ export const TrainingModal: React.FC<TrainingModalProps> = ({
             </button>
             <button
               onClick={handleSave}
-              disabled={validSampleCount === 0 && !preferences.tone.trim()}
+              disabled={!canSave}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Save Training Data
