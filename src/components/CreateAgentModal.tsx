@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Agent } from '../types';
 
@@ -22,14 +22,42 @@ export const CreateAgentModal: React.FC<CreateAgentModalProps> = ({
   editingAgent
 }) => {
   const [formData, setFormData] = useState({
-    name: editingAgent?.name || '',
-    description: editingAgent?.description || '',
-    avatar: editingAgent?.avatar || '👤',
-    personality: editingAgent?.personality || '',
-    writingStyle: editingAgent?.writingStyle || '',
-    customInstructions: editingAgent?.customInstructions || '',
-    active: editingAgent?.active ?? true
+    name: '',
+    description: '',
+    avatar: '👤',
+    personality: '',
+    writingStyle: '',
+    customInstructions: '',
+    active: true
   });
+
+  // Update form data when editingAgent changes or modal opens
+  useEffect(() => {
+    if (isOpen) {
+      if (editingAgent) {
+        setFormData({
+          name: editingAgent.name,
+          description: editingAgent.description,
+          avatar: editingAgent.avatar,
+          personality: editingAgent.personality,
+          writingStyle: editingAgent.writingStyle,
+          customInstructions: editingAgent.customInstructions || '',
+          active: editingAgent.active
+        });
+      } else {
+        // Reset form for new agent
+        setFormData({
+          name: '',
+          description: '',
+          avatar: '👤',
+          personality: '',
+          writingStyle: '',
+          customInstructions: '',
+          active: true
+        });
+      }
+    }
+  }, [isOpen, editingAgent]);
 
   if (!isOpen) return null;
 
@@ -39,17 +67,6 @@ export const CreateAgentModal: React.FC<CreateAgentModalProps> = ({
     
     onSave(formData);
     onClose();
-    
-    // Reset form
-    setFormData({
-      name: '',
-      description: '',
-      avatar: '👤',
-      personality: '',
-      writingStyle: '',
-      customInstructions: '',
-      active: true
-    });
   };
 
   return (
