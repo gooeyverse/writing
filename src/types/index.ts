@@ -22,6 +22,17 @@ export interface RewriteResult {
   rating?: number; // 1 for positive, -1 for negative
 }
 
+export interface ChatMessage {
+  id: string;
+  type: 'user' | 'agent';
+  content: string;
+  timestamp: Date;
+  agentId?: string; // For agent messages
+  originalMessage?: string; // For agent messages, the original user message
+  mentionedAgents?: string[]; // For user messages, which agents were mentioned
+  rating?: number; // 1 for positive, -1 for negative (for agent messages)
+}
+
 export interface WritingSample {
   id: string;
   text: string;

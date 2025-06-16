@@ -2,18 +2,19 @@ import React, { useState } from 'react';
 import { Header } from './components/Header';
 import { AgentCard } from './components/AgentCard';
 import { TextEditor } from './components/TextEditor';
+import { ChatPanel } from './components/ChatPanel';
 import { TrainingModal } from './components/TrainingModal';
 import { CreateAgentModal } from './components/CreateAgentModal';
 import { defaultAgents } from './data/agents';
 import { TextRewriter } from './utils/rewriter';
-import { Agent, TrainingData, RewriteResult } from './types';
+import { Agent, TrainingData, ChatMessage } from './types';
 
 function App() {
   const [agents, setAgents] = useState<Agent[]>(defaultAgents);
   const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>(['sophia']);
   const [originalText, setOriginalText] = useState<string>('');
-  const [rewriteResults, setRewriteResults] = useState<RewriteResult[]>([]);
-  const [isRewriting, setIsRewriting] = useState<boolean>(false);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [trainingModalOpen, setTrainingModalOpen] = useState<boolean>(false);
   const [createModalOpen, setCreateModalOpen] = useState<boolean>(false);
   const [trainingAgent, setTrainingAgent] = useState<Agent | null>(null);
@@ -33,68 +34,91 @@ function App() {
     });
   };
 
-  const handleRewrite = async () => {
-    if (!originalText.trim() || selectedAgentIds.length === 0) return;
+  const handleSendMessage = async (message: string, mentionedAgentIds: string[]) => {
+    if (!message.trim()) return;
 
-    setIsRewriting(true);
-    setRewriteResults([]);
-    
-    // Simulate API delay
+    // Add user message
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      type: 'user',
+      content: message,
+      timestamp: new Date(),
+      mentionedAgents: mentionedAgentIds
+    };
+
+    setChatMessages(prev => [...prev, userMessage]);
+    setIsProcessing(true);
+
+    // Simulate processing delay
     await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Determine which agents to respond
+    const respondingAgentIds = mentionedAgentIds.length > 0 ? mentionedAgentIds : selectedAgentIds;
     
-    const results: RewriteResult[] = [];
-    
-    for (const agentId of selectedAgentIds) {
+    // Generate responses from mentioned or selected agents
+    for (const agentId of respondingAgentIds) {
       const agent = agents.find(a => a.id === agentId);
       if (agent) {
-        const rewritten = TextRewriter.rewrite(originalText, agent);
-        results.push({
-          id: `${agentId}-${Date.now()}`,
-          original: originalText,
-          rewritten,
+        const rewritten = TextRewriter.rewrite(message, agent);
+        
+        const agentMessage: ChatMessage = {
+          id: `${agentId}-${Date.now()}-${Math.random()}`,
+          type: 'agent',
+          content: rewritten,
+          timestamp: new Date(),
           agentId,
-          timestamp: new Date()
-        });
+          originalMessage: message
+        };
+
+        setChatMessages(prev => [...prev, agentMessage]);
+        
+        // Update agent statistics
+        setAgents(prevAgents => 
+          prevAgents.map(a => 
+            a.id === agentId
+              ? { ...a, totalRewrites: a.totalRewrites + 1 }
+              : a
+          )
+        );
+
+        // Add small delay between agent responses for better UX
+        await new Promise(resolve => setTimeout(resolve, 300));
       }
     }
-    
-    setRewriteResults(results);
-    
-    // Update agent statistics
-    setAgents(prevAgents => 
-      prevAgents.map(agent => 
-        selectedAgentIds.includes(agent.id)
-          ? { ...agent, totalRewrites: agent.totalRewrites + 1 }
-          : agent
-      )
-    );
-    
-    setIsRewriting(false);
+
+    setIsProcessing(false);
   };
 
-  const handleFeedback = (resultId: string, rating: 'positive' | 'negative') => {
-    const result = rewriteResults.find(r => r.id === resultId);
-    if (!result) return;
+  const handleFeedback = (messageId: string, rating: 'positive' | 'negative') => {
+    const message = chatMessages.find(m => m.id === messageId);
+    if (!message || message.type !== 'agent') return;
 
     // Update agent accuracy based on feedback
     const accuracyChange = rating === 'positive' ? 0.5 : -0.3;
     
     setAgents(prevAgents =>
       prevAgents.map(agent =>
-        agent.id === result.agentId
+        agent.id === message.agentId
           ? { ...agent, accuracy: Math.max(0, Math.min(100, agent.accuracy + accuracyChange)) }
           : agent
       )
     );
 
-    // Update the result with rating
-    setRewriteResults(prev =>
-      prev.map(r =>
-        r.id === resultId
-          ? { ...r, rating: rating === 'positive' ? 1 : -1 }
-          : r
+    // Update the message with rating
+    setChatMessages(prev =>
+      prev.map(m =>
+        m.id === messageId
+          ? { ...m, rating: rating === 'positive' ? 1 : -1 }
+          : m
       )
     );
+  };
+
+  const handleRewrite = async () => {
+    if (!originalText.trim() || selectedAgentIds.length === 0) return;
+    
+    await handleSendMessage(originalText, []);
+    setOriginalText(''); // Clear the text editor after sending
   };
 
   const handleTrainAgent = (agent: Agent) => {
@@ -146,9 +170,6 @@ function App() {
           : agent
       )
     );
-
-    // Don't close the modal automatically - let user continue adding samples
-    // The modal will be closed when user clicks "Done" or "Close"
   };
 
   const handleCloseTrainingModal = () => {
@@ -194,7 +215,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header 
         onShowStats={() => {}}
         onShowSettings={() => {}}
@@ -202,7 +223,7 @@ function App() {
       />
       
       {/* Agents Horizontal Scroll Section */}
-      <div className="bg-white border-b border-gray-200 px-6 py-6">
+      <div className="bg-white border-b border-gray-200 px-6 py-6 flex-shrink-0">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-4">
             <h2 className="text-xl font-semibold text-gray-800">Your Writing Agents</h2>
@@ -248,17 +269,30 @@ function App() {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="p-6">
-        <TextEditor
-          originalText={originalText}
-          rewriteResults={rewriteResults}
-          onOriginalChange={setOriginalText}
-          onRewrite={handleRewrite}
-          onFeedback={handleFeedback}
-          isRewriting={isRewriting}
-          selectedAgents={selectedAgents}
-        />
+      {/* Main Content - Split Layout */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Panel - Text Editor */}
+        <div className="flex-1 p-6 overflow-y-auto">
+          <TextEditor
+            originalText={originalText}
+            onOriginalChange={setOriginalText}
+            onRewrite={handleRewrite}
+            isRewriting={isProcessing}
+            selectedAgents={selectedAgents}
+          />
+        </div>
+
+        {/* Right Panel - Chat Interface */}
+        <div className="w-1/2 border-l border-gray-200 bg-white flex flex-col">
+          <ChatPanel
+            messages={chatMessages}
+            agents={agents}
+            selectedAgents={selectedAgents}
+            onSendMessage={handleSendMessage}
+            onFeedback={handleFeedback}
+            isProcessing={isProcessing}
+          />
+        </div>
       </div>
 
       {/* Training Modal */}
