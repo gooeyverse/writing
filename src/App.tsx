@@ -149,38 +149,46 @@ function App() {
         onCreateAgent={() => setCreateModalOpen(true)}
       />
       
-      <div className="flex">
-        {/* Sidebar with Agents */}
-        <div className="w-80 p-6 bg-white border-r border-gray-200 h-[calc(100vh-80px)] overflow-y-auto">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Your Writing Agents</h2>
-          <div className="space-y-3">
+      {/* Agents Horizontal Scroll Section */}
+      <div className="bg-white border-b border-gray-200 px-6 py-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-gray-800">Your Writing Agents</h2>
+          <span className="text-sm text-gray-500">{agents.length} agents</span>
+        </div>
+        
+        <div className="relative">
+          <div className="flex space-x-4 overflow-x-auto pb-2 scrollbar-hide">
             {agents.map(agent => (
-              <AgentCard
-                key={agent.id}
-                agent={agent}
-                isSelected={selectedAgentId === agent.id}
-                onSelect={() => setSelectedAgentId(agent.id)}
-                onTrain={() => handleTrainAgent(agent)}
-                onEdit={() => handleEditAgent(agent)}
-                onDelete={() => handleDeleteAgent(agent.id)}
-              />
+              <div key={agent.id} className="flex-shrink-0 w-80">
+                <AgentCard
+                  agent={agent}
+                  isSelected={selectedAgentId === agent.id}
+                  onSelect={() => setSelectedAgentId(agent.id)}
+                  onTrain={() => handleTrainAgent(agent)}
+                  onEdit={() => handleEditAgent(agent)}
+                  onDelete={() => handleDeleteAgent(agent.id)}
+                />
+              </div>
             ))}
           </div>
+          
+          {/* Scroll indicators */}
+          <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none" />
         </div>
+      </div>
 
-        {/* Main Content */}
-        <div className="flex-1 p-6">
-          <TextEditor
-            originalText={originalText}
-            rewrittenText={rewrittenText}
-            onOriginalChange={setOriginalText}
-            onRewrite={handleRewrite}
-            onFeedback={handleFeedback}
-            isRewriting={isRewriting}
-            selectedAgentName={selectedAgent.name}
-            selectedAgentAvatar={selectedAgent.avatar}
-          />
-        </div>
+      {/* Main Content */}
+      <div className="p-6">
+        <TextEditor
+          originalText={originalText}
+          rewrittenText={rewrittenText}
+          onOriginalChange={setOriginalText}
+          onRewrite={handleRewrite}
+          onFeedback={handleFeedback}
+          isRewriting={isRewriting}
+          selectedAgentName={selectedAgent.name}
+          selectedAgentAvatar={selectedAgent.avatar}
+        />
       </div>
 
       {/* Training Modal */}
