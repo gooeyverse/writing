@@ -6,36 +6,64 @@ import { TrainingModal } from './components/TrainingModal';
 import { CreateAgentModal } from './components/CreateAgentModal';
 import { defaultAgents } from './data/agents';
 import { TextRewriter } from './utils/rewriter';
-import { Agent, TrainingData } from './types';
+import { Agent, TrainingData, RewriteResult } from './types';
 
 function App() {
   const [agents, setAgents] = useState<Agent[]>(defaultAgents);
-  const [selectedAgentId, setSelectedAgentId] = useState<string>('sophia');
+  const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>(['sophia']);
   const [originalText, setOriginalText] = useState<string>('');
-  const [rewrittenText, setRewrittenText] = useState<string>('');
+  const [rewriteResults, setRewriteResults] = useState<RewriteResult[]>([]);
   const [isRewriting, setIsRewriting] = useState<boolean>(false);
   const [trainingModalOpen, setTrainingModalOpen] = useState<boolean>(false);
   const [createModalOpen, setCreateModalOpen] = useState<boolean>(false);
   const [trainingAgent, setTrainingAgent] = useState<Agent | null>(null);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
 
-  const selectedAgent = agents.find(agent => agent.id === selectedAgentId) || agents[0];
+  const selectedAgents = agents.filter(agent => selectedAgentIds.includes(agent.id));
+
+  const handleAgentSelect = (agentId: string) => {
+    setSelectedAgentIds(prev => {
+      if (prev.includes(agentId)) {
+        // Don't allow deselecting if it's the only selected agent
+        if (prev.length === 1) return prev;
+        return prev.filter(id => id !== agentId);
+      } else {
+        return [...prev, agentId];
+      }
+    });
+  };
 
   const handleRewrite = async () => {
-    if (!originalText.trim()) return;
+    if (!originalText.trim() || selectedAgentIds.length === 0) return;
 
     setIsRewriting(true);
+    setRewriteResults([]);
     
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    const rewritten = TextRewriter.rewrite(originalText, selectedAgent);
-    setRewrittenText(rewritten);
+    const results: RewriteResult[] = [];
+    
+    for (const agentId of selectedAgentIds) {
+      const agent = agents.find(a => a.id === agentId);
+      if (agent) {
+        const rewritten = TextRewriter.rewrite(originalText, agent);
+        results.push({
+          id: `${agentId}-${Date.now()}`,
+          original: originalText,
+          rewritten,
+          agentId,
+          timestamp: new Date()
+        });
+      }
+    }
+    
+    setRewriteResults(results);
     
     // Update agent statistics
     setAgents(prevAgents => 
       prevAgents.map(agent => 
-        agent.id === selectedAgentId 
+        selectedAgentIds.includes(agent.id)
           ? { ...agent, totalRewrites: agent.totalRewrites + 1 }
           : agent
       )
@@ -44,15 +72,27 @@ function App() {
     setIsRewriting(false);
   };
 
-  const handleFeedback = (rating: 'positive' | 'negative') => {
+  const handleFeedback = (resultId: string, rating: 'positive' | 'negative') => {
+    const result = rewriteResults.find(r => r.id === resultId);
+    if (!result) return;
+
     // Update agent accuracy based on feedback
     const accuracyChange = rating === 'positive' ? 0.5 : -0.3;
     
     setAgents(prevAgents =>
       prevAgents.map(agent =>
-        agent.id === selectedAgentId
+        agent.id === result.agentId
           ? { ...agent, accuracy: Math.max(0, Math.min(100, agent.accuracy + accuracyChange)) }
           : agent
+      )
+    );
+
+    // Update the result with rating
+    setRewriteResults(prev =>
+      prev.map(r =>
+        r.id === resultId
+          ? { ...r, rating: rating === 'positive' ? 1 : -1 }
+          : r
       )
     );
   };
@@ -72,12 +112,13 @@ function App() {
     
     setAgents(prevAgents => prevAgents.filter(agent => agent.id !== agentId));
     
-    // If we deleted the selected agent, select the first remaining one
-    if (selectedAgentId === agentId) {
-      const remainingAgents = agents.filter(agent => agent.id !== agentId);
-      if (remainingAgents.length > 0) {
-        setSelectedAgentId(remainingAgents[0].id);
-      }
+    // Remove from selected agents if it was selected
+    setSelectedAgentIds(prev => prev.filter(id => id !== agentId));
+    
+    // If no agents are selected after deletion, select the first remaining one
+    const remainingAgents = agents.filter(agent => agent.id !== agentId);
+    if (selectedAgentIds.includes(agentId) && selectedAgentIds.length === 1 && remainingAgents.length > 0) {
+      setSelectedAgentIds([remainingAgents[0].id]);
     }
   };
 
@@ -141,6 +182,17 @@ function App() {
     setEditingAgent(null);
   };
 
+  const handleSelectAll = () => {
+    const activeAgents = agents.filter(agent => agent.active);
+    setSelectedAgentIds(activeAgents.map(agent => agent.id));
+  };
+
+  const handleDeselectAll = () => {
+    if (agents.length > 0) {
+      setSelectedAgentIds([agents[0].id]); // Keep at least one selected
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header 
@@ -152,8 +204,26 @@ function App() {
       {/* Agents Horizontal Scroll Section */}
       <div className="bg-white border-b border-gray-200 px-6 py-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-gray-800">Your Writing Agents</h2>
-          <span className="text-sm text-gray-500">{agents.length} agents</span>
+          <div className="flex items-center space-x-4">
+            <h2 className="text-xl font-semibold text-gray-800">Your Writing Agents</h2>
+            <span className="text-sm text-gray-500">
+              {selectedAgentIds.length} of {agents.length} selected
+            </span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={handleSelectAll}
+              className="px-3 py-1 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+            >
+              Select All
+            </button>
+            <button
+              onClick={handleDeselectAll}
+              className="px-3 py-1 text-sm text-gray-600 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              Select One
+            </button>
+          </div>
         </div>
         
         <div className="relative">
@@ -162,11 +232,12 @@ function App() {
               <div key={agent.id} className="flex-shrink-0 w-80">
                 <AgentCard
                   agent={agent}
-                  isSelected={selectedAgentId === agent.id}
-                  onSelect={() => setSelectedAgentId(agent.id)}
+                  isSelected={selectedAgentIds.includes(agent.id)}
+                  onSelect={() => handleAgentSelect(agent.id)}
                   onTrain={() => handleTrainAgent(agent)}
                   onEdit={() => handleEditAgent(agent)}
                   onDelete={() => handleDeleteAgent(agent.id)}
+                  multiSelect={true}
                 />
               </div>
             ))}
@@ -181,13 +252,12 @@ function App() {
       <div className="p-6">
         <TextEditor
           originalText={originalText}
-          rewrittenText={rewrittenText}
+          rewriteResults={rewriteResults}
           onOriginalChange={setOriginalText}
           onRewrite={handleRewrite}
           onFeedback={handleFeedback}
           isRewriting={isRewriting}
-          selectedAgentName={selectedAgent.name}
-          selectedAgentAvatar={selectedAgent.avatar}
+          selectedAgents={selectedAgents}
         />
       </div>
 

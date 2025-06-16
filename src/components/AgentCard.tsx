@@ -1,6 +1,6 @@
 import React from 'react';
 import { Agent } from '../types';
-import { Settings, Trash2, BookOpen } from 'lucide-react';
+import { Settings, Trash2, BookOpen, Check } from 'lucide-react';
 
 interface AgentCardProps {
   agent: Agent;
@@ -9,6 +9,7 @@ interface AgentCardProps {
   onTrain: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  multiSelect?: boolean;
 }
 
 export const AgentCard: React.FC<AgentCardProps> = ({
@@ -17,7 +18,8 @@ export const AgentCard: React.FC<AgentCardProps> = ({
   onSelect,
   onTrain,
   onEdit,
-  onDelete
+  onDelete,
+  multiSelect = false
 }) => {
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('en-US', { 
@@ -39,6 +41,21 @@ export const AgentCard: React.FC<AgentCardProps> = ({
       `}
       onClick={onSelect}
     >
+      {/* Selection indicator for multi-select */}
+      {multiSelect && (
+        <div className="absolute top-3 right-3 z-10">
+          <div className={`
+            w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all
+            ${isSelected 
+              ? 'bg-blue-500 border-blue-500 text-white' 
+              : 'border-gray-300 bg-white group-hover:border-blue-300'
+            }
+          `}>
+            {isSelected && <Check className="w-4 h-4" />}
+          </div>
+        </div>
+      )}
+
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center space-x-3">
           <div className="text-3xl">{agent.avatar}</div>

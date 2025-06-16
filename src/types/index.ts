@@ -19,7 +19,7 @@ export interface RewriteResult {
   rewritten: string;
   agentId: string;
   timestamp: Date;
-  rating?: number;
+  rating?: number; // 1 for positive, -1 for negative
 }
 
 export interface WritingSample {
