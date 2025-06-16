@@ -8,6 +8,7 @@ import { CreateAgentModal } from './components/CreateAgentModal';
 import { defaultAgents } from './data/agents';
 import { TextRewriter } from './utils/rewriter';
 import { Agent, TrainingData, ChatMessage } from './types';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 function App() {
   const [agents, setAgents] = useState<Agent[]>(defaultAgents);
@@ -19,6 +20,7 @@ function App() {
   const [createModalOpen, setCreateModalOpen] = useState<boolean>(false);
   const [trainingAgent, setTrainingAgent] = useState<Agent | null>(null);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
+  const [agentsSectionCollapsed, setAgentsSectionCollapsed] = useState<boolean>(false);
 
   const selectedAgents = agents.filter(agent => selectedAgentIds.includes(agent.id));
 
@@ -222,51 +224,77 @@ function App() {
         onCreateAgent={() => setCreateModalOpen(true)}
       />
       
-      {/* Agents Horizontal Scroll Section */}
-      <div className="bg-white border-b border-gray-200 px-6 py-6 flex-shrink-0">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-4">
-            <h2 className="text-xl font-semibold text-gray-800">Your Writing Agents</h2>
-            <span className="text-sm text-gray-500">
-              {selectedAgentIds.length} of {agents.length} selected
-            </span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={handleSelectAll}
-              className="px-3 py-1 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-            >
-              Select All
-            </button>
-            <button
-              onClick={handleDeselectAll}
-              className="px-3 py-1 text-sm text-gray-600 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              Select One
-            </button>
-          </div>
+      {/* Agents Horizontal Scroll Section - Collapsible */}
+      <div className="bg-white border-b border-gray-200 flex-shrink-0">
+        <div className="px-6 py-4">
+          <button
+            onClick={() => setAgentsSectionCollapsed(!agentsSectionCollapsed)}
+            className="flex items-center justify-between w-full group"
+          >
+            <div className="flex items-center space-x-4">
+              <h2 className="text-xl font-semibold text-gray-800">Your Writing Agents</h2>
+              <span className="text-sm text-gray-500">
+                {selectedAgentIds.length} of {agents.length} selected
+              </span>
+            </div>
+            <div className="flex items-center space-x-3">
+              {!agentsSectionCollapsed && (
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSelectAll();
+                    }}
+                    className="px-3 py-1 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                  >
+                    Select All
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeselectAll();
+                    }}
+                    className="px-3 py-1 text-sm text-gray-600 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    Select One
+                  </button>
+                </div>
+              )}
+              <div className="p-1 rounded-lg group-hover:bg-gray-100 transition-colors">
+                {agentsSectionCollapsed ? (
+                  <ChevronDown className="w-5 h-5 text-gray-500" />
+                ) : (
+                  <ChevronUp className="w-5 h-5 text-gray-500" />
+                )}
+              </div>
+            </div>
+          </button>
         </div>
         
-        <div className="relative">
-          <div className="flex space-x-4 overflow-x-auto pb-2 scrollbar-hide">
-            {agents.map(agent => (
-              <div key={agent.id} className="flex-shrink-0 w-80">
-                <AgentCard
-                  agent={agent}
-                  isSelected={selectedAgentIds.includes(agent.id)}
-                  onSelect={() => handleAgentSelect(agent.id)}
-                  onTrain={() => handleTrainAgent(agent)}
-                  onEdit={() => handleEditAgent(agent)}
-                  onDelete={() => handleDeleteAgent(agent.id)}
-                  multiSelect={true}
-                />
+        {!agentsSectionCollapsed && (
+          <div className="px-6 pb-6">
+            <div className="relative">
+              <div className="flex space-x-4 overflow-x-auto pb-2 scrollbar-hide">
+                {agents.map(agent => (
+                  <div key={agent.id} className="flex-shrink-0 w-80">
+                    <AgentCard
+                      agent={agent}
+                      isSelected={selectedAgentIds.includes(agent.id)}
+                      onSelect={() => handleAgentSelect(agent.id)}
+                      onTrain={() => handleTrainAgent(agent)}
+                      onEdit={() => handleEditAgent(agent)}
+                      onDelete={() => handleDeleteAgent(agent.id)}
+                      multiSelect={true}
+                    />
+                  </div>
+                ))}
               </div>
-            ))}
+              
+              {/* Scroll indicators */}
+              <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none" />
+            </div>
           </div>
-          
-          {/* Scroll indicators */}
-          <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none" />
-        </div>
+        )}
       </div>
 
       {/* Main Content - Split Layout */}

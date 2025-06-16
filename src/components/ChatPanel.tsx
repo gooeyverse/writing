@@ -78,7 +78,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
     
     mentions.forEach(mention => {
       const agentName = mention.substring(1); // Remove @
-      const agent = agents.find(a => a.name.toLowerCase() === agentName.toLowerCase());
+      // Only allow mentions of selected agents
+      const agent = selectedAgents.find(a => a.name.toLowerCase() === agentName.toLowerCase());
       if (agent) {
         mentionedAgentIds.push(agent.id);
       }
@@ -116,7 +117,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
     document.body.removeChild(element);
   };
 
-  const filteredAgents = agents.filter(agent => 
+  // Only show selected agents in mention suggestions
+  const filteredAgents = selectedAgents.filter(agent => 
     agent.name.toLowerCase().includes(mentionQuery)
   );
 
@@ -137,7 +139,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
           <div>
             <h2 className="text-lg font-semibold text-gray-900">Agent Chat</h2>
             <p className="text-sm text-gray-600">
-              Chat with your agents • Use @AgentName to mention specific agents
+              Chat with your selected agents • Use @AgentName to mention specific agents
             </p>
           </div>
         </div>
@@ -278,9 +280,12 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
 
       {/* Input Area */}
       <div className="border-t border-gray-200 p-4 bg-white relative">
-        {/* Mention Suggestions */}
+        {/* Mention Suggestions - Only show selected agents */}
         {showSuggestions && filteredAgents.length > 0 && (
           <div className="absolute bottom-full left-4 right-4 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-40 overflow-y-auto z-10">
+            <div className="px-3 py-2 text-xs text-gray-500 border-b border-gray-100 bg-gray-50">
+              Selected agents only
+            </div>
             {filteredAgents.map(agent => (
               <button
                 key={agent.id}
@@ -304,7 +309,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
               value={inputMessage}
               onChange={handleInputChange}
               onKeyPress={handleKeyPress}
-              placeholder="Type a message... Use @AgentName to mention specific agents"
+              placeholder={`Type a message... Use @AgentName to mention specific selected agents (${selectedAgents.map(a => a.name).join(', ')})`}
               className="w-full p-3 border border-gray-200 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent max-h-32"
               rows={1}
               style={{ minHeight: '44px' }}
