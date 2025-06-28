@@ -5,6 +5,7 @@ import { TextEditor } from './components/TextEditor';
 import { ChatPanel } from './components/ChatPanel';
 import { TrainingModal } from './components/TrainingModal';
 import { CreateAgentModal } from './components/CreateAgentModal';
+import { ResizablePanel } from './components/ResizablePanel';
 import { defaultAgents } from './data/agents';
 import { TextRewriter } from './utils/rewriter';
 import { Agent, TrainingData, ChatMessage } from './types';
@@ -21,6 +22,10 @@ function App() {
   const [trainingAgent, setTrainingAgent] = useState<Agent | null>(null);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   const [agentsSectionCollapsed, setAgentsSectionCollapsed] = useState<boolean>(false);
+  
+  // Layout state
+  const [editorWidth, setEditorWidth] = useState<number>(50);
+  const [chatHeight, setChatHeight] = useState<number>(70);
 
   const selectedAgents = agents.filter(agent => selectedAgentIds.includes(agent.id));
 
@@ -329,29 +334,63 @@ function App() {
         )}
       </div>
 
-      {/* Main Content - Split Layout */}
+      {/* Main Content - Resizable Split Layout */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Panel - Text Editor */}
-        <div className="flex-1 p-6 overflow-y-auto">
-          <TextEditor
-            originalText={originalText}
-            onOriginalChange={setOriginalText}
-            onRewrite={handleRewrite}
-            isRewriting={isProcessing}
-            selectedAgents={selectedAgents}
-          />
-        </div>
+        {/* Left Panel - Text Editor (Resizable) */}
+        <ResizablePanel
+          direction="horizontal"
+          initialSize={editorWidth}
+          minSize={30}
+          maxSize={70}
+          onResize={setEditorWidth}
+          className="overflow-y-auto"
+        >
+          <div className="p-6 h-full">
+            <TextEditor
+              originalText={originalText}
+              onOriginalChange={setOriginalText}
+              onRewrite={handleRewrite}
+              isRewriting={isProcessing}
+              selectedAgents={selectedAgents}
+            />
+          </div>
+        </ResizablePanel>
 
-        {/* Right Panel - Chat Interface */}
-        <div className="w-1/2 border-l border-black bg-white flex flex-col">
-          <ChatPanel
-            messages={chatMessages}
-            agents={agents}
-            selectedAgents={selectedAgents}
-            onSendMessage={handleSendMessage}
-            onFeedback={handleFeedback}
-            isProcessing={isProcessing}
-          />
+        {/* Right Panel - Chat Interface (Resizable) */}
+        <div className="flex-1 border-l border-black bg-white flex flex-col overflow-hidden">
+          {/* Chat Messages Area (Resizable) */}
+          <ResizablePanel
+            direction="vertical"
+            initialSize={chatHeight}
+            minSize={40}
+            maxSize={85}
+            onResize={setChatHeight}
+            className="flex flex-col"
+          >
+            <ChatPanel
+              messages={chatMessages}
+              agents={agents}
+              selectedAgents={selectedAgents}
+              onSendMessage={handleSendMessage}
+              onFeedback={handleFeedback}
+              isProcessing={isProcessing}
+              showInputArea={false}
+            />
+          </ResizablePanel>
+
+          {/* Chat Input Area (Fixed at bottom) */}
+          <div className="flex-1 border-t-2 border-black bg-white">
+            <ChatPanel
+              messages={[]}
+              agents={agents}
+              selectedAgents={selectedAgents}
+              onSendMessage={handleSendMessage}
+              onFeedback={handleFeedback}
+              isProcessing={isProcessing}
+              showMessagesArea={false}
+              showInputArea={true}
+            />
+          </div>
         </div>
       </div>
 

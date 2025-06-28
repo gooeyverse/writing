@@ -9,6 +9,8 @@ interface ChatPanelProps {
   onSendMessage: (message: string, mentionedAgentIds: string[]) => void;
   onFeedback: (messageId: string, rating: 'positive' | 'negative') => void;
   isProcessing: boolean;
+  showMessagesArea?: boolean;
+  showInputArea?: boolean;
 }
 
 export const ChatPanel: React.FC<ChatPanelProps> = ({
@@ -17,7 +19,9 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
   selectedAgents,
   onSendMessage,
   onFeedback,
-  isProcessing
+  isProcessing,
+  showMessagesArea = true,
+  showInputArea = true
 }) => {
   const [inputMessage, setInputMessage] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -28,8 +32,10 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (showMessagesArea) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, showMessagesArea]);
 
   // Handle @ mentions
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -132,213 +138,219 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="px-6 py-4 border-b border-black bg-gray-100">
-        <div className="flex items-center space-x-3">
-          <MessageCircle className="w-6 h-6 text-black" />
-          <div>
-            <h2 className="text-lg font-semibold text-black">Agent Chat</h2>
-            <p className="text-sm text-gray-700">
-              Chat with your selected agents • Use @AgentName to mention specific agents
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center">
-            <Bot className="w-12 h-12 text-gray-500 mb-4" />
-            <h3 className="text-lg font-medium text-black mb-2">Start a conversation</h3>
-            <p className="text-gray-600 mb-4 max-w-sm">
-              Send a message to get rewrites from your selected agents, or mention specific agents using @AgentName
-            </p>
-            <div className="flex flex-wrap gap-2 justify-center">
-              {selectedAgents.slice(0, 3).map(agent => (
-                <div key={agent.id} className="flex items-center space-x-2 px-3 py-1 bg-gray-100 rounded-full text-sm text-black border border-gray-400">
-                  <span>{agent.avatar}</span>
-                  <span>{agent.name}</span>
-                </div>
-              ))}
-              {selectedAgents.length > 3 && (
-                <div className="px-3 py-1 bg-gray-200 rounded-full text-sm text-gray-700 border border-gray-400">
-                  +{selectedAgents.length - 3} more
-                </div>
-              )}
+      {/* Header - Only show if messages area is visible */}
+      {showMessagesArea && (
+        <div className="px-6 py-4 border-b border-black bg-gray-100 flex-shrink-0">
+          <div className="flex items-center space-x-3">
+            <MessageCircle className="w-6 h-6 text-black" />
+            <div>
+              <h2 className="text-lg font-semibold text-black">Agent Chat</h2>
+              <p className="text-sm text-gray-700">
+                Chat with your selected agents • Use @AgentName to mention specific agents
+              </p>
             </div>
           </div>
-        ) : (
-          <>
-            {messages.map((message) => (
-              <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[80%] ${message.type === 'user' ? 'order-2' : 'order-1'}`}>
-                  {message.type === 'user' ? (
-                    <div className="bg-black text-white rounded-2xl rounded-br-md px-4 py-3 border-2 border-black">
-                      <p className="whitespace-pre-wrap">{message.content}</p>
-                      <div className="flex items-center justify-between mt-2 text-xs text-gray-300">
-                        <span>{formatTime(message.timestamp)}</span>
-                        {message.mentionedAgents && message.mentionedAgents.length > 0 && (
-                          <div className="flex items-center space-x-1">
-                            <span>→</span>
-                            {message.mentionedAgents.map(agentId => {
-                              const agent = agents.find(a => a.id === agentId);
-                              return agent ? (
-                                <span key={agentId} className="text-xs">{agent.avatar}</span>
-                              ) : null;
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="bg-white border-2 border-gray-400 rounded-2xl rounded-bl-md shadow-sm">
-                      <div className="px-4 py-3">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <span className="text-lg">{agents.find(a => a.id === message.agentId)?.avatar}</span>
-                          <span className="font-medium text-black">
-                            {agents.find(a => a.id === message.agentId)?.name}
-                          </span>
-                          {message.rating && (
-                            <div className={`px-2 py-1 rounded-full text-xs font-medium border ${
-                              message.rating > 0 
-                                ? 'bg-gray-100 text-black border-gray-400' 
-                                : 'bg-gray-200 text-black border-gray-500'
-                            }`}>
-                              {message.rating > 0 ? 'Liked' : 'Needs work'}
+        </div>
+      )}
+
+      {/* Messages - Only show if messages area is visible */}
+      {showMessagesArea && (
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {messages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center">
+              <Bot className="w-12 h-12 text-gray-500 mb-4" />
+              <h3 className="text-lg font-medium text-black mb-2">Start a conversation</h3>
+              <p className="text-gray-600 mb-4 max-w-sm">
+                Send a message to get rewrites from your selected agents, or mention specific agents using @AgentName
+              </p>
+              <div className="flex flex-wrap gap-2 justify-center">
+                {selectedAgents.slice(0, 3).map(agent => (
+                  <div key={agent.id} className="flex items-center space-x-2 px-3 py-1 bg-gray-100 rounded-full text-sm text-black border border-gray-400">
+                    <span>{agent.avatar}</span>
+                    <span>{agent.name}</span>
+                  </div>
+                ))}
+                {selectedAgents.length > 3 && (
+                  <div className="px-3 py-1 bg-gray-200 rounded-full text-sm text-gray-700 border border-gray-400">
+                    +{selectedAgents.length - 3} more
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <>
+              {messages.map((message) => (
+                <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[80%] ${message.type === 'user' ? 'order-2' : 'order-1'}`}>
+                    {message.type === 'user' ? (
+                      <div className="bg-black text-white rounded-2xl rounded-br-md px-4 py-3 border-2 border-black">
+                        <p className="whitespace-pre-wrap">{message.content}</p>
+                        <div className="flex items-center justify-between mt-2 text-xs text-gray-300">
+                          <span>{formatTime(message.timestamp)}</span>
+                          {message.mentionedAgents && message.mentionedAgents.length > 0 && (
+                            <div className="flex items-center space-x-1">
+                              <span>→</span>
+                              {message.mentionedAgents.map(agentId => {
+                                const agent = agents.find(a => a.id === agentId);
+                                return agent ? (
+                                  <span key={agentId} className="text-xs">{agent.avatar}</span>
+                                ) : null;
+                              })}
                             </div>
                           )}
                         </div>
-                        <p className="text-black whitespace-pre-wrap mb-3">{message.content}</p>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-600">{formatTime(message.timestamp)}</span>
-                          <div className="flex items-center space-x-1">
-                            <button
-                              onClick={() => copyToClipboard(message.content)}
-                              className="p-1 text-gray-500 hover:text-black rounded border border-gray-300"
-                              title="Copy"
-                            >
-                              <Copy className="w-3 h-3" />
-                            </button>
-                            <button
-                              onClick={() => downloadText(message.content, `${agents.find(a => a.id === message.agentId)?.name.toLowerCase()}-response.txt`)}
-                              className="p-1 text-gray-500 hover:text-black rounded border border-gray-300"
-                              title="Download"
-                            >
-                              <Download className="w-3 h-3" />
-                            </button>
-                            <button
-                              onClick={() => onFeedback(message.id, 'positive')}
-                              className={`p-1 rounded transition-colors border ${
-                                message.rating === 1
-                                  ? 'text-black bg-gray-100 border-gray-400'
-                                  : 'text-gray-500 hover:text-black hover:bg-gray-100 border-gray-300'
-                              }`}
-                              title="Good response"
-                            >
-                              <ThumbsUp className="w-3 h-3" />
-                            </button>
-                            <button
-                              onClick={() => onFeedback(message.id, 'negative')}
-                              className={`p-1 rounded transition-colors border ${
-                                message.rating === -1
-                                  ? 'text-black bg-gray-100 border-gray-400'
-                                  : 'text-gray-500 hover:text-black hover:bg-gray-100 border-gray-300'
-                              }`}
-                              title="Needs improvement"
-                            >
-                              <ThumbsDown className="w-3 h-3" />
-                            </button>
+                      </div>
+                    ) : (
+                      <div className="bg-white border-2 border-gray-400 rounded-2xl rounded-bl-md shadow-sm">
+                        <div className="px-4 py-3">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <span className="text-lg">{agents.find(a => a.id === message.agentId)?.avatar}</span>
+                            <span className="font-medium text-black">
+                              {agents.find(a => a.id === message.agentId)?.name}
+                            </span>
+                            {message.rating && (
+                              <div className={`px-2 py-1 rounded-full text-xs font-medium border ${
+                                message.rating > 0 
+                                  ? 'bg-gray-100 text-black border-gray-400' 
+                                  : 'bg-gray-200 text-black border-gray-500'
+                              }`}>
+                                {message.rating > 0 ? 'Liked' : 'Needs work'}
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-black whitespace-pre-wrap mb-3">{message.content}</p>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-gray-600">{formatTime(message.timestamp)}</span>
+                            <div className="flex items-center space-x-1">
+                              <button
+                                onClick={() => copyToClipboard(message.content)}
+                                className="p-1 text-gray-500 hover:text-black rounded border border-gray-300"
+                                title="Copy"
+                              >
+                                <Copy className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={() => downloadText(message.content, `${agents.find(a => a.id === message.agentId)?.name.toLowerCase()}-response.txt`)}
+                                className="p-1 text-gray-500 hover:text-black rounded border border-gray-300"
+                                title="Download"
+                              >
+                                <Download className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={() => onFeedback(message.id, 'positive')}
+                                className={`p-1 rounded transition-colors border ${
+                                  message.rating === 1
+                                    ? 'text-black bg-gray-100 border-gray-400'
+                                    : 'text-gray-500 hover:text-black hover:bg-gray-100 border-gray-300'
+                                }`}
+                                title="Good response"
+                              >
+                                <ThumbsUp className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={() => onFeedback(message.id, 'negative')}
+                                className={`p-1 rounded transition-colors border ${
+                                  message.rating === -1
+                                    ? 'text-black bg-gray-100 border-gray-400'
+                                    : 'text-gray-500 hover:text-black hover:bg-gray-100 border-gray-300'
+                                }`}
+                                title="Needs improvement"
+                              >
+                                <ThumbsDown className="w-3 h-3" />
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-            
-            {isProcessing && (
-              <div className="flex justify-start">
-                <div className="bg-gray-100 rounded-2xl rounded-bl-md px-4 py-3 border border-gray-400">
-                  <div className="flex items-center space-x-2">
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-black rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-black rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                      <div className="w-2 h-2 bg-black rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                    </div>
-                    <span className="text-sm text-gray-700">Agents are thinking...</span>
+                    )}
                   </div>
                 </div>
-              </div>
-            )}
-            
-            <div ref={messagesEndRef} />
-          </>
-        )}
-      </div>
-
-      {/* Input Area */}
-      <div className="border-t-2 border-black p-4 bg-white relative">
-        {/* Mention Suggestions - Only show selected agents */}
-        {showSuggestions && filteredAgents.length > 0 && (
-          <div className="absolute bottom-full left-4 right-4 mb-2 bg-white border-2 border-black rounded-lg shadow-lg max-h-40 overflow-y-auto z-10">
-            <div className="px-3 py-2 text-xs text-gray-600 border-b border-gray-300 bg-gray-100">
-              Selected agents only
-            </div>
-            {filteredAgents.map(agent => (
-              <button
-                key={agent.id}
-                onClick={() => insertMention(agent.name)}
-                className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center space-x-3 border-b border-gray-200 last:border-b-0"
-              >
-                <span className="text-lg">{agent.avatar}</span>
-                <div>
-                  <div className="font-medium text-black">{agent.name}</div>
-                  <div className="text-xs text-gray-600">{agent.personality}</div>
+              ))}
+              
+              {isProcessing && (
+                <div className="flex justify-start">
+                  <div className="bg-gray-100 rounded-2xl rounded-bl-md px-4 py-3 border border-gray-400">
+                    <div className="flex items-center space-x-2">
+                      <div className="flex space-x-1">
+                        <div className="w-2 h-2 bg-black rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-black rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                        <div className="w-2 h-2 bg-black rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                      </div>
+                      <span className="text-sm text-gray-700">Agents are thinking...</span>
+                    </div>
+                  </div>
                 </div>
-              </button>
-            ))}
-          </div>
-        )}
-
-        <div className="flex items-end space-x-3">
-          <div className="flex-1 relative">
-            <textarea
-              ref={inputRef}
-              value={inputMessage}
-              onChange={handleInputChange}
-              onKeyPress={handleKeyPress}
-              placeholder={`Type a message... Use @AgentName to mention specific selected agents (${selectedAgents.map(a => a.name).join(', ')})`}
-              className="w-full p-3 border-2 border-gray-400 rounded-lg resize-none focus:ring-2 focus:ring-black focus:border-black max-h-32 bg-white text-black"
-              rows={1}
-              style={{ minHeight: '44px' }}
-            />
-          </div>
-          <button
-            onClick={handleSend}
-            disabled={!inputMessage.trim() || isProcessing}
-            className="p-3 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0 border-2 border-black"
-          >
-            <Send className="w-4 h-4" />
-          </button>
+              )}
+              
+              <div ref={messagesEndRef} />
+            </>
+          )}
         </div>
-        
-        {selectedAgents.length > 0 && (
-          <div className="flex items-center space-x-2 mt-2 text-xs text-gray-600">
-            <span>Default recipients:</span>
-            {selectedAgents.slice(0, 3).map(agent => (
-              <span key={agent.id} className="flex items-center space-x-1">
-                <span>{agent.avatar}</span>
-                <span>{agent.name}</span>
-              </span>
-            ))}
-            {selectedAgents.length > 3 && (
-              <span>+{selectedAgents.length - 3} more</span>
-            )}
+      )}
+
+      {/* Input Area - Only show if input area is visible */}
+      {showInputArea && (
+        <div className="p-4 bg-white relative flex-shrink-0">
+          {/* Mention Suggestions - Only show selected agents */}
+          {showSuggestions && filteredAgents.length > 0 && (
+            <div className="absolute bottom-full left-4 right-4 mb-2 bg-white border-2 border-black rounded-lg shadow-lg max-h-40 overflow-y-auto z-10">
+              <div className="px-3 py-2 text-xs text-gray-600 border-b border-gray-300 bg-gray-100">
+                Selected agents only
+              </div>
+              {filteredAgents.map(agent => (
+                <button
+                  key={agent.id}
+                  onClick={() => insertMention(agent.name)}
+                  className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center space-x-3 border-b border-gray-200 last:border-b-0"
+                >
+                  <span className="text-lg">{agent.avatar}</span>
+                  <div>
+                    <div className="font-medium text-black">{agent.name}</div>
+                    <div className="text-xs text-gray-600">{agent.personality}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="flex items-end space-x-3">
+            <div className="flex-1 relative">
+              <textarea
+                ref={inputRef}
+                value={inputMessage}
+                onChange={handleInputChange}
+                onKeyPress={handleKeyPress}
+                placeholder={`Type a message... Use @AgentName to mention specific selected agents (${selectedAgents.map(a => a.name).join(', ')})`}
+                className="w-full p-3 border-2 border-gray-400 rounded-lg resize-none focus:ring-2 focus:ring-black focus:border-black max-h-32 bg-white text-black"
+                rows={1}
+                style={{ minHeight: '44px' }}
+              />
+            </div>
+            <button
+              onClick={handleSend}
+              disabled={!inputMessage.trim() || isProcessing}
+              className="p-3 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0 border-2 border-black"
+            >
+              <Send className="w-4 h-4" />
+            </button>
           </div>
-        )}
-      </div>
+          
+          {selectedAgents.length > 0 && (
+            <div className="flex items-center space-x-2 mt-2 text-xs text-gray-600">
+              <span>Default recipients:</span>
+              {selectedAgents.slice(0, 3).map(agent => (
+                <span key={agent.id} className="flex items-center space-x-1">
+                  <span>{agent.avatar}</span>
+                  <span>{agent.name}</span>
+                </span>
+              ))}
+              {selectedAgents.length > 3 && (
+                <span>+{selectedAgents.length - 3} more</span>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
