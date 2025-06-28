@@ -292,20 +292,22 @@ function App() {
         {!agentsSectionCollapsed && (
           <div className="px-6 pb-6">
             {/* Scrollable agents container with custom styled scrollbar */}
-            <div className="agents-scroll-container flex space-x-4 overflow-x-auto pb-4">
-              {agents.map(agent => (
-                <div key={agent.id} className="flex-shrink-0 w-80">
-                  <AgentCard
-                    agent={agent}
-                    isSelected={selectedAgentIds.includes(agent.id)}
-                    onSelect={() => handleAgentSelect(agent.id)}
-                    onTrain={() => handleTrainAgent(agent)}
-                    onEdit={() => handleEditAgent(agent)}
-                    onDelete={() => handleDeleteAgent(agent.id)}
-                    multiSelect={true}
-                  />
-                </div>
-              ))}
+            <div className="agents-scroll-container">
+              <div className="agents-scroll-content">
+                {agents.map(agent => (
+                  <div key={agent.id} className="flex-shrink-0 w-80">
+                    <AgentCard
+                      agent={agent}
+                      isSelected={selectedAgentIds.includes(agent.id)}
+                      onSelect={() => handleAgentSelect(agent.id)}
+                      onTrain={() => handleTrainAgent(agent)}
+                      onEdit={() => handleEditAgent(agent)}
+                      onDelete={() => handleDeleteAgent(agent.id)}
+                      multiSelect={true}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
             
             {/* Scroll hint text */}
