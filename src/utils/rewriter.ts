@@ -67,6 +67,30 @@ export class TextRewriter {
       { pattern: /\bcommence\b/gi, replacement: 'start' },
       { pattern: /\bterminate\b/gi, replacement: 'end' },
     ],
+    'Casual and concise': [
+      { pattern: /\btherefore\b/gi, replacement: 'so' },
+      { pattern: /\bconsequently\b/gi, replacement: 'so' },
+      { pattern: /\bfurthermore\b/gi, replacement: 'also' },
+      { pattern: /\bmoreover\b/gi, replacement: 'plus' },
+      { pattern: /\butilize\b/gi, replacement: 'use' },
+      { pattern: /\bassist\b/gi, replacement: 'help' },
+      { pattern: /\bcommence\b/gi, replacement: 'start' },
+      { pattern: /\bterminate\b/gi, replacement: 'end' },
+      { pattern: /\bfacilitate\b/gi, replacement: 'help' },
+      { pattern: /\bdemonstrate\b/gi, replacement: 'show' },
+      { pattern: /\bsubstantiate\b/gi, replacement: 'prove' },
+      { pattern: /\bimplement\b/gi, replacement: 'do' },
+      { pattern: /\boptimize\b/gi, replacement: 'improve' },
+      { pattern: /\bvalidate\b/gi, replacement: 'check' },
+      { pattern: /\bgenerate\b/gi, replacement: 'make' },
+      { pattern: /\bestablish\b/gi, replacement: 'set up' },
+      { pattern: /\bmaintain\b/gi, replacement: 'keep' },
+      { pattern: /\bobtain\b/gi, replacement: 'get' },
+      { pattern: /\bpurchase\b/gi, replacement: 'buy' },
+      { pattern: /\bcomprehensive\b/gi, replacement: 'complete' },
+      { pattern: /\bsignificant\b/gi, replacement: 'big' },
+      { pattern: /\bminimal\b/gi, replacement: 'small' },
+    ],
     'Confident and compelling': [
       { pattern: /\bI think you should\b/gi, replacement: 'You need to' },
       { pattern: /\bmaybe\b/gi, replacement: 'definitely' },
@@ -120,6 +144,14 @@ export class TextRewriter {
         return sentences.map(s => s.trim()).join('. ').replace(/\.$/, '') + '.';
       case 'Casual and approachable':
         return sentences.map(s => s.trim()).join('. ') + ' Hope this helps!';
+      case 'Casual and concise':
+        // Keep sentences short and simple
+        const shortSentences = sentences.map(s => {
+          const sentence = s.trim();
+          // Split long sentences at conjunctions
+          return sentence.replace(/,\s+(and|but|or|so)\s+/gi, '. $1 ');
+        });
+        return shortSentences.join('. ').replace(/\.\s*\./g, '.') + '.';
       case 'Confident and compelling':
         return sentences.map(s => s.trim()).join('. ') + ' Take action today!';
       case 'Scholarly and methodical':
