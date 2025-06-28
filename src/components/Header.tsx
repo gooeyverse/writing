@@ -1,6 +1,5 @@
 import React from 'react';
 import { Bot, Settings, BarChart3, Plus } from 'lucide-react';
-import { ConnectionStatus } from './ConnectionStatus';
 
 interface HeaderProps {
   onShowStats: () => void;
@@ -11,7 +10,7 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ onShowStats, onShowSettings, onCreateAgent }) => {
   return (
     <header className="bg-white border-b border-gray-200 px-6 py-4">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <div className="p-2 bg-blue-600 rounded-lg">
             <Bot className="w-6 h-6 text-white" />
@@ -46,9 +45,6 @@ export const Header: React.FC<HeaderProps> = ({ onShowStats, onShowSettings, onC
           </button>
         </div>
       </div>
-      
-      {/* Connection Status */}
-      <ConnectionStatus />
     </header>
   );
 };
