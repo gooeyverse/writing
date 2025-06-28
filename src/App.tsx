@@ -51,9 +51,6 @@ function App() {
     setChatMessages(prev => [...prev, userMessage]);
     setIsProcessing(true);
 
-    // Simulate processing delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
     // Determine which agents to respond
     const respondingAgentIds = mentionedAgentIds.length > 0 ? mentionedAgentIds : selectedAgentIds;
     
@@ -61,27 +58,43 @@ function App() {
     for (const agentId of respondingAgentIds) {
       const agent = agents.find(a => a.id === agentId);
       if (agent) {
-        const rewritten = TextRewriter.rewrite(message, agent);
-        
-        const agentMessage: ChatMessage = {
-          id: `${agentId}-${Date.now()}-${Math.random()}`,
-          type: 'agent',
-          content: rewritten,
-          timestamp: new Date(),
-          agentId,
-          originalMessage: message
-        };
+        try {
+          const rewritten = await TextRewriter.rewrite(message, agent);
+          
+          const agentMessage: ChatMessage = {
+            id: `${agentId}-${Date.now()}-${Math.random()}`,
+            type: 'agent',
+            content: rewritten,
+            timestamp: new Date(),
+            agentId,
+            originalMessage: message
+          };
 
-        setChatMessages(prev => [...prev, agentMessage]);
-        
-        // Update agent statistics
-        setAgents(prevAgents => 
-          prevAgents.map(a => 
-            a.id === agentId
-              ? { ...a, totalRewrites: a.totalRewrites + 1 }
-              : a
-          )
-        );
+          setChatMessages(prev => [...prev, agentMessage]);
+          
+          // Update agent statistics
+          setAgents(prevAgents => 
+            prevAgents.map(a => 
+              a.id === agentId
+                ? { ...a, totalRewrites: a.totalRewrites + 1 }
+                : a
+            )
+          );
+        } catch (error) {
+          console.error(`Error rewriting with agent ${agent.name}:`, error);
+          
+          // Add error message
+          const errorMessage: ChatMessage = {
+            id: `${agentId}-error-${Date.now()}-${Math.random()}`,
+            type: 'agent',
+            content: `Sorry, I encountered an error while rewriting your text. Please try again.`,
+            timestamp: new Date(),
+            agentId,
+            originalMessage: message
+          };
+
+          setChatMessages(prev => [...prev, errorMessage]);
+        }
 
         // Add small delay between agent responses for better UX
         await new Promise(resolve => setTimeout(resolve, 300));
