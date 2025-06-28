@@ -8,7 +8,7 @@ import { CreateAgentModal } from './components/CreateAgentModal';
 import { defaultAgents } from './data/agents';
 import { TextRewriter } from './utils/rewriter';
 import { Agent, TrainingData, ChatMessage } from './types';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
 
 function App() {
   const [agents, setAgents] = useState<Agent[]>(defaultAgents);
@@ -274,7 +274,22 @@ function App() {
         {!agentsSectionCollapsed && (
           <div className="px-6 pb-6">
             <div className="relative">
-              <div className="flex space-x-4 overflow-x-auto pb-2 scrollbar-hide">
+              {/* Left scroll indicator */}
+              <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-white via-white to-transparent pointer-events-none z-10 flex items-center justify-start pl-2">
+                <div className="w-8 h-8 bg-white rounded-full shadow-md border border-gray-200 flex items-center justify-center opacity-60">
+                  <ChevronLeft className="w-4 h-4 text-gray-500" />
+                </div>
+              </div>
+              
+              {/* Right scroll indicator */}
+              <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-white via-white to-transparent pointer-events-none z-10 flex items-center justify-end pr-2">
+                <div className="w-8 h-8 bg-white rounded-full shadow-md border border-gray-200 flex items-center justify-center opacity-60">
+                  <ChevronRight className="w-4 h-4 text-gray-500" />
+                </div>
+              </div>
+              
+              {/* Scrollable agents container */}
+              <div className="flex space-x-4 overflow-x-auto pb-2 scrollbar-hide px-12">
                 {agents.map(agent => (
                   <div key={agent.id} className="flex-shrink-0 w-80">
                     <AgentCard
@@ -290,8 +305,12 @@ function App() {
                 ))}
               </div>
               
-              {/* Scroll indicators */}
-              <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none" />
+              {/* Scroll hint text */}
+              <div className="text-center mt-2">
+                <span className="text-xs text-gray-400 bg-gray-50 px-3 py-1 rounded-full">
+                  ← Scroll horizontally to see all agents →
+                </span>
+              </div>
             </div>
           </div>
         )}
