@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Header } from './components/Header';
 import { AgentCard } from './components/AgentCard';
 import { TextEditor } from './components/TextEditor';
@@ -9,7 +9,7 @@ import { ResizablePanel } from './components/ResizablePanel';
 import { defaultAgents } from './data/agents';
 import { TextRewriter } from './utils/rewriter';
 import { Agent, TrainingData, ChatMessage } from './types';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
 
 function App() {
   const [agents, setAgents] = useState<Agent[]>(defaultAgents);
@@ -26,6 +26,9 @@ function App() {
   // Layout state
   const [editorWidth, setEditorWidth] = useState<number>(50);
   const [chatHeight, setChatHeight] = useState<number>(70);
+
+  // Scroll control ref
+  const agentsScrollRef = useRef<HTMLDivElement>(null);
 
   const selectedAgents = agents.filter(agent => selectedAgentIds.includes(agent.id));
 
@@ -234,6 +237,25 @@ function App() {
     }
   };
 
+  // Scroll control functions
+  const scrollLeft = () => {
+    if (agentsScrollRef.current) {
+      agentsScrollRef.current.scrollBy({
+        left: -320, // Scroll by approximately one agent card width
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const scrollRight = () => {
+    if (agentsScrollRef.current) {
+      agentsScrollRef.current.scrollBy({
+        left: 320, // Scroll by approximately one agent card width
+        behavior: 'smooth'
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <Header 
@@ -291,29 +313,52 @@ function App() {
         
         {!agentsSectionCollapsed && (
           <div className="px-6 pb-6">
-            {/* Scrollable agents container with custom styled scrollbar */}
-            <div className="agents-scroll-container">
-              <div className="agents-scroll-content">
-                {agents.map(agent => (
-                  <div key={agent.id} className="flex-shrink-0 w-80">
-                    <AgentCard
-                      agent={agent}
-                      isSelected={selectedAgentIds.includes(agent.id)}
-                      onSelect={() => handleAgentSelect(agent.id)}
-                      onTrain={() => handleTrainAgent(agent)}
-                      onEdit={() => handleEditAgent(agent)}
-                      onDelete={() => handleDeleteAgent(agent.id)}
-                      multiSelect={true}
-                    />
-                  </div>
-                ))}
+            <div className="relative">
+              {/* Left scroll button */}
+              <button
+                onClick={scrollLeft}
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white rounded-full shadow-lg border-2 border-black flex items-center justify-center hover:bg-gray-100 transition-colors"
+                title="Scroll left"
+              >
+                <ChevronLeft className="w-5 h-5 text-black" />
+              </button>
+              
+              {/* Right scroll button */}
+              <button
+                onClick={scrollRight}
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white rounded-full shadow-lg border-2 border-black flex items-center justify-center hover:bg-gray-100 transition-colors"
+                title="Scroll right"
+              >
+                <ChevronRight className="w-5 h-5 text-black" />
+              </button>
+              
+              {/* Scrollable agents container with custom styled scrollbar */}
+              <div 
+                ref={agentsScrollRef}
+                className="agents-scroll-container mx-12"
+              >
+                <div className="agents-scroll-content">
+                  {agents.map(agent => (
+                    <div key={agent.id} className="flex-shrink-0 w-80">
+                      <AgentCard
+                        agent={agent}
+                        isSelected={selectedAgentIds.includes(agent.id)}
+                        onSelect={() => handleAgentSelect(agent.id)}
+                        onTrain={() => handleTrainAgent(agent)}
+                        onEdit={() => handleEditAgent(agent)}
+                        onDelete={() => handleDeleteAgent(agent.id)}
+                        multiSelect={true}
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
             
             {/* Scroll hint text */}
             <div className="text-center mt-2">
               <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full border border-gray-300">
-                ← Scroll horizontally to see all agents →
+                ← Use arrow buttons or scroll horizontally to see all agents →
               </span>
             </div>
           </div>
