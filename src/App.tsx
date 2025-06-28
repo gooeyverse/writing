@@ -226,17 +226,6 @@ function App() {
     setEditingAgent(null);
   };
 
-  const handleSelectAll = () => {
-    const activeAgents = agents.filter(agent => agent.active);
-    setSelectedAgentIds(activeAgents.map(agent => agent.id));
-  };
-
-  const handleDeselectAll = () => {
-    if (agents.length > 0) {
-      setSelectedAgentIds([agents[0].id]); // Keep at least one selected
-    }
-  };
-
   // Scroll control functions
   const scrollLeft = () => {
     if (agentsScrollRef.current) {
@@ -277,36 +266,12 @@ function App() {
                 {selectedAgentIds.length} of {agents.length} selected
               </span>
             </div>
-            <div className="flex items-center space-x-3">
-              {!agentsSectionCollapsed && (
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleSelectAll();
-                    }}
-                    className="px-3 py-1 text-sm text-black hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors border border-black"
-                  >
-                    Select All
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeselectAll();
-                    }}
-                    className="px-3 py-1 text-sm text-gray-600 hover:text-black hover:bg-gray-100 rounded-lg transition-colors border border-gray-400"
-                  >
-                    Select One
-                  </button>
-                </div>
+            <div className="p-1 rounded-lg group-hover:bg-gray-100 transition-colors">
+              {agentsSectionCollapsed ? (
+                <ChevronDown className="w-5 h-5 text-gray-600" />
+              ) : (
+                <ChevronUp className="w-5 h-5 text-gray-600" />
               )}
-              <div className="p-1 rounded-lg group-hover:bg-gray-100 transition-colors">
-                {agentsSectionCollapsed ? (
-                  <ChevronDown className="w-5 h-5 text-gray-600" />
-                ) : (
-                  <ChevronUp className="w-5 h-5 text-gray-600" />
-                )}
-              </div>
             </div>
           </button>
         </div>
