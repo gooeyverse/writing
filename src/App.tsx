@@ -336,10 +336,10 @@ function App() {
             </div>
             
             {/* Arrow buttons positioned at bottom right */}
-            <div className="absolute bottom-0 right-0 flex items-center space-x-2 bg-white p-2 rounded-tl-lg border-l border-t border-black">
+            <div className="absolute bottom-0 right-0 flex items-center space-x-2 bg-white p-2 rounded-tl-lg shadow-md">
               <button
                 onClick={scrollLeft}
-                className="w-8 h-8 bg-white rounded-lg shadow-md border-2 border-black flex items-center justify-center hover:bg-gray-100 transition-colors"
+                className="w-8 h-8 bg-white rounded-lg shadow-sm flex items-center justify-center hover:bg-gray-100 transition-colors"
                 title="Scroll left"
               >
                 <ChevronLeft className="w-4 h-4 text-black" />
@@ -347,18 +347,11 @@ function App() {
               
               <button
                 onClick={scrollRight}
-                className="w-8 h-8 bg-white rounded-lg shadow-md border-2 border-black flex items-center justify-center hover:bg-gray-100 transition-colors"
+                className="w-8 h-8 bg-white rounded-lg shadow-sm flex items-center justify-center hover:bg-gray-100 transition-colors"
                 title="Scroll right"
               >
                 <ChevronRight className="w-4 h-4 text-black" />
               </button>
-            </div>
-            
-            {/* Scroll hint text */}
-            <div className="text-center mt-2">
-              <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full border border-gray-300">
-                ← Use arrow buttons or scroll horizontally to see all agents →
-              </span>
             </div>
           </div>
         )}
