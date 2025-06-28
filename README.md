@@ -5,7 +5,7 @@ A sophisticated React application that allows you to create and train personaliz
 ## Features
 
 - **Multiple AI Agents**: Create and manage different writing agents with unique personalities
-- **OpenAI Integration**: Powered by OpenAI's GPT models for intelligent text rewriting
+- **Supabase + OpenAI Integration**: Secure server-side AI processing via Supabase Edge Functions
 - **Agent Training**: Train agents with writing samples and style preferences
 - **Real-time Chat**: Interactive chat interface with agent mentions
 - **Feedback System**: Rate agent responses to improve their accuracy
@@ -16,6 +16,7 @@ A sophisticated React application that allows you to create and train personaliz
 ### Prerequisites
 
 - Node.js 18+ 
+- Supabase account
 - OpenAI API key
 
 ### Installation
@@ -26,12 +27,17 @@ A sophisticated React application that allows you to create and train personaliz
    npm install
    ```
 
-3. Create a `.env` file in the root directory and add your OpenAI API key:
-   ```
-   VITE_OPENAI_API_KEY=your_openai_api_key_here
-   ```
+3. Set up Supabase:
+   - Create a new project at [supabase.com](https://supabase.com)
+   - Click "Connect to Supabase" in the app header to configure your connection
+   - In your Supabase project dashboard, go to Settings > API to find your project URL and anon key
 
-4. Start the development server:
+4. Configure OpenAI in Supabase:
+   - In your Supabase dashboard, go to Settings > Edge Functions
+   - Add a new secret called `OPENAI_API_KEY` with your OpenAI API key
+   - Deploy the Edge Function (this happens automatically when you use the app)
+
+5. Start the development server:
    ```bash
    npm run dev
    ```
@@ -42,15 +48,16 @@ A sophisticated React application that allows you to create and train personaliz
 2. Sign up or log in to your account
 3. Navigate to the API section
 4. Generate a new API key
-5. Add the key to your `.env` file as shown above
+5. Add the key as a secret in your Supabase project settings
 
 ## Usage
 
-1. **Select Agents**: Choose which writing agents you want to use
-2. **Write Text**: Enter your text in the editor or chat interface
-3. **Get Rewrites**: Agents will rewrite your text according to their personalities
-4. **Train Agents**: Add writing samples to improve agent performance
-5. **Provide Feedback**: Rate responses to help agents learn your preferences
+1. **Connect to Supabase**: Click the "Connect to Supabase" button in the header
+2. **Select Agents**: Choose which writing agents you want to use
+3. **Write Text**: Enter your text in the editor or chat interface
+4. **Get Rewrites**: Agents will rewrite your text using OpenAI's GPT models
+5. **Train Agents**: Add writing samples to improve agent performance
+6. **Provide Feedback**: Rate responses to help agents learn your preferences
 
 ## Agent Types
 
@@ -63,13 +70,20 @@ The app comes with several pre-configured agents:
 - **Luna**: Creative and imaginative content
 - **Alex**: Technical documentation
 
-## Technology Stack
+## Architecture
 
 - **Frontend**: React 18 with TypeScript
+- **Backend**: Supabase Edge Functions (Deno runtime)
+- **AI**: OpenAI GPT-4o-mini via secure server-side calls
 - **Styling**: Tailwind CSS
-- **AI**: OpenAI GPT-4o-mini
 - **Icons**: Lucide React
 - **Build Tool**: Vite
+
+## Security
+
+- OpenAI API keys are stored securely in Supabase secrets
+- All AI processing happens server-side via Edge Functions
+- No sensitive credentials are exposed to the client
 
 ## Contributing
 

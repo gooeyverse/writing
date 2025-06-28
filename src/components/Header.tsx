@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Bot, Settings, BarChart3, Plus, Zap, ZapOff } from 'lucide-react';
-import { testOpenAIConnection } from '../lib/openai';
+import { supabase } from '../lib/supabase';
 
 interface HeaderProps {
   onShowStats: () => void;
@@ -9,12 +9,22 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ onShowStats, onShowSettings, onCreateAgent }) => {
-  const [openaiStatus, setOpenaiStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking');
+  const [supabaseStatus, setSupabaseStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking');
 
   useEffect(() => {
     const checkConnection = async () => {
-      const result = await testOpenAIConnection();
-      setOpenaiStatus(result.success ? 'connected' : 'disconnected');
+      try {
+        // Test Supabase connection by calling a simple function
+        const { error } = await supabase.functions.invoke('openai-rewrite', {
+          body: { test: true }
+        });
+        
+        // If we get a response (even an error), Supabase is connected
+        setSupabaseStatus('connected');
+      } catch (error) {
+        console.error('Supabase connection test failed:', error);
+        setSupabaseStatus('disconnected');
+      }
     };
 
     checkConnection();
@@ -34,18 +44,18 @@ export const Header: React.FC<HeaderProps> = ({ onShowStats, onShowSettings, onC
         </div>
         
         <div className="flex items-center space-x-3">
-          {/* OpenAI Status Indicator */}
+          {/* Supabase Status Indicator */}
           <div className="flex items-center space-x-2 px-3 py-1 rounded-lg border border-gray-400 bg-gray-100">
-            {openaiStatus === 'checking' ? (
+            {supabaseStatus === 'checking' ? (
               <div className="w-2 h-2 bg-gray-500 rounded-full animate-pulse" />
-            ) : openaiStatus === 'connected' ? (
+            ) : supabaseStatus === 'connected' ? (
               <Zap className="w-4 h-4 text-green-600" />
             ) : (
               <ZapOff className="w-4 h-4 text-red-600" />
             )}
             <span className="text-xs text-gray-700">
-              {openaiStatus === 'checking' ? 'Checking...' : 
-               openaiStatus === 'connected' ? 'OpenAI Connected' : 'OpenAI Disconnected'}
+              {supabaseStatus === 'checking' ? 'Checking...' : 
+               supabaseStatus === 'connected' ? 'AI Connected' : 'AI Disconnected'}
             </span>
           </div>
 

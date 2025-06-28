@@ -1,94 +1,34 @@
-import { openai } from '../lib/openai';
+import { supabase } from '../lib/supabase';
 import { Agent } from '../types';
 
 export class TextRewriter {
   static async rewrite(text: string, agent: Agent): Promise<string> {
-    // Fallback to mock rewriting if OpenAI is not configured
-    if (!openai) {
-      console.warn('OpenAI not configured, using fallback rewriting');
-      return this.fallbackRewrite(text, agent);
-    }
-
     try {
-      const prompt = this.buildPrompt(text, agent);
-      
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini', // Using the more cost-effective model
-        messages: [
-          {
-            role: 'system',
-            content: prompt.systemMessage
-          },
-          {
-            role: 'user',
-            content: prompt.userMessage
-          }
-        ],
-        max_tokens: Math.max(500, Math.ceil(text.length * 1.5)), // Dynamic token limit
-        temperature: 0.7, // Balanced creativity
-        presence_penalty: 0.1,
-        frequency_penalty: 0.1
-      });
-
-      const rewrittenText = response.choices[0]?.message?.content?.trim();
-      
-      if (!rewrittenText) {
-        throw new Error('No response from OpenAI');
-      }
-
-      return rewrittenText;
-    } catch (error) {
-      console.error('OpenAI rewriting failed:', error);
-      // Fallback to mock rewriting on error
-      return this.fallbackRewrite(text, agent);
-    }
-  }
-
-  private static buildPrompt(text: string, agent: Agent): { systemMessage: string; userMessage: string } {
-    let systemMessage = `You are ${agent.name}, a writing assistant with the following characteristics:
-
-PERSONALITY: ${agent.personality}
-WRITING STYLE: ${agent.writingStyle}`;
-
-    // Add custom instructions if available
-    if (agent.customInstructions) {
-      systemMessage += `\n\nSPECIAL INSTRUCTIONS: ${agent.customInstructions}`;
-    }
-
-    // Include training data preferences if available
-    if (agent.trainingData?.preferences) {
-      const prefs = agent.trainingData.preferences;
-      systemMessage += `\n\nSTYLE PREFERENCES:
-- Formality: ${prefs.formality}
-- Length: ${prefs.length}
-- Voice: ${prefs.voice}`;
-      
-      if (prefs.tone) {
-        systemMessage += `\n- Tone: ${prefs.tone}`;
-      }
-    }
-
-    // Include training samples if available (up to 3 most recent)
-    if (agent.trainingData?.samples && agent.trainingData.samples.length > 0) {
-      const recentSamples = agent.trainingData.samples
-        .sort((a, b) => b.addedAt.getTime() - a.addedAt.getTime())
-        .slice(0, 3);
-
-      systemMessage += `\n\nWRITING EXAMPLES TO LEARN FROM:`;
-      recentSamples.forEach((sample, index) => {
-        systemMessage += `\n\nExample ${index + 1}${sample.title ? ` (${sample.title})` : ''}:
-"${sample.text}"`;
-        if (sample.notes) {
-          systemMessage += `\nNotes: ${sample.notes}`;
+      // Call Supabase Edge Function
+      const { data, error } = await supabase.functions.invoke('openai-rewrite', {
+        body: {
+          text,
+          agent
         }
       });
+
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw new Error(`Rewrite failed: ${error.message}`);
+      }
+
+      if (!data?.success || !data?.rewrittenText) {
+        throw new Error('Invalid response from rewrite service');
+      }
+
+      return data.rewrittenText;
+    } catch (error) {
+      console.error('Rewriting failed:', error);
+      
+      // Fallback to mock rewriting on error
+      console.warn('Using fallback rewriting due to error');
+      return this.fallbackRewrite(text, agent);
     }
-
-    systemMessage += `\n\nYour task is to rewrite the provided text while maintaining its core meaning but adapting it to match your personality, writing style, and preferences. Do not add explanations or meta-commentary - just provide the rewritten text.`;
-
-    const userMessage = `Please rewrite this text:\n\n"${text}"`;
-
-    return { systemMessage, userMessage };
   }
 
   // Fallback rewriting method (original logic)
