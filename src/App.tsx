@@ -217,7 +217,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col">
       <Header 
         onShowStats={() => {}}
         onShowSettings={() => {}}
@@ -225,15 +225,15 @@ function App() {
       />
       
       {/* Agents Horizontal Scroll Section - Collapsible */}
-      <div className="bg-white border-b border-gray-200 flex-shrink-0">
+      <div className="bg-white border-b border-black flex-shrink-0">
         <div className="px-6 py-4">
           <button
             onClick={() => setAgentsSectionCollapsed(!agentsSectionCollapsed)}
             className="flex items-center justify-between w-full group"
           >
             <div className="flex items-center space-x-4">
-              <h2 className="text-xl font-semibold text-gray-800">Your Writing Agents</h2>
-              <span className="text-sm text-gray-500">
+              <h2 className="text-xl font-semibold text-black">Your Writing Agents</h2>
+              <span className="text-sm text-gray-600">
                 {selectedAgentIds.length} of {agents.length} selected
               </span>
             </div>
@@ -245,7 +245,7 @@ function App() {
                       e.stopPropagation();
                       handleSelectAll();
                     }}
-                    className="px-3 py-1 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                    className="px-3 py-1 text-sm text-black hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors border border-black"
                   >
                     Select All
                   </button>
@@ -254,7 +254,7 @@ function App() {
                       e.stopPropagation();
                       handleDeselectAll();
                     }}
-                    className="px-3 py-1 text-sm text-gray-600 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="px-3 py-1 text-sm text-gray-600 hover:text-black hover:bg-gray-100 rounded-lg transition-colors border border-gray-400"
                   >
                     Select One
                   </button>
@@ -262,9 +262,9 @@ function App() {
               )}
               <div className="p-1 rounded-lg group-hover:bg-gray-100 transition-colors">
                 {agentsSectionCollapsed ? (
-                  <ChevronDown className="w-5 h-5 text-gray-500" />
+                  <ChevronDown className="w-5 h-5 text-gray-600" />
                 ) : (
-                  <ChevronUp className="w-5 h-5 text-gray-500" />
+                  <ChevronUp className="w-5 h-5 text-gray-600" />
                 )}
               </div>
             </div>
@@ -276,15 +276,15 @@ function App() {
             <div className="relative">
               {/* Left scroll indicator */}
               <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-white via-white to-transparent pointer-events-none z-10 flex items-center justify-start pl-2">
-                <div className="w-8 h-8 bg-white rounded-full shadow-md border border-gray-200 flex items-center justify-center opacity-60">
-                  <ChevronLeft className="w-4 h-4 text-gray-500" />
+                <div className="w-8 h-8 bg-white rounded-full shadow-md border border-black flex items-center justify-center opacity-60">
+                  <ChevronLeft className="w-4 h-4 text-black" />
                 </div>
               </div>
               
               {/* Right scroll indicator */}
               <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-white via-white to-transparent pointer-events-none z-10 flex items-center justify-end pr-2">
-                <div className="w-8 h-8 bg-white rounded-full shadow-md border border-gray-200 flex items-center justify-center opacity-60">
-                  <ChevronRight className="w-4 h-4 text-gray-500" />
+                <div className="w-8 h-8 bg-white rounded-full shadow-md border border-black flex items-center justify-center opacity-60">
+                  <ChevronRight className="w-4 h-4 text-black" />
                 </div>
               </div>
               
@@ -307,7 +307,7 @@ function App() {
               
               {/* Scroll hint text */}
               <div className="text-center mt-2">
-                <span className="text-xs text-gray-400 bg-gray-50 px-3 py-1 rounded-full">
+                <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full border border-gray-300">
                   ← Scroll horizontally to see all agents →
                 </span>
               </div>
@@ -330,7 +330,7 @@ function App() {
         </div>
 
         {/* Right Panel - Chat Interface */}
-        <div className="w-1/2 border-l border-gray-200 bg-white flex flex-col">
+        <div className="w-1/2 border-l border-black bg-white flex flex-col">
           <ChatPanel
             messages={chatMessages}
             agents={agents}
