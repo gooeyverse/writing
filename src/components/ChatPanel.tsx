@@ -290,7 +290,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
 
       {/* Input Area - Only show if input area is visible */}
       {showInputArea && (
-        <div className="p-4 bg-white relative flex-shrink-0">
+        <div className="flex flex-col h-full p-4 bg-white relative">
           {/* Mention Suggestions - Only show selected agents */}
           {showSuggestions && filteredAgents.length > 0 && (
             <div className="absolute bottom-full left-4 right-4 mb-2 bg-white border-2 border-black rounded-lg shadow-lg max-h-40 overflow-y-auto z-10">
@@ -313,7 +313,9 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
             </div>
           )}
 
-          <div className="flex items-end space-x-3">
+          {/* Main input area that fills the height */}
+          <div className="flex flex-col h-full space-y-3">
+            {/* Text input - takes up most of the space */}
             <div className="flex-1 relative">
               <textarea
                 ref={inputRef}
@@ -321,34 +323,39 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                 onChange={handleInputChange}
                 onKeyPress={handleKeyPress}
                 placeholder={`Type a message... Use @AgentName to mention specific selected agents (${selectedAgents.map(a => a.name).join(', ')})`}
-                className="w-full p-3 border-2 border-gray-400 rounded-lg resize-none focus:ring-2 focus:ring-black focus:border-black max-h-32 bg-white text-black"
-                rows={1}
-                style={{ minHeight: '44px' }}
+                className="w-full h-full p-4 border-2 border-gray-400 rounded-lg resize-none focus:ring-2 focus:ring-black focus:border-black bg-white text-black"
               />
             </div>
-            <button
-              onClick={handleSend}
-              disabled={!inputMessage.trim() || isProcessing}
-              className="p-3 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0 border-2 border-black"
-            >
-              <Send className="w-4 h-4" />
-            </button>
-          </div>
-          
-          {selectedAgents.length > 0 && (
-            <div className="flex items-center space-x-2 mt-2 text-xs text-gray-600">
-              <span>Default recipients:</span>
-              {selectedAgents.slice(0, 3).map(agent => (
-                <span key={agent.id} className="flex items-center space-x-1">
-                  <span>{agent.avatar}</span>
-                  <span>{agent.name}</span>
-                </span>
-              ))}
-              {selectedAgents.length > 3 && (
-                <span>+{selectedAgents.length - 3} more</span>
+            
+            {/* Bottom controls */}
+            <div className="flex items-center justify-between">
+              {/* Agent info */}
+              {selectedAgents.length > 0 && (
+                <div className="flex items-center space-x-2 text-xs text-gray-600">
+                  <span>Default recipients:</span>
+                  {selectedAgents.slice(0, 3).map(agent => (
+                    <span key={agent.id} className="flex items-center space-x-1">
+                      <span>{agent.avatar}</span>
+                      <span>{agent.name}</span>
+                    </span>
+                  ))}
+                  {selectedAgents.length > 3 && (
+                    <span>+{selectedAgents.length - 3} more</span>
+                  )}
+                </div>
               )}
+              
+              {/* Send button */}
+              <button
+                onClick={handleSend}
+                disabled={!inputMessage.trim() || isProcessing}
+                className="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2 border-2 border-black"
+              >
+                <Send className="w-4 h-4" />
+                <span>Send</span>
+              </button>
             </div>
-          )}
+          </div>
         </div>
       )}
     </div>
