@@ -291,8 +291,8 @@ function App() {
         
         {!agentsSectionCollapsed && (
           <div className="px-6 pb-6">
-            {/* Scrollable agents container with horizontal scrollbar */}
-            <div className="flex space-x-4 overflow-x-auto pb-4">
+            {/* Scrollable agents container with custom styled scrollbar */}
+            <div className="agents-scroll-container flex space-x-4 overflow-x-auto pb-4">
               {agents.map(agent => (
                 <div key={agent.id} className="flex-shrink-0 w-80">
                   <AgentCard
@@ -306,6 +306,13 @@ function App() {
                   />
                 </div>
               ))}
+            </div>
+            
+            {/* Scroll hint text */}
+            <div className="text-center mt-2">
+              <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full border border-gray-300">
+                ← Scroll horizontally to see all agents →
+              </span>
             </div>
           </div>
         )}
