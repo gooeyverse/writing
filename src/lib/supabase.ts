@@ -13,7 +13,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 export const testConnection = async () => {
   try {
     const { data, error } = await supabase.from('_test').select('*').limit(1)
-    if (error && error.code !== 'PGRST116') { // PGRST116 is "table not found" which is expected
+    if (error && error.code !== 'PGRST116' && error.code !== '42P01') { // PGRST116 and 42P01 are both "table not found" which is expected
       throw error
     }
     return { success: true, message: 'Supabase connection successful!' }
