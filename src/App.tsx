@@ -312,47 +312,46 @@ function App() {
         </div>
         
         {!agentsSectionCollapsed && (
-          <div className="px-6 pb-6">
-            <div className="relative">
-              {/* Left scroll button */}
+          <div className="px-6 pb-6 relative">
+            {/* Scrollable agents container with custom styled scrollbar */}
+            <div 
+              ref={agentsScrollRef}
+              className="agents-scroll-container"
+            >
+              <div className="agents-scroll-content">
+                {agents.map(agent => (
+                  <div key={agent.id} className="flex-shrink-0 w-80">
+                    <AgentCard
+                      agent={agent}
+                      isSelected={selectedAgentIds.includes(agent.id)}
+                      onSelect={() => handleAgentSelect(agent.id)}
+                      onTrain={() => handleTrainAgent(agent)}
+                      onEdit={() => handleEditAgent(agent)}
+                      onDelete={() => handleDeleteAgent(agent.id)}
+                      multiSelect={true}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Arrow buttons positioned at bottom right */}
+            <div className="absolute bottom-0 right-0 flex items-center space-x-2 bg-white p-2 rounded-tl-lg border-l border-t border-black">
               <button
                 onClick={scrollLeft}
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white rounded-full shadow-lg border-2 border-black flex items-center justify-center hover:bg-gray-100 transition-colors"
+                className="w-8 h-8 bg-white rounded-lg shadow-md border-2 border-black flex items-center justify-center hover:bg-gray-100 transition-colors"
                 title="Scroll left"
               >
-                <ChevronLeft className="w-5 h-5 text-black" />
+                <ChevronLeft className="w-4 h-4 text-black" />
               </button>
               
-              {/* Right scroll button */}
               <button
                 onClick={scrollRight}
-                className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white rounded-full shadow-lg border-2 border-black flex items-center justify-center hover:bg-gray-100 transition-colors"
+                className="w-8 h-8 bg-white rounded-lg shadow-md border-2 border-black flex items-center justify-center hover:bg-gray-100 transition-colors"
                 title="Scroll right"
               >
-                <ChevronRight className="w-5 h-5 text-black" />
+                <ChevronRight className="w-4 h-4 text-black" />
               </button>
-              
-              {/* Scrollable agents container with custom styled scrollbar */}
-              <div 
-                ref={agentsScrollRef}
-                className="agents-scroll-container mx-12"
-              >
-                <div className="agents-scroll-content">
-                  {agents.map(agent => (
-                    <div key={agent.id} className="flex-shrink-0 w-80">
-                      <AgentCard
-                        agent={agent}
-                        isSelected={selectedAgentIds.includes(agent.id)}
-                        onSelect={() => handleAgentSelect(agent.id)}
-                        onTrain={() => handleTrainAgent(agent)}
-                        onEdit={() => handleEditAgent(agent)}
-                        onDelete={() => handleDeleteAgent(agent.id)}
-                        multiSelect={true}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
             
             {/* Scroll hint text */}
