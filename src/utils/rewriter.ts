@@ -1,4 +1,50 @@
+import { supabase } from '../lib/supabase';
+import { Agent } from '../types';
+
 export class TextRewriter {
+  static async rewrite(text: string, agent: Agent): Promise<string> {
+    try {
+      // Call Supabase Edge Function
+      const { data, error } = await supabase.functions.invoke('openai-rewrite', {
+        body: {
+          text,
+          agent
+        }
+      });
+
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw new Error(`Rewrite failed: ${error.message}`);
+      }
+
+      if (!data?.success || !data?.rewrittenText) {
+        throw new Error('Invalid response from rewrite service');
+      }
+
+      return data.rewrittenText;
+    } catch (error) {
+      console.error('Rewriting failed:', error);
+      
+      // Fallback to mock rewriting on error
+      console.warn('Using fallback rewriting due to error');
+      return this.fallbackRewrite(text, agent);
+    }
+  }
+
+  // Fallback rewriting method (original logic)
+  private static fallbackRewrite(text: string, agent: Agent): string {
+    let result = text;
+    
+    // Apply personality-based transforms
+    const transforms = this.personalityTransforms[agent.personality] || [];
+    result = this.applyTransforms(result, transforms);
+    
+    // Apply style-specific modifications
+    result = this.addStyleSpecificPhrases(result, agent);
+
+    return result;
+  }
+
   private static personalityTransforms: Record<string, Array<{ pattern: RegExp; replacement: string }>> = {
     'Professional and polished': [
       { pattern: /\bI think\b/gi, replacement: 'I believe' },
@@ -59,26 +105,13 @@ export class TextRewriter {
     ]
   };
 
-  static rewrite(text: string, agent: { personality: string; writingStyle: string; customInstructions?: string }): string {
-    let result = text;
-    
-    // Apply personality-based transforms
-    const transforms = this.personalityTransforms[agent.personality] || [];
-    result = this.applyTransforms(result, transforms);
-    
-    // Apply style-specific modifications
-    result = this.addStyleSpecificPhrases(result, agent);
-
-    return result;
-  }
-
   private static applyTransforms(text: string, transforms: Array<{ pattern: RegExp; replacement: string }>): string {
     return transforms.reduce((acc, transform) => {
       return acc.replace(transform.pattern, transform.replacement);
     }, text);
   }
 
-  private static addStyleSpecificPhrases(text: string, agent: { personality: string; writingStyle: string; customInstructions?: string }): string {
+  private static addStyleSpecificPhrases(text: string, agent: Agent): string {
     const sentences = text.split('. ');
     
     // Apply modifications based on personality
