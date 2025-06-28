@@ -35,8 +35,8 @@ export const AgentCard: React.FC<AgentCardProps> = ({
       className={`
         relative p-5 rounded-xl border-2 cursor-pointer transition-all duration-200 hover:shadow-lg group
         ${isSelected 
-          ? 'border-blue-500 bg-blue-50 shadow-lg shadow-blue-100' 
-          : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
+          ? 'border-black bg-gray-100 shadow-lg' 
+          : 'border-gray-400 bg-white hover:border-black hover:shadow-md'
         }
       `}
       onClick={onSelect}
@@ -47,8 +47,8 @@ export const AgentCard: React.FC<AgentCardProps> = ({
           <div className={`
             w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all
             ${isSelected 
-              ? 'bg-blue-500 border-blue-500 text-white' 
-              : 'border-gray-300 bg-white group-hover:border-blue-300'
+              ? 'bg-black border-black text-white' 
+              : 'border-gray-400 bg-white group-hover:border-black'
             }
           `}>
             {isSelected && <Check className="w-4 h-4" />}
@@ -60,15 +60,15 @@ export const AgentCard: React.FC<AgentCardProps> = ({
         <div className="flex items-center space-x-3">
           <div className="text-3xl">{agent.avatar}</div>
           <div>
-            <h3 className="font-semibold text-lg text-gray-900">{agent.name}</h3>
+            <h3 className="font-semibold text-lg text-black">{agent.name}</h3>
             <p className="text-sm text-gray-600">{agent.personality}</p>
           </div>
         </div>
         
         <div className="flex items-center space-x-2">
           <div className="flex items-center space-x-1">
-            <span className="text-xs font-medium text-gray-700">{agent.accuracy}%</span>
-            <div className={`w-2 h-2 rounded-full ${agent.active ? 'bg-green-400' : 'bg-gray-300'}`} />
+            <span className="text-xs font-medium text-black">{agent.accuracy}%</span>
+            <div className={`w-2 h-2 rounded-full ${agent.active ? 'bg-black' : 'bg-gray-400'}`} />
           </div>
           
           <div className="opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
@@ -77,7 +77,7 @@ export const AgentCard: React.FC<AgentCardProps> = ({
                 e.stopPropagation();
                 onEdit();
               }}
-              className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
+              className="p-1 text-gray-500 hover:text-black hover:bg-gray-100 rounded border border-gray-300"
               title="Edit agent"
             >
               <Settings className="w-4 h-4" />
@@ -87,7 +87,7 @@ export const AgentCard: React.FC<AgentCardProps> = ({
                 e.stopPropagation();
                 onDelete();
               }}
-              className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+              className="p-1 text-gray-500 hover:text-black hover:bg-gray-100 rounded border border-gray-300"
               title="Delete agent"
             >
               <Trash2 className="w-4 h-4" />
@@ -96,35 +96,35 @@ export const AgentCard: React.FC<AgentCardProps> = ({
         </div>
       </div>
       
-      <p className="text-sm text-gray-600 mb-4 line-clamp-2">{agent.description}</p>
+      <p className="text-sm text-gray-700 mb-4 line-clamp-2">{agent.description}</p>
       
       {/* Training Status */}
       {hasTrainingData && (
-        <div className="mb-3 p-2 bg-green-50 rounded-lg border border-green-200">
+        <div className="mb-3 p-2 bg-gray-100 rounded-lg border border-gray-400">
           <div className="flex items-center space-x-2">
-            <BookOpen className="w-3 h-3 text-green-600" />
-            <span className="text-xs text-green-700 font-medium">
+            <BookOpen className="w-3 h-3 text-black" />
+            <span className="text-xs text-black font-medium">
               Trained with {agent.trainingData!.samples.length} samples
             </span>
           </div>
         </div>
       )}
       
-      <div className="flex items-center justify-between text-xs text-gray-500">
+      <div className="flex items-center justify-between text-xs text-gray-600">
         <span>{agent.totalRewrites.toLocaleString()} rewrites</span>
         <span>Created {formatDate(agent.createdAt)}</span>
       </div>
       
-      <div className="mt-3 pt-3 border-t border-gray-100">
+      <div className="mt-3 pt-3 border-t border-gray-300">
         <button
           onClick={(e) => {
             e.stopPropagation();
             onTrain();
           }}
-          className={`w-full px-3 py-2 text-sm rounded-lg transition-colors ${
+          className={`w-full px-3 py-2 text-sm rounded-lg transition-colors border ${
             hasTrainingData
-              ? 'bg-blue-100 hover:bg-blue-200 text-blue-700'
-              : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+              ? 'bg-gray-100 hover:bg-gray-200 text-black border-gray-400'
+              : 'bg-white hover:bg-gray-100 text-black border-gray-400'
           }`}
         >
           {hasTrainingData ? 'Update Training' : 'Train Agent'}
