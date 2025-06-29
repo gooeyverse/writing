@@ -8,7 +8,7 @@ import { ResizablePanel } from './components/ResizablePanel';
 import { defaultAgents } from './data/agents';
 import { TextRewriter } from './utils/rewriter';
 import { Agent, TrainingData, ChatMessage } from './types';
-import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 
 function App() {
   const [agents, setAgents] = useState<Agent[]>(defaultAgents);
@@ -303,6 +303,7 @@ function App() {
               className="agents-scroll-container"
             >
               <div className="agents-scroll-content">
+                {/* Existing agents */}
                 {agents.map(agent => (
                   <div key={agent.id} className="flex-shrink-0 w-80">
                     <AgentCard
@@ -315,6 +316,33 @@ function App() {
                     />
                   </div>
                 ))}
+                
+                {/* Add New Agent Tile */}
+                <div className="flex-shrink-0 w-80">
+                  <div
+                    onClick={() => setCreateModalOpen(true)}
+                    className="h-full p-5 rounded-xl border-2 border-dashed border-gray-400 cursor-pointer transition-all duration-200 hover:border-black hover:bg-gray-50 group flex flex-col items-center justify-center min-h-[200px] bg-white"
+                  >
+                    <div className="flex flex-col items-center space-y-4">
+                      <div className="w-16 h-16 rounded-full border-2 border-gray-400 group-hover:border-black flex items-center justify-center transition-colors bg-gray-100 group-hover:bg-gray-200">
+                        <Plus className="w-8 h-8 text-gray-600 group-hover:text-black transition-colors" />
+                      </div>
+                      
+                      <div className="text-center">
+                        <h3 className="font-semibold text-lg text-gray-700 group-hover:text-black transition-colors mb-2">
+                          Create New Agent
+                        </h3>
+                        <p className="text-sm text-gray-600 group-hover:text-gray-700 transition-colors max-w-48">
+                          Add a new writing agent with custom personality and training
+                        </p>
+                      </div>
+                      
+                      <div className="px-4 py-2 bg-gray-200 group-hover:bg-black group-hover:text-white text-gray-700 rounded-lg text-sm font-medium transition-all duration-200 border border-gray-300 group-hover:border-black">
+                        Get Started
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
             
