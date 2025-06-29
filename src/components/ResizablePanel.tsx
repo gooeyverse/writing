@@ -22,6 +22,7 @@ export const ResizablePanel: React.FC<ResizablePanelProps> = ({
 }) => {
   const [size, setSize] = useState(initialSize);
   const [isDragging, setIsDragging] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const startPos = useRef(0);
   const startSize = useRef(0);
@@ -60,17 +61,24 @@ export const ResizablePanel: React.FC<ResizablePanelProps> = ({
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = direction === 'horizontal' ? 'col-resize' : 'row-resize';
+      document.body.style.userSelect = 'none';
     }
 
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
     };
   }, [isDragging, direction, minSize, maxSize, onResize]);
 
   const sizeStyle = direction === 'horizontal' 
     ? { width: `${size}%` }
     : { height: `${size}%` };
+
+  // Calculate stroke weight - 1px default, 2px on hover/drag
+  const strokeWeight = (isHovering || isDragging) ? 2 : 1;
 
   return (
     <div 
@@ -83,22 +91,39 @@ export const ResizablePanel: React.FC<ResizablePanelProps> = ({
       {/* Resize Handle */}
       <div
         className={`
-          absolute bg-gray-300 hover:bg-gray-400 transition-colors cursor-${direction === 'horizontal' ? 'col' : 'row'}-resize z-10 group
+          absolute z-10 group transition-all duration-200 bg-transparent
           ${direction === 'horizontal' 
-            ? 'right-0 top-0 bottom-0 w-1 hover:w-2' 
-            : 'bottom-0 left-0 right-0 h-1 hover:h-2'
+            ? 'right-0 top-0 bottom-0' 
+            : 'bottom-0 left-0 right-0'
           }
-          ${isDragging ? 'bg-black' : ''}
         `}
+        style={{ 
+          cursor: direction === 'horizontal' ? 'col-resize' : 'row-resize',
+          [direction === 'horizontal' ? 'width' : 'height']: `${strokeWeight}px`,
+          backgroundColor: (isHovering || isDragging) ? '#6b7280' : 'transparent' // Dark gray on hover/drag
+        }}
         onMouseDown={handleMouseDown}
+        onMouseEnter={() => setIsHovering(true)}
+        onMouseLeave={() => setIsHovering(false)}
       >
+        {/* Resize Icon - Centered */}
         <div className={`
-          absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity
+          absolute inset-0 flex items-center justify-center transition-opacity duration-200
           ${direction === 'horizontal' ? 'flex-col' : 'flex-row'}
+          ${isHovering || isDragging ? 'opacity-100' : 'opacity-0'}
         `}>
-          <GripVertical 
-            className={`w-3 h-3 text-gray-600 ${direction === 'vertical' ? 'rotate-90' : ''}`} 
-          />
+          <div className={`
+            bg-white border border-gray-400 rounded-sm p-1 shadow-sm
+            ${isDragging ? 'border-gray-600 bg-gray-100' : ''}
+          `}>
+            <GripVertical 
+              className={`
+                w-3 h-3 text-gray-600 transition-colors
+                ${direction === 'vertical' ? 'rotate-90' : ''}
+                ${isDragging ? 'text-gray-700' : ''}
+              `} 
+            />
+          </div>
         </div>
       </div>
     </div>

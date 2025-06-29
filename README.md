@@ -1,10 +1,10 @@
-# Writing Agents - AI-Powered Text Feedback Tool
+# Writer's circle - AI-Powered Writing Improvement Tool
 
-A sophisticated React application that allows you to create and train personalized AI writing agents to provide detailed feedback and analysis on your text in different styles and perspectives.
+A sophisticated React application that allows you to create and train personalized AI writing agents to provide detailed feedback and analysis on your text in different styles and perspectives. Build your own personal writer's circle with AI agents that understand your unique writing needs.
 
 ## Features
 
-- **Multiple AI Agents**: Create and manage different writing agents with unique personalities and expertise
+- **Personal Writer's Circle**: Create and manage different writing agents with unique personalities and expertise
 - **Supabase + OpenAI Integration**: Secure server-side AI processing via Supabase Edge Functions
 - **Agent Training**: Train agents with writing samples and style preferences
 - **Real-time Feedback**: Interactive chat interface with agent mentions for detailed text analysis
@@ -65,11 +65,10 @@ The app comes with several pre-configured agents:
 
 - **Sophia**: Professional business writing analysis
 - **Marcus**: Casual and friendly communication feedback
-- **Victoria**: Persuasive sales copy evaluation
 - **Professor Chen**: Academic and scholarly writing review
-- **Luna**: Creative and imaginative content analysis
-- **Alex**: Technical documentation assessment
-- **Sam**: Simple, direct communication feedback
+- **Holden**: Authentic voice with stream-of-consciousness style
+- **Billy**: Darkly humorous philosopher with compassionate cynicism
+- **David**: Master of self-deprecating humor and keen social observation
 
 ## Architecture
 

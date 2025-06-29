@@ -63,7 +63,7 @@ serve(async (req) => {
     // Build the feedback prompt
     const prompt = buildFeedbackPrompt(text, agent)
 
-    // Call OpenAI API
+    // Call OpenAI API with parameters optimized for concise responses
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -82,10 +82,10 @@ serve(async (req) => {
             content: prompt.userMessage
           }
         ],
-        max_tokens: Math.max(800, Math.ceil(text.length * 2)),
-        temperature: 0.7,
-        presence_penalty: 0.1,
-        frequency_penalty: 0.1
+        max_tokens: Math.min(400, Math.max(150, Math.ceil(text.length * 0.8))), // Reduced max tokens for shorter responses
+        temperature: 0.7, // Slightly lower for more focused responses
+        presence_penalty: 0.2,
+        frequency_penalty: 0.3 // Higher to avoid repetition and encourage conciseness
       })
     })
 
@@ -132,8 +132,7 @@ function buildFeedbackPrompt(text: string, agent: Agent): { systemMessage: strin
   let systemMessage = `You are ${agent.name}, a writing feedback specialist with the following characteristics:
 
 PERSONALITY: ${agent.personality}
-EXPERTISE: ${agent.writingStyle}
-APPROACH: Provide constructive feedback and analysis rather than rewriting`
+EXPERTISE: ${agent.writingStyle}`
 
   // Add custom instructions if available
   if (agent.customInstructions) {
@@ -143,125 +142,90 @@ APPROACH: Provide constructive feedback and analysis rather than rewriting`
   // Include training data preferences if available
   if (agent.trainingData?.preferences) {
     const prefs = agent.trainingData.preferences
-    systemMessage += `\n\nFEEDBACK FOCUS AREAS:
-- Formality level: ${prefs.formality}
-- Content length: ${prefs.length}
-- Voice preference: ${prefs.voice}`
+    systemMessage += `\n\nYOUR WRITING PREFERENCES:
+- You prefer ${prefs.formality} writing
+- You like content that is ${prefs.length}
+- You favor ${prefs.voice} voice`
     
     if (prefs.tone) {
-      systemMessage += `\n- Desired tone: ${prefs.tone}`
+      systemMessage += `\n- You appreciate a ${prefs.tone} tone`
     }
   }
 
-  // Include training samples if available (up to 2 most recent for context)
+  // Include training samples if available (up to 1 most recent for context to keep prompt shorter)
   if (agent.trainingData?.samples && agent.trainingData.samples.length > 0) {
-    const recentSamples = agent.trainingData.samples
-      .sort((a, b) => new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime())
-      .slice(0, 2)
+    const recentSample = agent.trainingData.samples
+      .sort((a, b) => new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime())[0]
 
-    systemMessage += `\n\nWRITING STYLE EXAMPLES TO REFERENCE:`
-    recentSamples.forEach((sample, index) => {
-      systemMessage += `\n\nExample ${index + 1}${sample.title ? ` (${sample.title})` : ''}:
-"${sample.text}"`
-      if (sample.notes) {
-        systemMessage += `\nStyle Notes: ${sample.notes}`
-      }
-    })
+    systemMessage += `\n\nWRITING EXAMPLE YOU'VE LEARNED FROM:
+"${recentSample.text}"`
+    if (recentSample.notes) {
+      systemMessage += `\nWhat makes this effective: ${recentSample.notes}`
+    }
   }
 
-  // Define feedback structure based on personality
-  let feedbackStructure = ''
+  // Define concise feedback approach based on personality
+  let feedbackApproach = ''
   
   switch (agent.personality) {
     case 'Professional and polished':
-      feedbackStructure = `
-Provide feedback in this professional format:
-**Professional Analysis:**
-- Structure & Clarity assessment
-- Tone evaluation  
-- Specific recommendations (3-4 bullet points)
-- Overall professional assessment`
+      feedbackApproach = `Give brief, professional feedback. Focus on 2-3 key observations about clarity, structure, and tone. Be direct and actionable.`
       break
       
     case 'Casual and approachable':
-      feedbackStructure = `
-Provide feedback in a friendly, conversational tone:
-- Start with a warm greeting
-- Comment on readability and tone
-- Share what's working well
-- Offer helpful suggestions in a supportive way
-- End with encouragement`
+      feedbackApproach = `Give friendly, concise feedback. Point out what works well and 1-2 main areas to improve. Keep it encouraging and conversational.`
       break
       
     case 'Casual and concise':
-      feedbackStructure = `
-Provide brief, direct feedback:
-- Keep it short and simple
-- Use bullet points
-- Focus on the most important issues
-- Give clear, actionable advice
-- End with a simple bottom-line assessment`
+      feedbackApproach = `Give very brief, direct feedback. Focus on the most important point that will make the biggest difference. Be honest and practical.`
       break
       
     case 'Confident and compelling':
-      feedbackStructure = `
-Provide powerful, action-oriented feedback:
-- Assess impact and persuasion strength
-- Identify power elements (or lack thereof)
-- Give bold recommendations for improvement
-- Focus on call-to-action effectiveness
-- End with a compelling verdict`
+      feedbackApproach = `Give bold, focused feedback. Identify what's powerful and what needs more impact. Be direct about the main improvement needed.`
       break
       
     case 'Scholarly and methodical':
-      feedbackStructure = `
-Provide academic-style analysis:
-- Structural evaluation with metrics
-- Evidence and methodology assessment
-- Logical flow analysis
-- Scholarly recommendations
-- Academic conclusion with rating`
+      feedbackApproach = `Give concise, analytical feedback. Focus on the most important structural or logical issue. Be precise but brief.`
       break
       
     case 'Imaginative and expressive':
-      feedbackStructure = `
-Provide creative, artistic feedback:
-- Comment on imagery and emotional resonance
-- Assess sensory elements and creativity
-- Suggest ways to enhance artistic expression
-- Use metaphorical language in your feedback
-- End with inspiring encouragement`
+      feedbackApproach = `Give creative, brief feedback. Focus on emotional impact and one key way to enhance the artistic expression.`
       break
       
     case 'Precise and logical':
-      feedbackStructure = `
-Provide technical, systematic feedback:
-- Include metrics and measurements
-- Assess logical structure and precision
-- Identify errors or ambiguities
-- Give optimization recommendations
-- Provide system status and next steps`
+      feedbackApproach = `Give clear, systematic feedback in 2-3 sentences. Focus on the main clarity or structure issue.`
+      break
+
+    case 'Authentic and introspective':
+      feedbackApproach = `Give honest, brief feedback about the authentic voice. Focus on what feels genuine and one way to strengthen it.`
+      break
+
+    case 'Darkly humorous and philosophical':
+      feedbackApproach = `Give witty, concise feedback with philosophical insight. Make one key observation with your characteristic humor.`
+      break
+
+    case 'Self-deprecating and observational':
+      feedbackApproach = `Give brief feedback with humor and keen observation. Focus on one main way to add personality or insight.`
       break
       
     default:
-      feedbackStructure = `
-Provide balanced, helpful feedback covering:
-- Overall structure and clarity
-- Strengths and areas for improvement
-- Specific suggestions
-- Encouraging conclusion`
+      feedbackApproach = `Give natural, brief feedback. Focus on 1-2 key observations that will be most helpful.`
   }
 
-  systemMessage += `\n\n${feedbackStructure}
+  systemMessage += `\n\n${feedbackApproach}
 
-IMPORTANT: 
-- Analyze and provide feedback on the text, do NOT rewrite it
-- Be constructive and specific in your feedback
-- Match your personality and expertise in your response style
-- Focus on helping the writer improve their own work
-- Keep feedback length appropriate (detailed but not overwhelming)`
+CRITICAL REQUIREMENTS:
+- Keep your response SHORT and CONCISE (2-4 sentences maximum)
+- Focus on only the MOST IMPORTANT feedback point
+- Be direct and actionable
+- Don't use bullet points or long explanations
+- Get straight to the point
+- Make every word count
+- If the text is good, say so briefly and suggest one small improvement
+- If it needs work, identify the main issue and how to fix it
+- Write naturally but keep it tight and focused`
 
-  const userMessage = `Please analyze this text and provide feedback:\n\n"${text}"`
+  const userMessage = `Quick feedback on this text:\n\n"${text}"`
 
   return { systemMessage, userMessage }
 }

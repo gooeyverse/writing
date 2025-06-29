@@ -8,24 +8,26 @@ import { ResizablePanel } from './components/ResizablePanel';
 import { defaultAgents } from './data/agents';
 import { TextRewriter } from './utils/rewriter';
 import { Agent, TrainingData, ChatMessage } from './types';
-import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 
 function App() {
   const [agents, setAgents] = useState<Agent[]>(defaultAgents);
   const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>(['sophia']);
   const [originalText, setOriginalText] = useState<string>('');
+  const [selectedText, setSelectedText] = useState<string>(''); // Track selected text
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [createModalOpen, setCreateModalOpen] = useState<boolean>(false);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   const [agentsSectionCollapsed, setAgentsSectionCollapsed] = useState<boolean>(false);
   
-  // Layout state
-  const [editorWidth, setEditorWidth] = useState<number>(50);
+  // Layout state - Chat is always open, just width adjustable
+  const [editorWidth, setEditorWidth] = useState<number>(65);
   const [chatHeight, setChatHeight] = useState<number>(70);
 
-  // Scroll control ref
+  // Scroll control ref and hover state
   const agentsScrollRef = useRef<HTMLDivElement>(null);
+  const [isAgentsPanelHovered, setIsAgentsPanelHovered] = useState<boolean>(false);
 
   const selectedAgents = agents.filter(agent => selectedAgentIds.includes(agent.id));
 
@@ -41,7 +43,7 @@ function App() {
     });
   };
 
-  const handleSendMessage = async (message: string, mentionedAgentIds: string[], messageType: 'feedback' | 'chat' = 'chat') => {
+  const handleSendMessage = async (message: string, mentionedAgentIds: string[], messageType: 'feedback' | 'chat' | 'rewrite' = 'chat') => {
     if (!message.trim()) return;
 
     // Add user message
@@ -66,15 +68,22 @@ function App() {
       if (agent) {
         try {
           let response: string;
+          let responseType: 'feedback' | 'rewrite' | 'conversation' | 'error';
           
-          // Determine response type based on message content and type
-          if (messageType === 'feedback' || isRequestingFeedback(message)) {
+          // Determine response type based on message type and content
+          if (messageType === 'rewrite') {
+            response = await TextRewriter.rewrite(message, agent);
+            responseType = 'rewrite';
+          } else if (messageType === 'feedback' || isRequestingFeedback(message)) {
             response = await TextRewriter.provideFeedback(message, agent);
+            responseType = 'feedback';
           } else if (isRequestingRewrite(message)) {
             response = await TextRewriter.rewrite(message, agent);
+            responseType = 'rewrite';
           } else {
             // For general chat, provide conversational feedback/advice
             response = await TextRewriter.provideConversationalResponse(message, agent, chatMessages);
+            responseType = 'conversation';
           }
           
           const agentMessage: ChatMessage = {
@@ -84,8 +93,7 @@ function App() {
             timestamp: new Date(),
             agentId,
             originalMessage: message,
-            responseType: messageType === 'feedback' || isRequestingFeedback(message) ? 'feedback' : 
-                         isRequestingRewrite(message) ? 'rewrite' : 'conversation'
+            responseType
           };
 
           setChatMessages(prev => [...prev, agentMessage]);
@@ -180,6 +188,11 @@ function App() {
     await handleSendMessage(originalText, [], 'feedback');
   };
 
+  // Handle text selection from TextEditor
+  const handleTextSelection = (text: string) => {
+    setSelectedText(text);
+  };
+
   const handleEditAgent = (agent: Agent) => {
     setEditingAgent(agent);
     setCreateModalOpen(true);
@@ -226,6 +239,11 @@ function App() {
     setEditingAgent(null);
   };
 
+  // Clear chat history function
+  const handleClearChatHistory = () => {
+    setChatMessages([]);
+  };
+
   // Scroll control functions
   const scrollLeft = () => {
     if (agentsScrollRef.current) {
@@ -246,44 +264,55 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="h-screen bg-white flex flex-col overflow-hidden">
       <Header 
         onShowStats={() => {}}
         onShowSettings={() => {}}
         onCreateAgent={() => setCreateModalOpen(true)}
       />
       
-      {/* Agents Horizontal Scroll Section - Collapsible */}
-      <div className="bg-white border-b border-black flex-shrink-0">
+      {/* Agents Accordion Section - Light Gray Background */}
+      <div className="bg-gray-100 flex-shrink-0">
+        {/* Accordion Header - Always Visible */}
         <div className="px-6 py-4">
           <button
             onClick={() => setAgentsSectionCollapsed(!agentsSectionCollapsed)}
             className="flex items-center justify-between w-full group"
           >
             <div className="flex items-center space-x-4">
-              <h2 className="text-xl font-semibold text-black">Your Writing Agents</h2>
+              <h2 className={`${agentsSectionCollapsed ? 'text-base font-normal' : 'text-xl font-semibold'} text-gray-800 transition-all duration-200`}>
+                Your Writing Agents
+              </h2>
               <span className="text-sm text-gray-600">
                 {selectedAgentIds.length} of {agents.length} selected
               </span>
             </div>
-            <div className="p-1 rounded-lg group-hover:bg-gray-100 transition-colors">
+            
+            {/* Simple Chevron Button */}
+            <div className="p-1 rounded-lg group-hover:bg-gray-200 transition-colors">
               {agentsSectionCollapsed ? (
-                <ChevronDown className="w-5 h-5 text-gray-600" />
+                <ChevronDown className="w-5 h-5 text-gray-600 group-hover:text-gray-800 transition-colors" />
               ) : (
-                <ChevronUp className="w-5 h-5 text-gray-600" />
+                <ChevronUp className="w-5 h-5 text-gray-600 group-hover:text-gray-800 transition-colors" />
               )}
             </div>
           </button>
         </div>
         
+        {/* Accordion Content - Collapsible */}
         {!agentsSectionCollapsed && (
-          <div className="px-6 pb-6 relative">
+          <div 
+            className="px-6 pb-6 relative"
+            onMouseEnter={() => setIsAgentsPanelHovered(true)}
+            onMouseLeave={() => setIsAgentsPanelHovered(false)}
+          >
             {/* Scrollable agents container with custom styled scrollbar */}
             <div 
               ref={agentsScrollRef}
               className="agents-scroll-container"
             >
               <div className="agents-scroll-content">
+                {/* Existing agents */}
                 {agents.map(agent => (
                   <div key={agent.id} className="flex-shrink-0 w-80">
                     <AgentCard
@@ -296,17 +325,39 @@ function App() {
                     />
                   </div>
                 ))}
+                
+                {/* Add New Agent Tile - With text */}
+                <div className="flex-shrink-0 w-80">
+                  <div
+                    onClick={() => setCreateModalOpen(true)}
+                    className="h-48 p-5 rounded-xl border-2 border-dashed border-gray-400 cursor-pointer transition-all duration-200 hover:border-gray-700 hover:bg-gray-50 group flex flex-col items-center justify-center bg-white"
+                  >
+                    <div className="w-16 h-16 rounded-full border-2 border-gray-400 group-hover:border-gray-700 flex items-center justify-center transition-colors bg-gray-100 group-hover:bg-gray-200 mb-4">
+                      <Plus className="w-8 h-8 text-gray-600 group-hover:text-gray-800 transition-colors" />
+                    </div>
+                    <div className="text-center">
+                      <h3 className="text-lg font-semibold text-gray-700 group-hover:text-gray-800 transition-colors mb-1">
+                        New Agent
+                      </h3>
+                      <p className="text-sm text-gray-500 group-hover:text-gray-700 transition-colors">
+                        Create a custom writing assistant
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
             
-            {/* Arrow buttons positioned at bottom right */}
-            <div className="absolute bottom-0 right-0 flex items-center space-x-2 bg-white p-2 rounded-tl-lg shadow-md">
+            {/* Arrow buttons positioned at bottom right - Only visible on hover */}
+            <div className={`absolute bottom-0 right-0 flex items-center space-x-2 bg-white p-2 rounded-tl-lg shadow-md transition-opacity duration-200 ${
+              isAgentsPanelHovered ? 'opacity-100' : 'opacity-0'
+            }`}>
               <button
                 onClick={scrollLeft}
                 className="w-8 h-8 bg-white rounded-lg shadow-sm flex items-center justify-center hover:bg-gray-100 transition-colors"
                 title="Scroll left"
               >
-                <ChevronLeft className="w-4 h-4 text-black" />
+                <ChevronLeft className="w-4 h-4 text-gray-800" />
               </button>
               
               <button
@@ -314,15 +365,15 @@ function App() {
                 className="w-8 h-8 bg-white rounded-lg shadow-sm flex items-center justify-center hover:bg-gray-100 transition-colors"
                 title="Scroll right"
               >
-                <ChevronRight className="w-4 h-4 text-black" />
+                <ChevronRight className="w-4 h-4 text-gray-800" />
               </button>
             </div>
           </div>
         )}
       </div>
 
-      {/* Main Content - Resizable Split Layout */}
-      <div className="flex-1 flex overflow-hidden">
+      {/* Main Content - Always show both editor and chat with resizable layout */}
+      <div className="flex-1 flex overflow-hidden min-h-0">
         {/* Left Panel - Text Editor (Resizable) */}
         <ResizablePanel
           direction="horizontal"
@@ -330,21 +381,25 @@ function App() {
           minSize={30}
           maxSize={70}
           onResize={setEditorWidth}
-          className="overflow-y-auto"
+          className="overflow-hidden"
         >
-          <div className="p-6 h-full">
-            <TextEditor
-              originalText={originalText}
-              onOriginalChange={setOriginalText}
-              onGetFeedback={handleGetFeedback}
-              isProcessing={isProcessing}
-              selectedAgents={selectedAgents}
-            />
+          <div className="h-full overflow-y-auto">
+            <div className="p-6 h-full">
+              <TextEditor
+                originalText={originalText}
+                onOriginalChange={setOriginalText}
+                onGetFeedback={handleGetFeedback}
+                isProcessing={isProcessing}
+                selectedAgents={selectedAgents}
+                onSendMessage={handleSendMessage}
+                onTextSelection={handleTextSelection}
+              />
+            </div>
           </div>
         </ResizablePanel>
 
-        {/* Right Panel - Chat Interface (Resizable) */}
-        <div className="flex-1 border-l border-black bg-white flex flex-col overflow-hidden">
+        {/* Right Panel - Chat Interface (Always visible) */}
+        <div className="flex-1 border-l border-gray-800 bg-white flex flex-col overflow-hidden min-w-0">
           {/* Chat Messages Area (Resizable) */}
           <ResizablePanel
             direction="vertical"
@@ -352,7 +407,7 @@ function App() {
             minSize={40}
             maxSize={85}
             onResize={setChatHeight}
-            className="flex flex-col"
+            className="flex flex-col overflow-hidden"
           >
             <ChatPanel
               messages={chatMessages}
@@ -362,11 +417,14 @@ function App() {
               onFeedback={handleFeedback}
               isProcessing={isProcessing}
               showInputArea={false}
+              onClearChatHistory={handleClearChatHistory}
+              isEmpty={chatMessages.length === 0}
+              selectedText={selectedText}
             />
           </ResizablePanel>
 
           {/* Chat Input Area (Fixed at bottom) */}
-          <div className="flex-1 border-t-2 border-black bg-white">
+          <div className="flex-shrink-0 border-t-2 border-gray-800 bg-white">
             <ChatPanel
               messages={[]}
               agents={agents}
@@ -376,6 +434,8 @@ function App() {
               isProcessing={isProcessing}
               showMessagesArea={false}
               showInputArea={true}
+              isEmpty={chatMessages.length === 0}
+              selectedText={selectedText}
             />
           </div>
         </div>

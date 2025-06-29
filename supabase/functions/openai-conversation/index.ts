@@ -36,6 +36,7 @@ interface ChatMessage {
   timestamp: string;
   agentId?: string;
   responseType?: string;
+  mentionedAgents?: string[];
 }
 
 interface ConversationRequest {
@@ -70,10 +71,10 @@ serve(async (req) => {
       )
     }
 
-    // Build the conversation prompt
+    // Build the conversation prompt with proper history
     const prompt = buildConversationPrompt(message, agent, chatHistory || [])
 
-    // Call OpenAI API
+    // Call OpenAI API with optimized parameters for conversation
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -83,10 +84,10 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: prompt.messages,
-        max_tokens: Math.max(600, Math.ceil(message.length * 2)),
-        temperature: 0.8,
-        presence_penalty: 0.2,
-        frequency_penalty: 0.1
+        max_tokens: Math.max(300, Math.ceil(message.length * 1.5)), // Reasonable response length
+        temperature: 0.8, // Higher for more conversational responses
+        presence_penalty: 0.3, // Encourage new topics and avoid repetition
+        frequency_penalty: 0.2 // Reduce repetitive phrases
       })
     })
 
@@ -134,7 +135,9 @@ function buildConversationPrompt(message: string, agent: Agent, chatHistory: Cha
 
 PERSONALITY: ${agent.personality}
 EXPERTISE: ${agent.writingStyle}
-APPROACH: You are having a natural conversation about writing. Be helpful, engaging, and true to your personality.`
+APPROACH: You are having a natural conversation about writing. Be helpful, engaging, and true to your personality.
+
+IMPORTANT: You are part of an ongoing conversation. Remember what has been discussed previously and build upon it naturally. Reference earlier parts of the conversation when relevant.`
 
   // Add custom instructions if available
   if (agent.customInstructions) {
@@ -181,7 +184,8 @@ Conversation Style:
 - Provide structured, well-organized responses
 - Use formal language but remain approachable
 - Offer specific, actionable advice
-- Reference best practices when relevant`
+- Reference best practices when relevant
+- Remember previous professional advice you've given`
       break
       
     case 'Casual and approachable':
@@ -191,7 +195,8 @@ Conversation Style:
 - Use conversational language with contractions
 - Share enthusiasm for good writing
 - Make suggestions feel like friendly advice
-- Use examples and analogies to explain concepts`
+- Use examples and analogies to explain concepts
+- Remember what you've chatted about before and build on it`
       break
       
     case 'Casual and concise':
@@ -201,7 +206,8 @@ Conversation Style:
 - Use simple, direct language
 - Focus on the most important points
 - Avoid lengthy explanations
-- Give practical, actionable advice`
+- Give practical, actionable advice
+- Remember key points from earlier in the conversation`
       break
       
     case 'Confident and compelling':
@@ -211,7 +217,8 @@ Conversation Style:
 - Use strong, action-oriented language
 - Focus on impact and results
 - Challenge the user to improve
-- Provide bold, transformative suggestions`
+- Provide bold, transformative suggestions
+- Build on previous challenges you've given`
       break
       
     case 'Scholarly and methodical':
@@ -221,7 +228,8 @@ Conversation Style:
 - Reference writing principles and theory
 - Use precise, academic language
 - Offer systematic approaches to problems
-- Include evidence-based recommendations`
+- Include evidence-based recommendations
+- Connect current discussion to previous scholarly points`
       break
       
     case 'Imaginative and expressive':
@@ -231,7 +239,8 @@ Conversation Style:
 - Include metaphors and vivid descriptions
 - Be enthusiastic about creative possibilities
 - Encourage experimentation and risk-taking
-- Make writing feel like an art form`
+- Make writing feel like an art form
+- Build on creative ideas from earlier conversations`
       break
       
     case 'Precise and logical':
@@ -241,7 +250,41 @@ Conversation Style:
 - Use logical structure and organization
 - Focus on accuracy and precision
 - Offer step-by-step guidance
-- Include specific metrics when helpful`
+- Include specific metrics when helpful
+- Reference logical frameworks from previous discussions`
+      break
+
+    case 'Authentic and introspective':
+      conversationStyle = `
+Conversation Style:
+- Be genuine and thoughtful in responses
+- Share honest observations about writing
+- Encourage authentic voice and expression
+- Use introspective questions to guide thinking
+- Connect with the human experience in writing
+- Remember personal insights shared in previous conversations`
+      break
+
+    case 'Darkly humorous and philosophical':
+      conversationStyle = `
+Conversation Style:
+- Use wit and dark humor appropriately
+- Include philosophical observations about writing and life
+- Be compassionately cynical about human nature
+- Find absurdity in mundane writing situations
+- Balance humor with genuine helpfulness
+- Reference philosophical themes from earlier discussions`
+      break
+
+    case 'Self-deprecating and observational':
+      conversationStyle = `
+Conversation Style:
+- Use self-deprecating humor and keen observation
+- Share personal anecdotes when relevant
+- Find humor in everyday writing challenges
+- Be relatable and down-to-earth
+- Use observational comedy to make points
+- Build on humorous observations from previous conversations`
       break
       
     default:
@@ -250,10 +293,21 @@ Conversation Style:
 - Be helpful and supportive
 - Adapt your tone to match the user's needs
 - Provide balanced, thoughtful advice
-- Encourage continued improvement`
+- Encourage continued improvement
+- Remember what you've discussed before`
   }
 
   systemMessage += `\n\n${conversationStyle}
+
+CONVERSATION MEMORY GUIDELINES:
+- Pay attention to the conversation history provided
+- Reference previous messages when relevant
+- Build upon earlier advice or feedback you've given
+- Remember the user's writing goals and challenges mentioned before
+- If the user asks about something you discussed earlier, acknowledge it
+- Maintain consistency with your previous responses and personality
+- If you gave feedback on a piece of writing before, remember it
+- If the user is working on a specific project, track its progress
 
 IMPORTANT GUIDELINES:
 - This is a natural conversation, not a formal analysis
@@ -264,20 +318,28 @@ IMPORTANT GUIDELINES:
 - If they're just chatting, engage in friendly conversation about writing
 - Keep your personality consistent throughout
 - Don't be overly formal unless that's your character
-- Feel free to ask follow-up questions to better help them`
+- Feel free to ask follow-up questions to better help them
+- ALWAYS acknowledge and build upon the conversation history when relevant`
 
-  // Build conversation history
+  // Build conversation history - include ALL relevant messages for context
   const messages = [{ role: 'system', content: systemMessage }]
   
-  // Add recent chat history for context (last 6 messages)
-  const recentHistory = chatHistory.slice(-6)
-  recentHistory.forEach(msg => {
-    if (msg.type === 'user') {
-      messages.push({ role: 'user', content: msg.content })
-    } else if (msg.agentId === agent.id) {
-      messages.push({ role: 'assistant', content: msg.content })
-    }
-  })
+  // Process chat history chronologically to maintain conversation flow
+  if (chatHistory && chatHistory.length > 0) {
+    // Sort by timestamp to ensure chronological order
+    const sortedHistory = [...chatHistory].sort((a, b) => 
+      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    )
+
+    sortedHistory.forEach(msg => {
+      if (msg.type === 'user') {
+        messages.push({ role: 'user', content: msg.content })
+      } else if (msg.agentId === agent.id) {
+        // Only include this agent's responses
+        messages.push({ role: 'assistant', content: msg.content })
+      }
+    })
+  }
   
   // Add current message
   messages.push({ role: 'user', content: message })
