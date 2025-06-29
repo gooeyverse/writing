@@ -244,9 +244,6 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     return rawPos;
   };
 
-  const wordCount = renderRichTextPreview(originalText).trim().split(/\s+/).filter(word => word.length > 0).length;
-  const charCount = renderRichTextPreview(originalText).length;
-
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -301,8 +298,6 @@ export const TextEditor: React.FC<TextEditorProps> = ({
                 "{selectedText.length > 15 ? selectedText.substring(0, 15) + '...' : selectedText}" selected
               </span>
             )}
-            <span>{wordCount} words</span>
-            <span>{charCount} characters</span>
             
             {/* Help Icon with Tooltip */}
             <div className="relative">
