@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Header } from './components/Header';
 import { AgentCard } from './components/AgentCard';
 import { TextEditor } from './components/TextEditor';
@@ -10,21 +10,111 @@ import { TextRewriter } from './utils/rewriter';
 import { Agent, TrainingData, ChatMessage } from './types';
 import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
 
+// Local storage keys
+const STORAGE_KEYS = {
+  CHAT_MESSAGES: 'writing-agents-chat-messages',
+  AGENTS: 'writing-agents-agents',
+  SELECTED_AGENT_IDS: 'writing-agents-selected-agents',
+  ORIGINAL_TEXT: 'writing-agents-original-text',
+  AGENTS_SECTION_COLLAPSED: 'writing-agents-section-collapsed',
+  EDITOR_WIDTH: 'writing-agents-editor-width'
+};
+
 function App() {
-  const [agents, setAgents] = useState<Agent[]>(defaultAgents);
-  const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>(['sophia']);
-  const [originalText, setOriginalText] = useState<string>('');
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  // Load initial state from localStorage
+  const [agents, setAgents] = useState<Agent[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.AGENTS);
+      return saved ? JSON.parse(saved) : defaultAgents;
+    } catch {
+      return defaultAgents;
+    }
+  });
+
+  const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.SELECTED_AGENT_IDS);
+      return saved ? JSON.parse(saved) : ['sophia'];
+    } catch {
+      return ['sophia'];
+    }
+  });
+
+  const [originalText, setOriginalText] = useState<string>(() => {
+    try {
+      return localStorage.getItem(STORAGE_KEYS.ORIGINAL_TEXT) || '';
+    } catch {
+      return '';
+    }
+  });
+
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.CHAT_MESSAGES);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Convert timestamp strings back to Date objects
+        return parsed.map((msg: any) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp)
+        }));
+      }
+      return [];
+    } catch {
+      return [];
+    }
+  });
+
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [createModalOpen, setCreateModalOpen] = useState<boolean>(false);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
-  const [agentsSectionCollapsed, setAgentsSectionCollapsed] = useState<boolean>(false);
+  
+  const [agentsSectionCollapsed, setAgentsSectionCollapsed] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.AGENTS_SECTION_COLLAPSED);
+      return saved ? JSON.parse(saved) : false;
+    } catch {
+      return false;
+    }
+  });
   
   // Layout state - Chat panel now defaults to 33%
-  const [editorWidth, setEditorWidth] = useState<number>(67);
+  const [editorWidth, setEditorWidth] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.EDITOR_WIDTH);
+      return saved ? JSON.parse(saved) : 67;
+    } catch {
+      return 67;
+    }
+  });
 
   // Scroll control ref
   const agentsScrollRef = useRef<HTMLDivElement>(null);
+
+  // Persist state changes to localStorage
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.AGENTS, JSON.stringify(agents));
+  }, [agents]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.SELECTED_AGENT_IDS, JSON.stringify(selectedAgentIds));
+  }, [selectedAgentIds]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.ORIGINAL_TEXT, originalText);
+  }, [originalText]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.CHAT_MESSAGES, JSON.stringify(chatMessages));
+  }, [chatMessages]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.AGENTS_SECTION_COLLAPSED, JSON.stringify(agentsSectionCollapsed));
+  }, [agentsSectionCollapsed]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.EDITOR_WIDTH, JSON.stringify(editorWidth));
+  }, [editorWidth]);
 
   const selectedAgents = agents.filter(agent => selectedAgentIds.includes(agent.id));
 
@@ -225,6 +315,11 @@ function App() {
     setEditingAgent(null);
   };
 
+  // Clear chat history function
+  const handleClearChatHistory = () => {
+    setChatMessages([]);
+  };
+
   // Scroll control functions
   const scrollLeft = () => {
     if (agentsScrollRef.current) {
@@ -250,6 +345,8 @@ function App() {
         onShowStats={() => {}}
         onShowSettings={() => {}}
         onCreateAgent={() => setCreateModalOpen(true)}
+        onClearChatHistory={handleClearChatHistory}
+        chatMessageCount={chatMessages.length}
       />
       
       {/* Agents Horizontal Scroll Section - Collapsible */}
@@ -354,6 +451,7 @@ function App() {
               onSendMessage={handleSendMessage}
               onFeedback={handleFeedback}
               isProcessing={isProcessing}
+              showMessagesArea={true}
               showInputArea={false}
             />
           </div>
