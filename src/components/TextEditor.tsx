@@ -26,7 +26,6 @@ export const TextEditor: React.FC<TextEditorProps> = ({
 }) => {
   const [selectedText, setSelectedText] = useState('');
   const [selectionRange, setSelectionRange] = useState<{ start: number; end: number } | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ show: boolean; position: ContextMenuPosition; selectedText: string }>({
     show: false,
@@ -57,9 +56,19 @@ export const TextEditor: React.FC<TextEditorProps> = ({
       }
     };
 
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setContextMenu({ show: false, position: { x: 0, y: 0 }, selectedText: '' });
+      }
+    };
+
     if (contextMenu.show) {
       document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEscape);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener('keydown', handleEscape);
+      };
     }
   }, [contextMenu.show]);
 
@@ -77,14 +86,12 @@ export const TextEditor: React.FC<TextEditorProps> = ({
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     
-    // Get selected text from either textarea or display
+    // Get selected text from textarea
     let selected = '';
-    if (isEditing && textareaRef.current) {
+    if (textareaRef.current) {
       const start = textareaRef.current.selectionStart;
       const end = textareaRef.current.selectionEnd;
       selected = originalText.substring(start, end);
-    } else if (!isEditing && window.getSelection) {
-      selected = window.getSelection()?.toString() || '';
     }
 
     // Only show context menu if we have selected agents and either selected text or full text
@@ -150,47 +157,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     }
   };
 
-  // Convert text with ==highlight== to rich text display
-  const renderRichText = (text: string) => {
-    if (!text) return <span className="text-gray-400">Start writing here...</span>;
-
-    const parts = text.split(/(==.*?==)/g);
-    return parts.map((part, index) => {
-      if (part.startsWith('==') && part.endsWith('==')) {
-        const highlightedText = part.slice(2, -2);
-        return (
-          <span key={index} className="bg-yellow-200 px-1 rounded">
-            {highlightedText}
-          </span>
-        );
-      }
-      return part;
-    });
-  };
-
-  const handleDisplayClick = () => {
-    setIsEditing(true);
-    setTimeout(() => {
-      if (textareaRef.current) {
-        textareaRef.current.focus();
-      }
-    }, 0);
-  };
-
-  const handleTextareaBlur = () => {
-    // Small delay to allow for toolbar interactions
-    setTimeout(() => {
-      if (!document.activeElement?.closest('.toolbar-container')) {
-        setIsEditing(false);
-      }
-    }, 100);
-  };
-
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      setIsEditing(false);
-      textareaRef.current?.blur();
-    }
     // Handle Ctrl+Z and Ctrl+Y
     if (e.ctrlKey || e.metaKey) {
       if (e.key === 'z' && !e.shiftKey) {
@@ -201,6 +168,19 @@ export const TextEditor: React.FC<TextEditorProps> = ({
         handleRedo();
       }
     }
+  };
+
+  // Convert text with ==highlight== to rich text display for preview
+  const renderRichTextPreview = (text: string) => {
+    if (!text) return '';
+
+    const parts = text.split(/(==.*?==)/g);
+    return parts.map((part) => {
+      if (part.startsWith('==') && part.endsWith('==')) {
+        return part.slice(2, -2); // Remove highlight markers for preview
+      }
+      return part;
+    }).join('');
   };
 
   const wordCount = originalText.trim().split(/\s+/).filter(word => word.length > 0).length;
@@ -237,7 +217,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
             {/* Yellow Highlight */}
             <button
               onClick={applyHighlight}
-              disabled={!selectedText || !isEditing}
+              disabled={!selectedText}
               className="p-2 text-yellow-600 hover:text-yellow-800 hover:bg-yellow-100 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               title="Highlight selected text"
             >
@@ -247,7 +227,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
 
           {/* Status Info with Help Tooltip */}
           <div className="flex items-center space-x-4 text-sm text-gray-600">
-            {selectedText && isEditing && (
+            {selectedText && (
               <span className="text-yellow-600 font-medium">
                 "{selectedText.length > 15 ? selectedText.substring(0, 15) + '...' : selectedText}" selected
               </span>
@@ -275,7 +255,6 @@ export const TextEditor: React.FC<TextEditorProps> = ({
                     <span>Editor Tips</span>
                   </h4>
                   <ul className="space-y-1 text-gray-200">
-                    <li>• Click anywhere in the text area to start editing</li>
                     <li className="flex items-center space-x-1">
                       <span>• Select text and click</span>
                       <Highlighter className="w-3 h-3 text-yellow-400" />
@@ -288,9 +267,9 @@ export const TextEditor: React.FC<TextEditorProps> = ({
                       <Redo className="w-3 h-3" />
                       <span>buttons for undo/redo</span>
                     </li>
-                    <li>• Press Escape to finish editing and see rich text formatting</li>
                     <li>• Right-click to ask agents for feedback or rewriting help</li>
                     <li>• Highlighted text is preserved when sharing with agents</li>
+                    <li>• Use ==text== syntax for manual highlighting</li>
                   </ul>
                 </div>
               )}
@@ -300,25 +279,31 @@ export const TextEditor: React.FC<TextEditorProps> = ({
         
         {/* Text Area Container */}
         <div className="p-6 flex-1 flex flex-col relative">
-          {/* Rich Text Display */}
-          {!isEditing && (
-            <div
-              ref={displayRef}
-              onClick={handleDisplayClick}
-              onContextMenu={handleContextMenu}
-              className="w-full flex-1 p-4 border-2 border-gray-400 rounded-lg min-h-64 bg-white text-black font-mono leading-relaxed cursor-text overflow-y-auto whitespace-pre-wrap select-text"
+          {/* Always-visible Text Editor with Rich Text Background */}
+          <div className="relative flex-1">
+            {/* Rich Text Background Layer */}
+            <div 
+              className="absolute inset-0 p-4 border-2 border-transparent rounded-lg pointer-events-none overflow-hidden whitespace-pre-wrap break-words z-0"
               style={{ 
                 fontFamily: 'JetBrains Mono, Courier New, monospace',
                 fontSize: '14px',
-                lineHeight: '1.6'
+                lineHeight: '1.6',
+                color: 'transparent'
               }}
             >
-              {renderRichText(originalText)}
+              {originalText.split(/(==.*?==)/g).map((part, index) => {
+                if (part.startsWith('==') && part.endsWith('==')) {
+                  return (
+                    <span key={index} className="bg-yellow-200 rounded px-1">
+                      {part.slice(2, -2)}
+                    </span>
+                  );
+                }
+                return <span key={index}>{part}</span>;
+              })}
             </div>
-          )}
 
-          {/* Raw Text Editor (hidden when not editing) */}
-          {isEditing && (
+            {/* Editable Textarea Overlay */}
             <textarea
               ref={textareaRef}
               value={originalText}
@@ -327,24 +312,16 @@ export const TextEditor: React.FC<TextEditorProps> = ({
               onMouseUp={handleTextSelection}
               onKeyUp={handleTextSelection}
               onKeyDown={handleKeyDown}
-              onBlur={handleTextareaBlur}
               onContextMenu={handleContextMenu}
               placeholder="Start writing here... Select text and click the highlight button to apply yellow highlighting."
-              className="w-full flex-1 p-4 border-2 border-black rounded-lg resize-none focus:ring-2 focus:ring-black focus:border-black min-h-64 bg-white text-black font-mono leading-relaxed focus:outline-none"
+              className="relative w-full h-full p-4 border-2 border-gray-400 rounded-lg resize-none focus:ring-2 focus:ring-black focus:border-black min-h-64 bg-transparent text-black font-mono leading-relaxed focus:outline-none z-10"
               style={{ 
                 fontFamily: 'JetBrains Mono, Courier New, monospace',
                 fontSize: '14px',
                 lineHeight: '1.6'
               }}
             />
-          )}
-          
-          {/* Edit Mode Indicator */}
-          {isEditing && (
-            <div className="absolute top-2 right-2 px-2 py-1 bg-black text-white text-xs rounded">
-              Editing - Press Esc to finish
-            </div>
-          )}
+          </div>
 
           {/* Bottom Controls */}
           <div className="flex justify-between items-center mt-4">
@@ -354,14 +331,6 @@ export const TextEditor: React.FC<TextEditorProps> = ({
                   <Users className="w-4 h-4" />
                   <span>{selectedAgents.length} agents selected</span>
                 </div>
-              )}
-              {!isEditing && (
-                <button
-                  onClick={handleDisplayClick}
-                  className="text-blue-600 hover:text-blue-800 underline"
-                >
-                  Click to edit
-                </button>
               )}
             </div>
             
@@ -402,8 +371,8 @@ export const TextEditor: React.FC<TextEditorProps> = ({
           <div className="px-4 py-2 border-b border-gray-300 bg-gray-50">
             <div className="text-xs text-gray-600 font-medium">
               {contextMenu.selectedText.length > 30 
-                ? `"${contextMenu.selectedText.substring(0, 30)}..."` 
-                : `"${contextMenu.selectedText}"`
+                ? `"${renderRichTextPreview(contextMenu.selectedText).substring(0, 30)}..."` 
+                : `"${renderRichTextPreview(contextMenu.selectedText)}"`
               }
             </div>
             <div className="text-xs text-gray-500 mt-1">
