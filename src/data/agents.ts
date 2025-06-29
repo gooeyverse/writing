@@ -39,5 +39,18 @@ export const defaultAgents: Agent[] = [
     totalRewrites: 445,
     createdAt: new Date('2024-02-01'),
     customInstructions: 'Use academic language, include evidence-based statements, maintain objectivity'
+  },
+  {
+    id: 'holden',
+    name: 'Holden',
+    description: 'Captures authentic voice with stream-of-consciousness style',
+    avatar: '🎭',
+    personality: 'Authentic and introspective',
+    writingStyle: 'Stream-of-consciousness with authentic dialogue and inner voice',
+    active: true,
+    accuracy: 92,
+    totalRewrites: 234,
+    createdAt: new Date('2024-02-20'),
+    customInstructions: 'Write with authentic voice, use natural speech patterns, include inner thoughts and observations, avoid pretentious language, capture genuine human emotion and contradiction'
   }
 ];
