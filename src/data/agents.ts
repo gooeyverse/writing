@@ -52,18 +52,5 @@ export const defaultAgents: Agent[] = [
     totalRewrites: 723,
     createdAt: new Date('2024-02-05'),
     customInstructions: 'Use vivid imagery, creative metaphors, and engaging storytelling techniques'
-  },
-  {
-    id: 'alex-tech',
-    name: 'Alex',
-    description: 'Senior developer who explains complex concepts clearly',
-    avatar: '👨‍💻',
-    personality: 'Precise and logical',
-    writingStyle: 'Technical documentation with clear explanations',
-    active: true,
-    accuracy: 93,
-    totalRewrites: 356,
-    createdAt: new Date('2024-02-10'),
-    customInstructions: 'Use precise technical language, include step-by-step instructions, avoid ambiguity'
   }
 ];
