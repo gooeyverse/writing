@@ -264,8 +264,8 @@ function App() {
         onCreateAgent={() => setCreateModalOpen(true)}
       />
       
-      {/* Agents Accordion Section - Light Gray Background */}
-      <div className="bg-gray-100 border-b border-black flex-shrink-0">
+      {/* Agents Accordion Section - Light Gray Background, No Bottom Border */}
+      <div className="bg-gray-100 flex-shrink-0">
         {/* Accordion Header - Always Visible */}
         <div className="px-6 py-4">
           <button
