@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, Users, Highlighter, Undo, Redo, HelpCircle, Edit3, FileText, Type, X } from 'lucide-react';
+import { MessageSquare, Users, Highlighter, Undo, Redo, HelpCircle, Edit3, FileText, Type, X, ChevronRight } from 'lucide-react';
 import { Agent } from '../types';
 
 interface TextEditorProps {
@@ -38,14 +38,23 @@ export const TextEditor: React.FC<TextEditorProps> = ({
   const [showTooltip, setShowTooltip] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const [contextMenu, setContextMenu] = useState<{ show: boolean; position: ContextMenuPosition; selectedText: string }>({
+  const [contextMenu, setContextMenu] = useState<{ 
+    show: boolean; 
+    position: ContextMenuPosition; 
+    selectedText: string;
+    hoveredAgent: string | null;
+    submenuPosition: ContextMenuPosition | null;
+  }>({
     show: false,
     position: { x: 0, y: 0 },
-    selectedText: ''
+    selectedText: '',
+    hoveredAgent: null,
+    submenuPosition: null
   });
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const displayRef = useRef<HTMLDivElement>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
+  const submenuRef = useRef<HTMLDivElement>(null);
   const [history, setHistory] = useState<string[]>([originalText]);
   const [historyIndex, setHistoryIndex] = useState(0);
 
@@ -62,14 +71,27 @@ export const TextEditor: React.FC<TextEditorProps> = ({
   // Close context menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (contextMenuRef.current && !contextMenuRef.current.contains(event.target as Node)) {
-        setContextMenu({ show: false, position: { x: 0, y: 0 }, selectedText: '' });
+      if (contextMenuRef.current && !contextMenuRef.current.contains(event.target as Node) &&
+          (!submenuRef.current || !submenuRef.current.contains(event.target as Node))) {
+        setContextMenu({ 
+          show: false, 
+          position: { x: 0, y: 0 }, 
+          selectedText: '',
+          hoveredAgent: null,
+          submenuPosition: null
+        });
       }
     };
 
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setContextMenu({ show: false, position: { x: 0, y: 0 }, selectedText: '' });
+        setContextMenu({ 
+          show: false, 
+          position: { x: 0, y: 0 }, 
+          selectedText: '',
+          hoveredAgent: null,
+          submenuPosition: null
+        });
       }
     };
 
@@ -117,9 +139,61 @@ export const TextEditor: React.FC<TextEditorProps> = ({
       setContextMenu({
         show: true,
         position: { x: e.clientX, y: e.clientY },
-        selectedText: textToUse
+        selectedText: textToUse,
+        hoveredAgent: null,
+        submenuPosition: null
       });
     }
+  };
+
+  const handleAgentHover = (agentId: string, event: React.MouseEvent) => {
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const submenuX = rect.right + 8; // 8px gap from the main menu
+    const submenuY = rect.top;
+    
+    // Check if submenu would go off-screen and adjust position
+    const submenuWidth = 200; // Approximate submenu width
+    const submenuHeight = 80; // Approximate submenu height
+    
+    let adjustedX = submenuX;
+    let adjustedY = submenuY;
+    
+    if (submenuX + submenuWidth > window.innerWidth) {
+      adjustedX = rect.left - submenuWidth - 8; // Show on left side instead
+    }
+    
+    if (submenuY + submenuHeight > window.innerHeight) {
+      adjustedY = window.innerHeight - submenuHeight - 10;
+    }
+
+    setContextMenu(prev => ({
+      ...prev,
+      hoveredAgent: agentId,
+      submenuPosition: { x: adjustedX, y: adjustedY }
+    }));
+  };
+
+  const handleAgentLeave = () => {
+    // Small delay to allow moving to submenu
+    setTimeout(() => {
+      setContextMenu(prev => ({
+        ...prev,
+        hoveredAgent: null,
+        submenuPosition: null
+      }));
+    }, 100);
+  };
+
+  const handleSubmenuEnter = () => {
+    // Keep submenu open when hovering over it
+  };
+
+  const handleSubmenuLeave = () => {
+    setContextMenu(prev => ({
+      ...prev,
+      hoveredAgent: null,
+      submenuPosition: null
+    }));
   };
 
   const handleAgentAction = (agent: Agent, action: 'feedback' | 'rewrite') => {
@@ -130,7 +204,13 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     const messageType = action; // Use the action directly as the message type
     
     onSendMessage(message, [agent.id], messageType);
-    setContextMenu({ show: false, position: { x: 0, y: 0 }, selectedText: '' });
+    setContextMenu({ 
+      show: false, 
+      position: { x: 0, y: 0 }, 
+      selectedText: '',
+      hoveredAgent: null,
+      submenuPosition: null
+    });
   };
 
   // Check if a range overlaps with any existing highlights
@@ -592,68 +672,111 @@ export const TextEditor: React.FC<TextEditorProps> = ({
         </div>
       </div>
 
-      {/* Context Menu */}
+      {/* Two-Layer Context Menu */}
       {contextMenu.show && (
-        <div
-          ref={contextMenuRef}
-          className="fixed bg-white border-2 border-gray-800 rounded-lg shadow-lg py-2 z-50 min-w-64"
-          style={{
-            left: `${Math.min(contextMenu.position.x, window.innerWidth - 280)}px`,
-            top: `${Math.min(contextMenu.position.y, window.innerHeight - 200)}px`
-          }}
-        >
-          {/* Context Menu Header */}
-          <div className="px-4 py-2 border-b border-gray-300 bg-gray-50">
-            <div className="text-xs text-gray-600 font-medium">
-              {contextMenu.selectedText.length > 30 
-                ? `"${contextMenu.selectedText.substring(0, 30)}..."` 
-                : `"${contextMenu.selectedText}"`
-              }
-            </div>
-            <div className="text-xs text-gray-500 mt-1">
-              Ask selected agents for help
-            </div>
-          </div>
-
-          {/* Agent Actions */}
-          <div className="max-h-64 overflow-y-auto">
-            {selectedAgents.map((agent) => (
-              <div key={agent.id} className="border-b border-gray-200 last:border-b-0">
-                {/* Agent Header */}
-                <div className="px-4 py-2 bg-gray-50 flex items-center space-x-2">
-                  <span className="text-lg">{agent.avatar}</span>
-                  <span className="font-medium text-gray-800 text-sm">{agent.name}</span>
-                  <span className="text-xs text-gray-600">({agent.personality})</span>
-                </div>
-                
-                {/* Action Buttons */}
-                <div className="px-4 py-2 space-y-1">
-                  <button
-                    onClick={() => handleAgentAction(agent, 'feedback')}
-                    className="w-full flex items-center space-x-2 px-3 py-2 text-left text-sm text-gray-800 hover:bg-gray-100 rounded transition-colors"
-                  >
-                    <FileText className="w-4 h-4 text-blue-600" />
-                    <span>Ask {agent.name} for feedback</span>
-                  </button>
-                  <button
-                    onClick={() => handleAgentAction(agent, 'rewrite')}
-                    className="w-full flex items-center space-x-2 px-3 py-2 text-left text-sm text-gray-800 hover:bg-gray-100 rounded transition-colors"
-                  >
-                    <Edit3 className="w-4 h-4 text-green-600" />
-                    <span>Ask {agent.name} to help me rewrite</span>
-                  </button>
-                  </div>
+        <>
+          {/* Main Menu - Agent List */}
+          <div
+            ref={contextMenuRef}
+            className="fixed bg-white border-2 border-gray-800 rounded-lg shadow-lg py-2 z-50 min-w-48"
+            style={{
+              left: `${Math.min(contextMenu.position.x, window.innerWidth - 200)}px`,
+              top: `${Math.min(contextMenu.position.y, window.innerHeight - (selectedAgents.length * 50 + 80))}px`
+            }}
+          >
+            {/* Context Menu Header */}
+            <div className="px-4 py-2 border-b border-gray-300 bg-gray-50">
+              <div className="text-xs text-gray-600 font-medium">
+                {contextMenu.selectedText.length > 30 
+                  ? `"${contextMenu.selectedText.substring(0, 30)}..."` 
+                  : `"${contextMenu.selectedText}"`
+                }
               </div>
-            ))}
-          </div>
+              <div className="text-xs text-gray-500 mt-1">
+                Choose an agent to help
+              </div>
+            </div>
 
-          {/* Footer */}
-          <div className="px-4 py-2 border-t border-gray-300 bg-gray-50">
-            <div className="text-xs text-gray-500">
-              Right-click anywhere to access this menu
+            {/* Agent List */}
+            <div className="max-h-64 overflow-y-auto">
+              {selectedAgents.map((agent) => (
+                <div 
+                  key={agent.id} 
+                  className="relative"
+                  onMouseEnter={(e) => handleAgentHover(agent.id, e)}
+                  onMouseLeave={handleAgentLeave}
+                >
+                  <div className="px-4 py-3 hover:bg-gray-100 transition-colors cursor-pointer flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <span className="text-lg">{agent.avatar}</span>
+                      <div>
+                        <div className="font-medium text-gray-800 text-sm">{agent.name}</div>
+                        <div className="text-xs text-gray-600">{agent.personality}</div>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-gray-400" />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Footer */}
+            <div className="px-4 py-2 border-t border-gray-300 bg-gray-50">
+              <div className="text-xs text-gray-500">
+                Hover over an agent to see actions
+              </div>
             </div>
           </div>
-        </div>
+
+          {/* Submenu - Actions */}
+          {contextMenu.hoveredAgent && contextMenu.submenuPosition && (
+            <div
+              ref={submenuRef}
+              className="fixed bg-white border-2 border-gray-800 rounded-lg shadow-lg py-2 z-50 min-w-44"
+              style={{
+                left: `${contextMenu.submenuPosition.x}px`,
+                top: `${contextMenu.submenuPosition.y}px`
+              }}
+              onMouseEnter={handleSubmenuEnter}
+              onMouseLeave={handleSubmenuLeave}
+            >
+              {(() => {
+                const agent = selectedAgents.find(a => a.id === contextMenu.hoveredAgent);
+                if (!agent) return null;
+
+                return (
+                  <>
+                    {/* Submenu Header */}
+                    <div className="px-4 py-2 border-b border-gray-300 bg-gray-50">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-lg">{agent.avatar}</span>
+                        <span className="font-medium text-gray-800 text-sm">{agent.name}</span>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="py-1">
+                      <button
+                        onClick={() => handleAgentAction(agent, 'feedback')}
+                        className="w-full flex items-center space-x-3 px-4 py-2 text-left text-sm text-gray-800 hover:bg-gray-100 transition-colors"
+                      >
+                        <FileText className="w-4 h-4 text-blue-600" />
+                        <span>Get Feedback</span>
+                      </button>
+                      <button
+                        onClick={() => handleAgentAction(agent, 'rewrite')}
+                        className="w-full flex items-center space-x-3 px-4 py-2 text-left text-sm text-gray-800 hover:bg-gray-100 transition-colors"
+                      >
+                        <Edit3 className="w-4 h-4 text-green-600" />
+                        <span>Help Rewrite</span>
+                      </button>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
