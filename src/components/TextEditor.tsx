@@ -185,7 +185,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
 
   // Calculate dynamic styling based on state
   const isEmpty = !originalText.trim();
-  const isInteractive = isFocused || isHovered;
+  const isInteractive = isHovered && !isFocused; // Only show hover effects when not focused
   
   return (
     <div className="flex flex-col h-full">
@@ -306,7 +306,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >
-          {/* Enhanced Text Editor with Dynamic Styling */}
+          {/* Enhanced Text Editor with Minimal Styling */}
           <div 
             className={`relative flex-1 min-h-0 transition-all duration-200 ${
               isInteractive ? 'transform scale-[1.002]' : ''
@@ -314,15 +314,13 @@ export const TextEditor: React.FC<TextEditorProps> = ({
           >
             {/* Rich Text Background Layer - Shows highlighted text without == markers */}
             <div 
-              className={`absolute inset-0 p-4 rounded-lg pointer-events-none overflow-hidden whitespace-pre-wrap break-words z-0 transition-all duration-200 ${
-                isFocused ? 'ring-2 ring-blue-500 ring-opacity-50' : isHovered ? 'ring-1 ring-blue-300 ring-opacity-30' : ''
-              }`}
+              className={`absolute inset-0 p-4 rounded-lg pointer-events-none overflow-hidden whitespace-pre-wrap break-words z-0 transition-all duration-200`}
               style={{ 
                 fontFamily: 'JetBrains Mono, Courier New, monospace',
                 fontSize: '14px',
                 lineHeight: '1.6',
                 color: 'transparent',
-                backgroundColor: isFocused ? 'rgba(59, 130, 246, 0.02)' : 'transparent'
+                backgroundColor: 'transparent'
               }}
             >
               {originalText.split(/(==.*?==)/g).map((part, index) => {
@@ -337,7 +335,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
               })}
             </div>
 
-            {/* Editable Textarea Overlay with Enhanced Styling */}
+            {/* Editable Textarea Overlay with Minimal Styling */}
             <textarea
               ref={textareaRef}
               value={originalText}
@@ -351,13 +349,9 @@ export const TextEditor: React.FC<TextEditorProps> = ({
               onBlur={() => setIsFocused(false)}
               placeholder={`Start writing here... ${selectedAgents.length > 0 ? `Your ${selectedAgents.length} selected agent${selectedAgents.length > 1 ? 's' : ''} will help you improve your writing.` : 'Select agents to get writing assistance.'}`}
               className={`relative w-full h-full p-4 rounded-lg resize-none bg-transparent text-black font-mono leading-relaxed focus:outline-none z-10 border-0 transition-all duration-200 ${
-                isFocused 
-                  ? 'ring-2 ring-blue-500 ring-opacity-50 bg-blue-50 bg-opacity-30' 
-                  : isHovered 
-                    ? 'ring-1 ring-blue-300 ring-opacity-30 bg-blue-50 bg-opacity-10' 
-                    : isEmpty 
-                      ? 'bg-transparent cursor-text' 
-                      : 'bg-transparent'
+                isInteractive && !isFocused
+                  ? 'ring-1 ring-blue-300 ring-opacity-30 bg-blue-50 bg-opacity-10' 
+                  : 'bg-transparent'
               }`}
               style={{ 
                 fontFamily: 'JetBrains Mono, Courier New, monospace',
@@ -367,11 +361,11 @@ export const TextEditor: React.FC<TextEditorProps> = ({
               }}
             />
 
-            {/* Typing Indicator */}
+            {/* Typing Indicator - Only show when focused and typing */}
             {isFocused && (
-              <div className="absolute top-2 right-2 flex items-center space-x-2 bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs z-20">
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                <span>Ready to type</span>
+              <div className="absolute top-2 right-2 flex items-center space-x-2 bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs z-20">
+                <div className="w-2 h-2 bg-gray-500 rounded-full animate-pulse"></div>
+                <span>Typing</span>
               </div>
             )}
           </div>
