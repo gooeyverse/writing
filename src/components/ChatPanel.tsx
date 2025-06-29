@@ -33,6 +33,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
   const [cursorPosition, setCursorPosition] = useState(0);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [isInputHovered, setIsInputHovered] = useState(false);
+  const [isInputFocused, setIsInputFocused] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -228,8 +229,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
     }
   };
 
-  // Calculate border weight - 2px default, 3px on hover (1px increase)
-  const borderWeight = isInputHovered ? 3 : 2;
+  // Calculate border weight - 2px default, 3px on hover/focus (1px increase)
+  const borderWeight = (isInputHovered || isInputFocused) ? 3 : 2;
 
   // Quick action suggestions
   const quickActions = [
@@ -495,10 +496,9 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
       {/* Input Area - Only show if input area is visible */}
       {showInputArea && (
         <div 
-          className="flex flex-col p-4 bg-white relative transition-all duration-200"
+          className="flex flex-col p-4 transition-all duration-200 bg-gray-50"
           style={{
-            borderTop: `${borderWeight}px solid ${isInputHovered ? '#6b7280' : 'transparent'}`,
-            backgroundColor: isInputHovered ? '#f9fafb' : 'white'
+            borderTop: `${borderWeight}px solid ${(isInputHovered || isInputFocused) ? '#6b7280' : '#d1d5db'}`,
           }}
           onMouseEnter={() => setIsInputHovered(true)}
           onMouseLeave={() => setIsInputHovered(false)}
@@ -534,6 +534,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                 value={inputMessage}
                 onChange={handleInputChange}
                 onKeyPress={handleKeyPress}
+                onFocus={() => setIsInputFocused(true)}
+                onBlur={() => setIsInputFocused(false)}
                 placeholder={`Ask for feedback, request rewrites, or chat naturally... Use @AgentName to mention specific agents (${selectedAgents.map(a => a.name).join(', ')})`}
                 className="w-full h-24 p-4 border-2 border-gray-400 rounded-lg resize-none focus:ring-2 focus:ring-gray-800 focus:border-gray-800 bg-white text-gray-700"
               />
