@@ -39,18 +39,5 @@ export const defaultAgents: Agent[] = [
     totalRewrites: 445,
     createdAt: new Date('2024-02-01'),
     customInstructions: 'Use academic language, include evidence-based statements, maintain objectivity'
-  },
-  {
-    id: 'luna',
-    name: 'Luna',
-    description: 'Creative storyteller with vivid imagination',
-    avatar: '🌙',
-    personality: 'Imaginative and expressive',
-    writingStyle: 'Creative with rich descriptions and metaphors',
-    active: true,
-    accuracy: 87,
-    totalRewrites: 723,
-    createdAt: new Date('2024-02-05'),
-    customInstructions: 'Use vivid imagery, creative metaphors, and engaging storytelling techniques'
   }
 ];
