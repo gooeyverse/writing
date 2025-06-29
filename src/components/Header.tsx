@@ -91,7 +91,7 @@ export const Header: React.FC<HeaderProps> = ({
           <CustomIcon className="w-16 h-16 text-gray-800" />
           <div>
             <h1 className="text-2xl font-bold text-gray-800 typewriter-effect">Writer's circle</h1>
-            <p className="text-sm text-gray-600">Improve your writing. Create your own personal writer's circle.</p>
+            <p className="text-sm text-gray-600">Be your best writer with the help of a personal writer's circle</p>
           </div>
         </div>
         
