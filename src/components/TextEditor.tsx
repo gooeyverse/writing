@@ -181,8 +181,71 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     }).join('');
   };
 
-  const wordCount = originalText.trim().split(/\s+/).filter(word => word.length > 0).length;
-  const charCount = originalText.length;
+  // Calculate position mapping between raw text and display text
+  const getDisplayPosition = (rawPosition: number): number => {
+    let displayPos = 0;
+    let rawPos = 0;
+    
+    while (rawPos < rawPosition && rawPos < originalText.length) {
+      if (originalText.substring(rawPos, rawPos + 2) === '==') {
+        // Skip the opening ==
+        rawPos += 2;
+        // Find the closing ==
+        const closePos = originalText.indexOf('==', rawPos);
+        if (closePos !== -1) {
+          // Add the content between == markers
+          const contentLength = closePos - rawPos;
+          displayPos += contentLength;
+          rawPos = closePos + 2; // Skip the closing ==
+        } else {
+          // No closing ==, treat as regular text
+          displayPos++;
+          rawPos++;
+        }
+      } else {
+        displayPos++;
+        rawPos++;
+      }
+    }
+    
+    return displayPos;
+  };
+
+  const getRawPosition = (displayPosition: number): number => {
+    let displayPos = 0;
+    let rawPos = 0;
+    
+    while (displayPos < displayPosition && rawPos < originalText.length) {
+      if (originalText.substring(rawPos, rawPos + 2) === '==') {
+        // Skip the opening ==
+        rawPos += 2;
+        // Find the closing ==
+        const closePos = originalText.indexOf('==', rawPos);
+        if (closePos !== -1) {
+          // Add the content between == markers
+          const contentLength = closePos - rawPos;
+          if (displayPos + contentLength >= displayPosition) {
+            // Position is within this highlighted section
+            return rawPos + (displayPosition - displayPos);
+          }
+          displayPos += contentLength;
+          rawPos = closePos + 2; // Skip the closing ==
+        } else {
+          // No closing ==, treat as regular text
+          displayPos++;
+          rawPos++;
+        }
+      } else {
+        displayPos++;
+        rawPos++;
+      }
+    }
+    
+    return rawPos;
+  };
+
+  const wordCount = renderRichTextPreview(originalText).trim().split(/\s+/).filter(word => word.length > 0).length;
+  const charCount = renderRichTextPreview(originalText).length;
 
   return (
     <div className="flex flex-col h-full">
@@ -279,7 +342,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
         <div className="p-6 flex-1 flex flex-col relative">
           {/* Always-visible Text Editor with Rich Text Background */}
           <div className="relative flex-1">
-            {/* Rich Text Background Layer */}
+            {/* Rich Text Background Layer - Shows highlighted text without == markers */}
             <div 
               className="absolute inset-0 p-4 border-2 border-transparent rounded-lg pointer-events-none overflow-hidden whitespace-pre-wrap break-words z-0"
               style={{ 
@@ -301,7 +364,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
               })}
             </div>
 
-            {/* Editable Textarea Overlay */}
+            {/* Editable Textarea Overlay - Shows raw text with == markers for editing */}
             <textarea
               ref={textareaRef}
               value={originalText}
@@ -316,7 +379,8 @@ export const TextEditor: React.FC<TextEditorProps> = ({
               style={{ 
                 fontFamily: 'JetBrains Mono, Courier New, monospace',
                 fontSize: '14px',
-                lineHeight: '1.6'
+                lineHeight: '1.6',
+                color: 'rgba(0, 0, 0, 0.8)' // Slightly transparent so background highlights show through
               }}
             />
           </div>
@@ -405,7 +469,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
                     <Edit3 className="w-4 h-4 text-green-600" />
                     <span>Ask {agent.name} to help me rewrite</span>
                   </button>
-                </div>
+                  </div>
               </div>
             ))}
           </div>
