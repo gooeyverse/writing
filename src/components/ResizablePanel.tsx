@@ -77,6 +77,9 @@ export const ResizablePanel: React.FC<ResizablePanelProps> = ({
     ? { width: `${size}%` }
     : { height: `${size}%` };
 
+  // Calculate stroke weight - 1px default, 2px on hover/drag
+  const strokeWeight = (isHovering || isDragging) ? 2 : 1;
+
   return (
     <div 
       ref={panelRef}
@@ -88,20 +91,16 @@ export const ResizablePanel: React.FC<ResizablePanelProps> = ({
       {/* Resize Handle */}
       <div
         className={`
-          absolute z-10 group transition-all duration-200
+          absolute z-10 group transition-all duration-200 bg-transparent
           ${direction === 'horizontal' 
-            ? `right-0 top-0 bottom-0 ${isHovering || isDragging ? 'w-2' : 'w-1'}` 
-            : `bottom-0 left-0 right-0 ${isHovering || isDragging ? 'h-2' : 'h-1'}`
-          }
-          ${isDragging 
-            ? 'bg-gray-600' 
-            : isHovering 
-              ? 'bg-gray-500' 
-              : 'bg-transparent hover:bg-gray-400'
+            ? 'right-0 top-0 bottom-0' 
+            : 'bottom-0 left-0 right-0'
           }
         `}
         style={{ 
-          cursor: direction === 'horizontal' ? 'col-resize' : 'row-resize'
+          cursor: direction === 'horizontal' ? 'col-resize' : 'row-resize',
+          [direction === 'horizontal' ? 'width' : 'height']: `${strokeWeight}px`,
+          backgroundColor: (isHovering || isDragging) ? '#6b7280' : 'transparent' // Dark gray on hover/drag
         }}
         onMouseDown={handleMouseDown}
         onMouseEnter={() => setIsHovering(true)}
