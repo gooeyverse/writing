@@ -9,7 +9,6 @@ interface TextEditorProps {
   isProcessing: boolean;
   selectedAgents: Agent[];
   onSendMessage?: (message: string, mentionedAgentIds: string[], messageType?: 'feedback' | 'chat' | 'rewrite') => void;
-  onFirstHighlight?: () => void;
 }
 
 interface ContextMenuPosition {
@@ -29,8 +28,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
   onGetFeedback,
   isProcessing,
   selectedAgents,
-  onSendMessage,
-  onFirstHighlight
+  onSendMessage
 }) => {
   const [selectedText, setSelectedText] = useState('');
   const [selectionRange, setSelectionRange] = useState<{ start: number; end: number } | null>(null);
@@ -48,9 +46,6 @@ export const TextEditor: React.FC<TextEditorProps> = ({
   const contextMenuRef = useRef<HTMLDivElement>(null);
   const [history, setHistory] = useState<string[]>([originalText]);
   const [historyIndex, setHistoryIndex] = useState(0);
-  const [hasHighlightedBefore, setHasHighlightedBefore] = useState(false);
-  const [pendingSelection, setPendingSelection] = useState<{ start: number; end: number; text: string } | null>(null);
-  const [isRestoringSelection, setIsRestoringSelection] = useState(false);
 
   // Update history when text changes
   useEffect(() => {
@@ -61,57 +56,6 @@ export const TextEditor: React.FC<TextEditorProps> = ({
       setHistoryIndex(newHistory.length - 1);
     }
   }, [originalText]);
-
-  // Handle pending selection restoration after layout changes
-  useEffect(() => {
-    if (pendingSelection && textareaRef.current && !isRestoringSelection) {
-      setIsRestoringSelection(true);
-      
-      const restoreSelection = () => {
-        if (textareaRef.current && pendingSelection) {
-          // Force focus and selection
-          textareaRef.current.focus();
-          textareaRef.current.setSelectionRange(pendingSelection.start, pendingSelection.end);
-          setSelectedText(pendingSelection.text);
-          setSelectionRange({ start: pendingSelection.start, end: pendingSelection.end });
-          
-          // Verify the selection was actually set
-          setTimeout(() => {
-            if (textareaRef.current && pendingSelection) {
-              const actualStart = textareaRef.current.selectionStart;
-              const actualEnd = textareaRef.current.selectionEnd;
-              
-              if (actualStart === pendingSelection.start && actualEnd === pendingSelection.end) {
-                // Selection successfully restored
-                console.log('Selection restored successfully');
-              } else {
-                // Try again if selection wasn't properly restored
-                textareaRef.current.setSelectionRange(pendingSelection.start, pendingSelection.end);
-              }
-            }
-          }, 50);
-        }
-      };
-
-      // Use multiple restoration attempts with different timing
-      const timeouts = [10, 50, 100, 200, 400, 600, 800, 1000];
-      timeouts.forEach((delay, index) => {
-        setTimeout(() => {
-          if (pendingSelection && textareaRef.current) {
-            restoreSelection();
-          }
-          
-          // Clear pending selection after final attempt
-          if (index === timeouts.length - 1) {
-            setTimeout(() => {
-              setPendingSelection(null);
-              setIsRestoringSelection(false);
-            }, 100);
-          }
-        }, delay);
-      });
-    }
-  }, [pendingSelection, isRestoringSelection]);
 
   // Close context menu when clicking outside
   useEffect(() => {
@@ -145,19 +89,6 @@ export const TextEditor: React.FC<TextEditorProps> = ({
       
       setSelectedText(selected);
       setSelectionRange({ start, end });
-
-      // Trigger first highlight callback when text is selected for the first time
-      if (selected.trim() && !hasHighlightedBefore && onFirstHighlight) {
-        setHasHighlightedBefore(true);
-        
-        // Store the selection to restore after layout changes
-        setPendingSelection({ start, end, text: selected });
-        
-        // Small delay to ensure the selection is properly stored before triggering layout change
-        setTimeout(() => {
-          onFirstHighlight();
-        }, 10);
-      }
     }
   };
 
@@ -554,7 +485,6 @@ export const TextEditor: React.FC<TextEditorProps> = ({
                     <li>• Right-click to ask agents for feedback or rewriting help</li>
                     <li>• Highlighted text is preserved when sharing with agents</li>
                     <li>• Highlights are visual only - no special syntax added to text</li>
-                    <li>• <strong>Selecting text for the first time opens the chat panel automatically!</strong></li>
                   </ul>
                 </div>
               )}
