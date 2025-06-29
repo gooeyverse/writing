@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, ThumbsUp, ThumbsDown, Copy, Download, MessageCircle, Bot, Sparkles, Edit3, MessageSquare, Trash2 } from 'lucide-react';
+import { Send, ThumbsUp, ThumbsDown, Copy, Download, MessageCircle, Bot, Sparkles, Edit3, MessageSquare, Trash2, FileText } from 'lucide-react';
 import { Agent, ChatMessage } from '../types';
 
 interface ChatPanelProps {
@@ -12,6 +12,7 @@ interface ChatPanelProps {
   showMessagesArea?: boolean;
   showInputArea?: boolean;
   onClearChatHistory?: () => void;
+  isEmpty?: boolean;
 }
 
 export const ChatPanel: React.FC<ChatPanelProps> = ({
@@ -23,7 +24,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
   isProcessing,
   showMessagesArea = true,
   showInputArea = true,
-  onClearChatHistory
+  onClearChatHistory,
+  isEmpty = false
 }) => {
   const [inputMessage, setInputMessage] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -164,6 +166,29 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
     }
   };
 
+  // Handle quick action clicks
+  const handleQuickAction = (action: string, agent?: Agent) => {
+    if (agent) {
+      // Agent-specific action
+      const message = action.includes('feedback') ? 'Can you give me feedback on my writing?' : 
+                     action.includes('rewrite') ? 'Can you help me rewrite this to be more professional?' :
+                     action.includes('casual') ? 'Can you help me make this more casual and friendly?' :
+                     'How can I improve this writing?';
+      
+      const messageType = action.includes('feedback') ? 'feedback' as const :
+                         action.includes('rewrite') ? 'rewrite' as const :
+                         'chat' as const;
+      
+      onSendMessage(message, [agent.id], messageType);
+    } else {
+      // General action
+      setInputMessage(action);
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+    }
+  };
+
   // Only show selected agents in mention suggestions
   const filteredAgents = selectedAgents.filter(agent => 
     agent.name.toLowerCase().includes(mentionQuery)
@@ -205,6 +230,14 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
 
   // Calculate border weight - 2px default, 3px on hover (1px increase)
   const borderWeight = isInputHovered ? 3 : 2;
+
+  // Quick action suggestions
+  const quickActions = [
+    { text: "Can you give me feedback on this?", icon: MessageSquare, type: 'feedback' as const },
+    { text: "Please rewrite this to be more professional", icon: Edit3, type: 'rewrite' as const },
+    { text: "Make this more casual and friendly", icon: MessageCircle, type: 'rewrite' as const },
+    { text: "How can I improve this writing?", icon: Sparkles, type: 'feedback' as const }
+  ];
 
   return (
     <div className="flex flex-col h-full">
@@ -261,9 +294,75 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
             </div>
           )}
 
-          {/* Messages or Empty State */}
+          {/* Messages or Empty State with Quick Actions */}
           {messages.length === 0 ? (
-            <div className="flex-1" />
+            <div className="flex flex-col items-center justify-center h-full text-center">
+              <Bot className="w-12 h-12 text-gray-500 mb-4" />
+              <h3 className="text-lg font-medium text-gray-800 mb-2">Start a conversation</h3>
+              <p className="text-gray-600 mb-6 max-w-sm">
+                Chat naturally with your agents. Ask for feedback, request rewrites, or have conversations about your writing.
+              </p>
+              
+              {/* Quick action buttons for each selected agent */}
+              {selectedAgents.length > 0 && (
+                <div className="w-full max-w-md space-y-4">
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">Quick Actions with Your Agents:</h4>
+                  
+                  {selectedAgents.map(agent => (
+                    <div key={agent.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                      <div className="flex items-center space-x-2 mb-3">
+                        <span className="text-lg">{agent.avatar}</span>
+                        <span className="font-medium text-gray-800">{agent.name}</span>
+                        <span className="text-xs text-gray-600 bg-gray-200 px-2 py-1 rounded-full">
+                          {agent.personality}
+                        </span>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => handleQuickAction('feedback', agent)}
+                          className="flex items-center space-x-2 px-3 py-2 bg-white border border-gray-300 rounded-lg hover:border-gray-800 hover:bg-gray-100 transition-colors text-sm text-left"
+                        >
+                          <FileText className="w-4 h-4 text-blue-600" />
+                          <span className="text-gray-800">Get Feedback</span>
+                        </button>
+                        <button
+                          onClick={() => handleQuickAction('rewrite', agent)}
+                          className="flex items-center space-x-2 px-3 py-2 bg-white border border-gray-300 rounded-lg hover:border-gray-800 hover:bg-gray-100 transition-colors text-sm text-left"
+                        >
+                          <Edit3 className="w-4 h-4 text-green-600" />
+                          <span className="text-gray-800">Help Rewrite</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {/* General quick actions */}
+              <div className="w-full max-w-md mt-6">
+                <h4 className="text-sm font-medium text-gray-700 mb-3">Or try these common requests:</h4>
+                <div className="grid grid-cols-1 gap-2">
+                  {quickActions.map((action, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleQuickAction(action.text)}
+                      className="flex items-center space-x-2 px-3 py-2 bg-white border border-gray-300 rounded-lg hover:border-gray-800 hover:bg-gray-100 transition-colors text-sm text-left"
+                    >
+                      <action.icon className="w-4 h-4 text-gray-600" />
+                      <span className="text-gray-800">{action.text}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Selected agents indicator */}
+              {selectedAgents.length > 0 && (
+                <div className="mt-6 text-xs text-gray-500">
+                  {selectedAgents.length} agent{selectedAgents.length > 1 ? 's' : ''} ready to help
+                </div>
+              )}
+            </div>
           ) : (
             <>
               {messages.map((message) => (

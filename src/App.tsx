@@ -8,19 +8,23 @@ import { ResizablePanel } from './components/ResizablePanel';
 import { defaultAgents } from './data/agents';
 import { TextRewriter } from './utils/rewriter';
 import { Agent, TrainingData, ChatMessage } from './types';
-import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Plus, MessageCircle, ChevronDoubleLeft, ChevronDoubleRight } from 'lucide-react';
 
 function App() {
   const [agents, setAgents] = useState<Agent[]>(defaultAgents);
   const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>(['sophia']);
   const [originalText, setOriginalText] = useState<string>('');
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]); // Start with empty array
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [createModalOpen, setCreateModalOpen] = useState<boolean>(false);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   const [agentsSectionCollapsed, setAgentsSectionCollapsed] = useState<boolean>(false);
   
-  // Layout state - Changed default editor width to 65% (so chat gets 35%)
+  // Chat panel state - collapsed by default
+  const [chatCollapsed, setChatCollapsed] = useState<boolean>(true);
+  const [hasOpenedChatOnce, setHasOpenedChatOnce] = useState<boolean>(false);
+  
+  // Layout state - When chat is collapsed, editor takes full width
   const [editorWidth, setEditorWidth] = useState<number>(65);
   const [chatHeight, setChatHeight] = useState<number>(70);
 
@@ -43,6 +47,12 @@ function App() {
 
   const handleSendMessage = async (message: string, mentionedAgentIds: string[], messageType: 'feedback' | 'chat' | 'rewrite' = 'chat') => {
     if (!message.trim()) return;
+
+    // Open chat panel if it's collapsed and this is the first interaction
+    if (chatCollapsed) {
+      setChatCollapsed(false);
+      setHasOpenedChatOnce(true);
+    }
 
     // Add user message
     const userMessage: ChatMessage = {
@@ -186,6 +196,14 @@ function App() {
     await handleSendMessage(originalText, [], 'feedback');
   };
 
+  // Handle highlighting text for the first time - opens chat
+  const handleFirstHighlight = () => {
+    if (chatCollapsed && !hasOpenedChatOnce) {
+      setChatCollapsed(false);
+      setHasOpenedChatOnce(true);
+    }
+  };
+
   const handleEditAgent = (agent: Agent) => {
     setEditingAgent(agent);
     setCreateModalOpen(true);
@@ -235,6 +253,15 @@ function App() {
   // Clear chat history function
   const handleClearChatHistory = () => {
     setChatMessages([]);
+  };
+
+  // Toggle chat panel
+  const toggleChatPanel = () => {
+    setChatCollapsed(!chatCollapsed);
+    if (!chatCollapsed) {
+      // If closing, mark as opened once
+      setHasOpenedChatOnce(true);
+    }
   };
 
   // Scroll control functions
@@ -359,68 +386,119 @@ function App() {
         )}
       </div>
 
-      {/* Main Content - Resizable Split Layout with full height */}
+      {/* Main Content - Dynamic Layout based on chat state */}
       <div className="flex-1 flex overflow-hidden min-h-0">
-        {/* Left Panel - Text Editor (Resizable) */}
-        <ResizablePanel
-          direction="horizontal"
-          initialSize={editorWidth}
-          minSize={30}
-          maxSize={70}
-          onResize={setEditorWidth}
-          className="overflow-hidden"
-        >
-          <div className="h-full overflow-y-auto">
-            <div className="p-6 h-full">
-              <TextEditor
-                originalText={originalText}
-                onOriginalChange={setOriginalText}
-                onGetFeedback={handleGetFeedback}
-                isProcessing={isProcessing}
+        {/* Left Panel - Text Editor */}
+        {chatCollapsed ? (
+          // When chat is collapsed, editor takes full width
+          <div className="flex-1 overflow-hidden">
+            <div className="h-full overflow-y-auto">
+              <div className="p-6 h-full">
+                <TextEditor
+                  originalText={originalText}
+                  onOriginalChange={setOriginalText}
+                  onGetFeedback={handleGetFeedback}
+                  isProcessing={isProcessing}
+                  selectedAgents={selectedAgents}
+                  onSendMessage={handleSendMessage}
+                  onFirstHighlight={handleFirstHighlight}
+                />
+              </div>
+            </div>
+          </div>
+        ) : (
+          // When chat is open, use resizable layout
+          <ResizablePanel
+            direction="horizontal"
+            initialSize={editorWidth}
+            minSize={30}
+            maxSize={70}
+            onResize={setEditorWidth}
+            className="overflow-hidden"
+          >
+            <div className="h-full overflow-y-auto">
+              <div className="p-6 h-full">
+                <TextEditor
+                  originalText={originalText}
+                  onOriginalChange={setOriginalText}
+                  onGetFeedback={handleGetFeedback}
+                  isProcessing={isProcessing}
+                  selectedAgents={selectedAgents}
+                  onSendMessage={handleSendMessage}
+                  onFirstHighlight={handleFirstHighlight}
+                />
+              </div>
+            </div>
+          </ResizablePanel>
+        )}
+
+        {/* Chat Panel Toggle Button - Always visible */}
+        <div className="flex-shrink-0 flex flex-col">
+          <button
+            onClick={toggleChatPanel}
+            className={`w-12 h-full bg-gray-100 hover:bg-gray-200 transition-colors flex flex-col items-center justify-center space-y-2 border-l border-gray-300 group ${
+              chatCollapsed ? 'border-r border-gray-300' : ''
+            }`}
+            title={chatCollapsed ? 'Open chat panel' : 'Close chat panel'}
+          >
+            <div className="flex flex-col items-center space-y-1">
+              {chatCollapsed ? (
+                <ChevronDoubleLeft className="w-5 h-5 text-gray-600 group-hover:text-gray-800 transition-colors" />
+              ) : (
+                <ChevronDoubleRight className="w-5 h-5 text-gray-600 group-hover:text-gray-800 transition-colors" />
+              )}
+              <MessageCircle className="w-4 h-4 text-gray-600 group-hover:text-gray-800 transition-colors" />
+              {chatMessages.length > 0 && (
+                <div className="w-2 h-2 bg-blue-500 rounded-full" />
+              )}
+            </div>
+            <div className="text-xs text-gray-600 group-hover:text-gray-800 transition-colors transform -rotate-90 whitespace-nowrap">
+              {chatCollapsed ? 'Chat' : 'Hide'}
+            </div>
+          </button>
+        </div>
+
+        {/* Right Panel - Chat Interface (Only when not collapsed) */}
+        {!chatCollapsed && (
+          <div className="flex-1 border-l border-gray-800 bg-white flex flex-col overflow-hidden min-w-0">
+            {/* Chat Messages Area (Resizable) */}
+            <ResizablePanel
+              direction="vertical"
+              initialSize={chatHeight}
+              minSize={40}
+              maxSize={85}
+              onResize={setChatHeight}
+              className="flex flex-col overflow-hidden"
+            >
+              <ChatPanel
+                messages={chatMessages}
+                agents={agents}
                 selectedAgents={selectedAgents}
                 onSendMessage={handleSendMessage}
+                onFeedback={handleFeedback}
+                isProcessing={isProcessing}
+                showInputArea={false}
+                onClearChatHistory={handleClearChatHistory}
+                isEmpty={chatMessages.length === 0}
+              />
+            </ResizablePanel>
+
+            {/* Chat Input Area (Fixed at bottom) */}
+            <div className="flex-shrink-0 border-t-2 border-gray-800 bg-white">
+              <ChatPanel
+                messages={[]}
+                agents={agents}
+                selectedAgents={selectedAgents}
+                onSendMessage={handleSendMessage}
+                onFeedback={handleFeedback}
+                isProcessing={isProcessing}
+                showMessagesArea={false}
+                showInputArea={true}
+                isEmpty={chatMessages.length === 0}
               />
             </div>
           </div>
-        </ResizablePanel>
-
-        {/* Right Panel - Chat Interface (Resizable) */}
-        <div className="flex-1 border-l border-gray-800 bg-white flex flex-col overflow-hidden min-w-0">
-          {/* Chat Messages Area (Resizable) */}
-          <ResizablePanel
-            direction="vertical"
-            initialSize={chatHeight}
-            minSize={40}
-            maxSize={85}
-            onResize={setChatHeight}
-            className="flex flex-col overflow-hidden"
-          >
-            <ChatPanel
-              messages={chatMessages}
-              agents={agents}
-              selectedAgents={selectedAgents}
-              onSendMessage={handleSendMessage}
-              onFeedback={handleFeedback}
-              isProcessing={isProcessing}
-              showInputArea={false}
-              onClearChatHistory={handleClearChatHistory}
-            />
-          </ResizablePanel>
-
-          {/* Chat Input Area (Fixed at bottom) */}
-          <div className="flex-shrink-0 border-t-2 border-gray-800 bg-white">
-            <ChatPanel
-              messages={[]}
-              agents={agents}
-              selectedAgents={selectedAgents}
-              onSendMessage={handleSendMessage}
-              onFeedback={handleFeedback}
-              isProcessing={isProcessing}
-              showMessagesArea={false}
-              showInputArea={true}
-            />
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Create/Edit Agent Modal with Training */}

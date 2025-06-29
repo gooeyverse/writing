@@ -9,6 +9,7 @@ interface TextEditorProps {
   isProcessing: boolean;
   selectedAgents: Agent[];
   onSendMessage?: (message: string, mentionedAgentIds: string[], messageType?: 'feedback' | 'chat' | 'rewrite') => void;
+  onFirstHighlight?: () => void;
 }
 
 interface ContextMenuPosition {
@@ -28,7 +29,8 @@ export const TextEditor: React.FC<TextEditorProps> = ({
   onGetFeedback,
   isProcessing,
   selectedAgents,
-  onSendMessage
+  onSendMessage,
+  onFirstHighlight
 }) => {
   const [selectedText, setSelectedText] = useState('');
   const [selectionRange, setSelectionRange] = useState<{ start: number; end: number } | null>(null);
@@ -46,6 +48,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
   const contextMenuRef = useRef<HTMLDivElement>(null);
   const [history, setHistory] = useState<string[]>([originalText]);
   const [historyIndex, setHistoryIndex] = useState(0);
+  const [hasHighlightedBefore, setHasHighlightedBefore] = useState(false);
 
   // Update history when text changes
   useEffect(() => {
@@ -174,6 +177,12 @@ export const TextEditor: React.FC<TextEditorProps> = ({
       };
       
       setHighlights([...remainingHighlights, newHighlight]);
+
+      // Trigger first highlight callback if this is the first time highlighting
+      if (!hasHighlightedBefore && onFirstHighlight) {
+        setHasHighlightedBefore(true);
+        onFirstHighlight();
+      }
     }
 
     // Restore focus and selection
@@ -485,6 +494,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
                     <li>• Right-click to ask agents for feedback or rewriting help</li>
                     <li>• Highlighted text is preserved when sharing with agents</li>
                     <li>• Highlights are visual only - no special syntax added to text</li>
+                    <li>• <strong>First highlight opens the chat panel automatically!</strong></li>
                   </ul>
                 </div>
               )}
@@ -547,8 +557,6 @@ export const TextEditor: React.FC<TextEditorProps> = ({
                 }}
               />
             </div>
-
-            {/* Removed the typing indicator that was covering text */}
           </div>
 
           {/* Enhanced Bottom Controls - Only Get Feedback Button */}
