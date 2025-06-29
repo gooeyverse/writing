@@ -520,31 +520,33 @@ export const TextEditor: React.FC<TextEditorProps> = ({
               {renderHighlightedText(originalText)}
             </div>
 
-            {/* Editable Textarea Overlay with Minimal Styling */}
-            <textarea
-              ref={textareaRef}
-              value={originalText}
-              onChange={(e) => onOriginalChange(e.target.value)}
-              onSelect={handleTextSelection}
-              onMouseUp={handleTextSelection}
-              onKeyUp={handleTextSelection}
-              onKeyDown={handleKeyDown}
-              onContextMenu={handleContextMenu}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
-              placeholder={`Start writing here... ${selectedAgents.length > 0 ? `Your ${selectedAgents.length} selected agent${selectedAgents.length > 1 ? 's' : ''} will help you improve your writing.` : 'Select agents to get writing assistance.'}`}
-              className={`relative w-full h-full p-4 rounded-lg resize-none bg-transparent text-gray-700 font-mono leading-relaxed focus:outline-none z-10 border-0 transition-all duration-200 ${
-                isInteractive && !isFocused
-                  ? 'ring-1 ring-gray-300 ring-opacity-30 bg-gray-50 bg-opacity-10' 
-                  : 'bg-transparent'
-              }`}
-              style={{ 
-                fontFamily: 'JetBrains Mono, Courier New, monospace',
-                fontSize: '14px',
-                lineHeight: '1.6',
-                color: isEmpty && !isFocused ? 'rgba(55, 65, 81, 0.4)' : 'rgba(55, 65, 81, 0.9)'
-              }}
-            />
+            {/* Editable Textarea Overlay with Blinking Cursor */}
+            <div className={`relative w-full h-full ${isFocused ? 'text-editor-focused' : 'text-editor-unfocused'}`}>
+              <textarea
+                ref={textareaRef}
+                value={originalText}
+                onChange={(e) => onOriginalChange(e.target.value)}
+                onSelect={handleTextSelection}
+                onMouseUp={handleTextSelection}
+                onKeyUp={handleTextSelection}
+                onKeyDown={handleKeyDown}
+                onContextMenu={handleContextMenu}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+                placeholder={`Start writing here... ${selectedAgents.length > 0 ? `Your ${selectedAgents.length} selected agent${selectedAgents.length > 1 ? 's' : ''} will help you improve your writing.` : 'Select agents to get writing assistance.'}`}
+                className={`text-editor-cursor relative w-full h-full p-4 rounded-lg resize-none bg-transparent text-gray-700 font-mono leading-relaxed focus:outline-none z-10 border-0 transition-all duration-200 ${
+                  isInteractive && !isFocused
+                    ? 'ring-1 ring-gray-300 ring-opacity-30 bg-gray-50 bg-opacity-10' 
+                    : 'bg-transparent'
+                }`}
+                style={{ 
+                  fontFamily: 'JetBrains Mono, Courier New, monospace',
+                  fontSize: '14px',
+                  lineHeight: '1.6',
+                  color: isEmpty && !isFocused ? 'rgba(55, 65, 81, 0.4)' : 'rgba(55, 65, 81, 0.9)'
+                }}
+              />
+            </div>
 
             {/* Typing Indicator - Updated to Gray Theme */}
             {isFocused && (
