@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Type, Settings, BarChart3, Plus, Zap, ZapOff } from 'lucide-react';
+import { Type, Plus, Zap, ZapOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface HeaderProps {
@@ -69,20 +69,6 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <Plus className="w-4 h-4" />
             <span>New Agent</span>
-          </button>
-          <button
-            onClick={onShowStats}
-            className="p-2 text-black hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors border border-black"
-            title="View statistics"
-          >
-            <BarChart3 className="w-5 h-5" />
-          </button>
-          <button
-            onClick={onShowSettings}
-            className="p-2 text-black hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors border border-black"
-            title="Settings"
-          >
-            <Settings className="w-5 h-5" />
           </button>
         </div>
       </div>
