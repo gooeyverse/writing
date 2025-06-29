@@ -264,37 +264,35 @@ function App() {
         onCreateAgent={() => setCreateModalOpen(true)}
       />
       
-      {/* Agents Horizontal Scroll Section - Collapsible */}
-      <div className="bg-white border-b border-black flex-shrink-0">
+      {/* Agents Accordion Section - Light Gray Background */}
+      <div className="bg-gray-100 border-b border-black flex-shrink-0">
+        {/* Accordion Header - Always Visible */}
         <div className="px-6 py-4">
-          <div className="flex items-center justify-between w-full">
+          <button
+            onClick={() => setAgentsSectionCollapsed(!agentsSectionCollapsed)}
+            className="flex items-center justify-between w-full group"
+          >
             <div className="flex items-center space-x-4">
-              <h2 className="text-xl font-semibold text-black">Your Writing Agents</h2>
+              <h2 className={`${agentsSectionCollapsed ? 'text-base font-normal' : 'text-xl font-semibold'} text-black transition-all duration-200`}>
+                Your Writing Agents
+              </h2>
               <span className="text-sm text-gray-600">
                 {selectedAgentIds.length} of {agents.length} selected
               </span>
             </div>
             
-            {/* Collapse button - Top right */}
-            <button
-              onClick={() => setAgentsSectionCollapsed(!agentsSectionCollapsed)}
-              className="flex items-center space-x-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors border border-gray-300 group"
-            >
+            {/* Simple Chevron Button */}
+            <div className="p-1 rounded-lg group-hover:bg-gray-200 transition-colors">
               {agentsSectionCollapsed ? (
-                <>
-                  <ChevronDown className="w-4 h-4 text-gray-600 group-hover:text-black" />
-                  <span className="text-sm text-gray-600 group-hover:text-black font-medium">Expand</span>
-                </>
+                <ChevronDown className="w-5 h-5 text-gray-600 group-hover:text-black transition-colors" />
               ) : (
-                <>
-                  <ChevronUp className="w-4 h-4 text-gray-600 group-hover:text-black" />
-                  <span className="text-sm text-gray-600 group-hover:text-black font-medium">Collapse</span>
-                </>
+                <ChevronUp className="w-5 h-5 text-gray-600 group-hover:text-black transition-colors" />
               )}
-            </button>
-          </div>
+            </div>
+          </button>
         </div>
         
+        {/* Accordion Content - Collapsible */}
         {!agentsSectionCollapsed && (
           <div className="px-6 pb-6 relative">
             {/* Scrollable agents container with custom styled scrollbar */}
