@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, Users, Highlighter, Undo, Redo } from 'lucide-react';
+import { MessageSquare, Users, Highlighter, Undo, Redo, HelpCircle } from 'lucide-react';
 import { Agent } from '../types';
 
 interface TextEditorProps {
@@ -20,6 +20,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
   const [selectedText, setSelectedText] = useState('');
   const [selectionRange, setSelectionRange] = useState<{ start: number; end: number } | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const displayRef = useRef<HTMLDivElement>(null);
   const [history, setHistory] = useState<string[]>([originalText]);
@@ -179,7 +180,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
             </button>
           </div>
 
-          {/* Status Info */}
+          {/* Status Info with Help Tooltip */}
           <div className="flex items-center space-x-4 text-sm text-gray-600">
             {selectedText && isEditing && (
               <span className="text-yellow-600 font-medium">
@@ -188,6 +189,46 @@ export const TextEditor: React.FC<TextEditorProps> = ({
             )}
             <span>{wordCount} words</span>
             <span>{charCount} characters</span>
+            
+            {/* Help Icon with Tooltip */}
+            <div className="relative">
+              <button
+                onMouseEnter={() => setShowTooltip(true)}
+                onMouseLeave={() => setShowTooltip(false)}
+                className="p-1 text-gray-500 hover:text-gray-700 rounded transition-colors"
+                title="Editor tips"
+              >
+                <HelpCircle className="w-4 h-4" />
+              </button>
+              
+              {/* Tooltip */}
+              {showTooltip && (
+                <div className="absolute right-0 top-full mt-2 w-80 bg-black text-white text-xs rounded-lg p-3 shadow-lg z-50">
+                  <div className="absolute -top-1 right-4 w-2 h-2 bg-black transform rotate-45"></div>
+                  <h4 className="font-medium text-white mb-2 flex items-center space-x-1">
+                    <span>💡</span>
+                    <span>Editor Tips</span>
+                  </h4>
+                  <ul className="space-y-1 text-gray-200">
+                    <li>• Click anywhere in the text area to start editing</li>
+                    <li className="flex items-center space-x-1">
+                      <span>• Select text and click</span>
+                      <Highlighter className="w-3 h-3 text-yellow-400" />
+                      <span>to apply yellow highlighting</span>
+                    </li>
+                    <li className="flex items-center space-x-1">
+                      <span>• Use Ctrl+Z/Ctrl+Y or the</span>
+                      <Undo className="w-3 h-3" />
+                      <span>/</span>
+                      <Redo className="w-3 h-3" />
+                      <span>buttons for undo/redo</span>
+                    </li>
+                    <li>• Press Escape to finish editing and see rich text formatting</li>
+                    <li>• Highlighted text is preserved when sharing with agents</li>
+                  </ul>
+                </div>
+              )}
+            </div>
           </div>
         </div>
         
@@ -277,18 +318,6 @@ export const TextEditor: React.FC<TextEditorProps> = ({
             </button>
           </div>
         </div>
-      </div>
-
-      {/* Tips */}
-      <div className="mt-6 p-4 bg-gray-100 rounded-lg border-2 border-gray-400">
-        <h4 className="font-medium text-black mb-2">💡 Editor Tips</h4>
-        <ul className="text-sm text-gray-700 space-y-1">
-          <li>• Click anywhere in the text area to start editing</li>
-          <li>• Select text and click <Highlighter className="w-3 h-3 inline text-yellow-600" /> to apply yellow highlighting</li>
-          <li>• Use Ctrl+Z/Ctrl+Y or the <Undo className="w-3 h-3 inline" />/<Redo className="w-3 h-3 inline" /> buttons for undo/redo</li>
-          <li>• Press Escape to finish editing and see rich text formatting</li>
-          <li>• Highlighted text is preserved when sharing with agents</li>
-        </ul>
       </div>
     </div>
   );
