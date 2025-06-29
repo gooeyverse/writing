@@ -370,30 +370,8 @@ export const TextEditor: React.FC<TextEditorProps> = ({
             )}
           </div>
 
-          {/* Enhanced Bottom Controls */}
-          <div className="flex justify-between items-center mt-4 flex-shrink-0">
-            <div className="flex items-center space-x-4 text-sm text-gray-600">
-              {/* Character Count with Visual Indicator */}
-              <div className="flex items-center space-x-2">
-                <div className={`w-2 h-2 rounded-full ${
-                  originalText.length === 0 ? 'bg-gray-400' :
-                  originalText.length < 100 ? 'bg-yellow-400' :
-                  originalText.length < 500 ? 'bg-green-400' : 'bg-blue-400'
-                }`} />
-                <span>{originalText.length} characters</span>
-                {originalText.length > 0 && (
-                  <span className="text-gray-400">• {Math.ceil(originalText.split(' ').length / 200)} min read</span>
-                )}
-              </div>
-
-              {selectedAgents.length > 1 && (
-                <div className="flex items-center space-x-2">
-                  <Users className="w-4 h-4" />
-                  <span>{selectedAgents.length} agents selected</span>
-                </div>
-              )}
-            </div>
-            
+          {/* Enhanced Bottom Controls - Only Get Feedback Button */}
+          <div className="flex justify-end items-center mt-4 flex-shrink-0">
             {/* Enhanced Get Feedback Button */}
             <button
               onClick={onGetFeedback}
