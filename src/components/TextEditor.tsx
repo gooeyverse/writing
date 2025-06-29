@@ -109,10 +109,8 @@ export const TextEditor: React.FC<TextEditorProps> = ({
   const handleAgentAction = (agent: Agent, action: 'feedback' | 'rewrite') => {
     if (!onSendMessage || !contextMenu.selectedText) return;
 
-    const message = action === 'feedback' 
-      ? `Can you give me feedback on this text?\n\n"${contextMenu.selectedText}"`
-      : `Can you help me rewrite this text?\n\n"${contextMenu.selectedText}"`;
-
+    // Send the text directly without preamble
+    const message = contextMenu.selectedText;
     const messageType = action === 'feedback' ? 'feedback' : 'chat';
     
     onSendMessage(message, [agent.id], messageType);
