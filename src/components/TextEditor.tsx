@@ -153,7 +153,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     
     // Check if submenu would go off-screen and adjust position
     const submenuWidth = 200; // Approximate submenu width
-    const submenuHeight = 80; // Approximate submenu height
+    const submenuHeight = 120; // Increased height for 3 actions
     
     let adjustedX = submenuX;
     let adjustedY = submenuY;
@@ -196,12 +196,21 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     }));
   };
 
-  const handleAgentAction = (agent: Agent, action: 'feedback' | 'rewrite') => {
+  const handleAgentAction = (agent: Agent, action: 'feedback' | 'rewrite' | 'question') => {
     if (!onSendMessage || !contextMenu.selectedText) return;
 
-    // Send the text directly with the correct message type
-    const message = contextMenu.selectedText;
-    const messageType = action; // Use the action directly as the message type
+    let message: string;
+    let messageType: 'feedback' | 'chat' | 'rewrite';
+    
+    if (action === 'question') {
+      // For questions, we'll format it as a natural question about the text
+      message = `I have a question about this text: "${contextMenu.selectedText}"\n\nWhat do you think about this? Any insights or observations you can share?`;
+      messageType = 'chat'; // Use chat type for questions to get conversational responses
+    } else {
+      // Send the text directly with the correct message type for feedback/rewrite
+      message = contextMenu.selectedText;
+      messageType = action; // Use the action directly as the message type
+    }
     
     onSendMessage(message, [agent.id], messageType);
     setContextMenu({ 
@@ -769,6 +778,13 @@ export const TextEditor: React.FC<TextEditorProps> = ({
                       >
                         <Edit3 className="w-4 h-4 text-green-600" />
                         <span>Help Rewrite</span>
+                      </button>
+                      <button
+                        onClick={() => handleAgentAction(agent, 'question')}
+                        className="w-full flex items-center space-x-3 px-4 py-2 text-left text-sm text-gray-800 hover:bg-gray-100 transition-colors"
+                      >
+                        <MessageSquare className="w-4 h-4 text-purple-600" />
+                        <span>Ask Question</span>
                       </button>
                     </div>
                   </>
