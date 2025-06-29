@@ -14,6 +14,7 @@ function App() {
   const [agents, setAgents] = useState<Agent[]>(defaultAgents);
   const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>(['sophia']);
   const [originalText, setOriginalText] = useState<string>('');
+  const [selectedText, setSelectedText] = useState<string>(''); // Track selected text
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [createModalOpen, setCreateModalOpen] = useState<boolean>(false);
@@ -185,6 +186,11 @@ function App() {
     
     // Send message as feedback type but DON'T clear the text editor
     await handleSendMessage(originalText, [], 'feedback');
+  };
+
+  // Handle text selection from TextEditor
+  const handleTextSelection = (text: string) => {
+    setSelectedText(text);
   };
 
   const handleEditAgent = (agent: Agent) => {
@@ -386,6 +392,7 @@ function App() {
                 isProcessing={isProcessing}
                 selectedAgents={selectedAgents}
                 onSendMessage={handleSendMessage}
+                onTextSelection={handleTextSelection}
               />
             </div>
           </div>
@@ -412,6 +419,7 @@ function App() {
               showInputArea={false}
               onClearChatHistory={handleClearChatHistory}
               isEmpty={chatMessages.length === 0}
+              selectedText={selectedText}
             />
           </ResizablePanel>
 
@@ -427,6 +435,7 @@ function App() {
               showMessagesArea={false}
               showInputArea={true}
               isEmpty={chatMessages.length === 0}
+              selectedText={selectedText}
             />
           </div>
         </div>

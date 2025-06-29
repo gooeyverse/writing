@@ -9,6 +9,7 @@ interface TextEditorProps {
   isProcessing: boolean;
   selectedAgents: Agent[];
   onSendMessage?: (message: string, mentionedAgentIds: string[], messageType?: 'feedback' | 'chat' | 'rewrite') => void;
+  onTextSelection?: (selectedText: string) => void; // Add callback for text selection
 }
 
 interface ContextMenuPosition {
@@ -28,7 +29,8 @@ export const TextEditor: React.FC<TextEditorProps> = ({
   onGetFeedback,
   isProcessing,
   selectedAgents,
-  onSendMessage
+  onSendMessage,
+  onTextSelection
 }) => {
   const [selectedText, setSelectedText] = useState('');
   const [selectionRange, setSelectionRange] = useState<{ start: number; end: number } | null>(null);
@@ -89,6 +91,11 @@ export const TextEditor: React.FC<TextEditorProps> = ({
       
       setSelectedText(selected);
       setSelectionRange({ start, end });
+      
+      // Notify parent component about text selection
+      if (onTextSelection) {
+        onTextSelection(selected);
+      }
     }
   };
 

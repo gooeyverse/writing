@@ -13,6 +13,7 @@ interface ChatPanelProps {
   showInputArea?: boolean;
   onClearChatHistory?: () => void;
   isEmpty?: boolean;
+  selectedText?: string; // Add selectedText prop
 }
 
 export const ChatPanel: React.FC<ChatPanelProps> = ({
@@ -25,7 +26,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
   showMessagesArea = true,
   showInputArea = true,
   onClearChatHistory,
-  isEmpty = false
+  isEmpty = false,
+  selectedText = '' // Default to empty string
 }) => {
   const [inputMessage, setInputMessage] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -170,23 +172,21 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
   // Handle quick action clicks
   const handleQuickAction = (action: string, agent?: Agent) => {
     if (agent) {
-      // Agent-specific action
-      const message = action.includes('feedback') ? 'Can you give me feedback on my writing?' : 
-                     action.includes('rewrite') ? 'Can you help me rewrite this to be more professional?' :
-                     action.includes('casual') ? 'Can you help me make this more casual and friendly?' :
-                     'How can I improve this writing?';
+      // Use selected text if available, otherwise use a generic message
+      const textToUse = selectedText.trim() || 'my writing';
       
-      const messageType = action.includes('feedback') ? 'feedback' as const :
-                         action.includes('rewrite') ? 'rewrite' as const :
-                         'chat' as const;
+      let message = '';
+      let messageType: 'feedback' | 'rewrite' | 'chat' = 'chat';
+      
+      if (action.includes('feedback')) {
+        message = selectedText.trim() ? selectedText : 'Can you give me feedback on my writing?';
+        messageType = 'feedback';
+      } else if (action.includes('rewrite')) {
+        message = selectedText.trim() ? selectedText : 'Can you help me rewrite this to be more professional?';
+        messageType = 'rewrite';
+      }
       
       onSendMessage(message, [agent.id], messageType);
-    } else {
-      // General action
-      setInputMessage(action);
-      if (inputRef.current) {
-        inputRef.current.focus();
-      }
     }
   };
 
@@ -239,6 +239,9 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
     { text: "Make this more casual and friendly", icon: MessageCircle, type: 'rewrite' as const },
     { text: "How can I improve this writing?", icon: Sparkles, type: 'feedback' as const }
   ];
+
+  // Determine if we should show quick actions
+  const shouldShowQuickActions = messages.length === 0 && selectedText.trim().length > 0 && selectedAgents.length > 0;
 
   return (
     <div className="flex flex-col h-full">
@@ -295,12 +298,19 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
             </div>
           )}
 
-          {/* Messages or Empty State with Quick Actions */}
+          {/* Messages or Empty State with Conditional Quick Actions */}
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
-              {/* Quick action buttons for each selected agent */}
-              {selectedAgents.length > 0 && (
+              {/* Only show quick actions when there's selected text */}
+              {shouldShowQuickActions ? (
                 <div className="w-full max-w-md space-y-4">
+                  <div className="mb-6 text-center">
+                    <h3 className="text-lg font-medium text-gray-800 mb-2">Selected Text Ready</h3>
+                    <p className="text-gray-600 text-sm">
+                      "{selectedText.length > 50 ? selectedText.substring(0, 50) + '...' : selectedText}"
+                    </p>
+                  </div>
+                  
                   {selectedAgents.map(agent => (
                     <div key={agent.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                       <div className="flex items-center space-x-2 mb-3">
@@ -330,12 +340,23 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                     </div>
                   ))}
                 </div>
-              )}
-              
-              {/* Selected agents indicator */}
-              {selectedAgents.length > 0 && (
-                <div className="mt-6 text-xs text-gray-500">
-                  {selectedAgents.length} agent{selectedAgents.length > 1 ? 's' : ''} ready to help
+              ) : (
+                <div className="text-center">
+                  <Bot className="w-12 h-12 text-gray-500 mb-4 mx-auto" />
+                  <h3 className="text-lg font-medium text-gray-800 mb-2">Ready to Help</h3>
+                  <p className="text-gray-600 max-w-sm mx-auto">
+                    {selectedAgents.length === 0 
+                      ? 'Select agents from the panel above to get started.'
+                      : 'Select text in the editor or type a message below to begin.'
+                    }
+                  </p>
+                  
+                  {/* Selected agents indicator */}
+                  {selectedAgents.length > 0 && (
+                    <div className="mt-6 text-xs text-gray-500">
+                      {selectedAgents.length} agent{selectedAgents.length > 1 ? 's' : ''} ready to help
+                    </div>
+                  )}
                 </div>
               )}
             </div>
