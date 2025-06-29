@@ -68,7 +68,7 @@ export const Header: React.FC<HeaderProps> = ({
   }, []);
 
   return (
-    <header className="bg-white border-b-2 border-black px-6 py-4">
+    <header className="bg-white px-6 py-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <CustomIcon className="w-16 h-16 text-black" />
