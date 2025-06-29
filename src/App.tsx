@@ -3,7 +3,6 @@ import { Header } from './components/Header';
 import { AgentCard } from './components/AgentCard';
 import { TextEditor } from './components/TextEditor';
 import { ChatPanel } from './components/ChatPanel';
-import { TrainingModal } from './components/TrainingModal';
 import { CreateAgentModal } from './components/CreateAgentModal';
 import { ResizablePanel } from './components/ResizablePanel';
 import { defaultAgents } from './data/agents';
@@ -17,9 +16,7 @@ function App() {
   const [originalText, setOriginalText] = useState<string>('');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const [trainingModalOpen, setTrainingModalOpen] = useState<boolean>(false);
   const [createModalOpen, setCreateModalOpen] = useState<boolean>(false);
-  const [trainingAgent, setTrainingAgent] = useState<Agent | null>(null);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   const [agentsSectionCollapsed, setAgentsSectionCollapsed] = useState<boolean>(false);
   
@@ -183,11 +180,6 @@ function App() {
     await handleSendMessage(originalText, [], 'feedback');
   };
 
-  const handleTrainAgent = (agent: Agent) => {
-    setTrainingAgent(agent);
-    setTrainingModalOpen(true);
-  };
-
   const handleEditAgent = (agent: Agent) => {
     setEditingAgent(agent);
     setCreateModalOpen(true);
@@ -206,37 +198,6 @@ function App() {
     if (selectedAgentIds.includes(agentId) && selectedAgentIds.length === 1 && remainingAgents.length > 0) {
       setSelectedAgentIds([remainingAgents[0].id]);
     }
-  };
-
-  const handleSaveTraining = (trainingData: TrainingData) => {
-    if (!trainingAgent) return;
-    
-    // Save the training data to the agent
-    const updatedTrainingData = {
-      ...trainingData,
-      lastUpdated: new Date()
-    };
-    
-    // Update agent accuracy based on training data quality
-    const sampleCount = trainingData.samples.length;
-    const accuracyBoost = Math.min(8, sampleCount * 1.5); // More samples = better training
-    
-    setAgents(prevAgents =>
-      prevAgents.map(agent =>
-        agent.id === trainingAgent.id
-          ? { 
-              ...agent, 
-              accuracy: Math.min(100, agent.accuracy + accuracyBoost),
-              trainingData: updatedTrainingData
-            }
-          : agent
-      )
-    );
-  };
-
-  const handleCloseTrainingModal = () => {
-    setTrainingModalOpen(false);
-    setTrainingAgent(null);
   };
 
   const handleCreateAgent = (agentData: Omit<Agent, 'id' | 'accuracy' | 'totalRewrites' | 'createdAt'>) => {
@@ -329,7 +290,6 @@ function App() {
                       agent={agent}
                       isSelected={selectedAgentIds.includes(agent.id)}
                       onSelect={() => handleAgentSelect(agent.id)}
-                      onTrain={() => handleTrainAgent(agent)}
                       onEdit={() => handleEditAgent(agent)}
                       onDelete={() => handleDeleteAgent(agent.id)}
                       multiSelect={true}
@@ -421,17 +381,7 @@ function App() {
         </div>
       </div>
 
-      {/* Training Modal */}
-      {trainingAgent && (
-        <TrainingModal
-          agent={trainingAgent}
-          isOpen={trainingModalOpen}
-          onClose={handleCloseTrainingModal}
-          onSave={handleSaveTraining}
-        />
-      )}
-
-      {/* Create/Edit Agent Modal */}
+      {/* Create/Edit Agent Modal with Training */}
       <CreateAgentModal
         isOpen={createModalOpen}
         onClose={() => {

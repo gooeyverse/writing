@@ -6,7 +6,6 @@ interface AgentCardProps {
   agent: Agent;
   isSelected: boolean;
   onSelect: () => void;
-  onTrain: () => void;
   onEdit: () => void;
   onDelete: () => void;
   multiSelect?: boolean;
@@ -16,7 +15,6 @@ export const AgentCard: React.FC<AgentCardProps> = ({
   agent,
   isSelected,
   onSelect,
-  onTrain,
   onEdit,
   onDelete,
   multiSelect = false
@@ -119,15 +117,11 @@ export const AgentCard: React.FC<AgentCardProps> = ({
         <button
           onClick={(e) => {
             e.stopPropagation();
-            onTrain();
+            onEdit();
           }}
-          className={`w-full px-3 py-2 text-sm rounded-lg transition-colors border ${
-            hasTrainingData
-              ? 'bg-gray-100 hover:bg-gray-200 text-black border-gray-400'
-              : 'bg-white hover:bg-gray-100 text-black border-gray-400'
-          }`}
+          className="w-full px-3 py-2 text-sm rounded-lg transition-colors border bg-white hover:bg-gray-100 text-black border-gray-400"
         >
-          {hasTrainingData ? 'Update Training' : 'Train Agent'}
+          Edit & Train Agent
         </button>
       </div>
     </div>
