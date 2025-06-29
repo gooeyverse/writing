@@ -9,7 +9,7 @@ interface HeaderProps {
 }
 
 // Custom SVG Icon Component
-const CustomIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6" }) => (
+const CustomIcon: React.FC<{ className?: string }> = ({ className = "w-8 h-8" }) => (
   <svg 
     className={className} 
     viewBox="0 0 100 100" 
@@ -53,8 +53,8 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="bg-white border-b-2 border-black px-6 py-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <div className="p-2 bg-white border-2 border-black rounded-lg">
-            <CustomIcon className="w-6 h-6 text-black" />
+          <div className="p-3">
+            <CustomIcon className="w-8 h-8 text-black" />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-black typewriter-effect">Writing Agents</h1>
