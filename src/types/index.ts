@@ -31,7 +31,7 @@ export interface ChatMessage {
   originalMessage?: string; // For agent messages, the original user message
   mentionedAgents?: string[]; // For user messages, which agents were mentioned
   rating?: number; // 1 for positive, -1 for negative (for agent messages)
-  messageType?: 'feedback' | 'chat'; // For user messages, the type of interaction
+  messageType?: 'feedback' | 'chat' | 'rewrite'; // Extended to include 'rewrite'
   responseType?: 'feedback' | 'rewrite' | 'conversation' | 'error'; // For agent messages, the type of response
 }
 

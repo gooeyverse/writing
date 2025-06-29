@@ -41,7 +41,7 @@ function App() {
     });
   };
 
-  const handleSendMessage = async (message: string, mentionedAgentIds: string[], messageType: 'feedback' | 'chat' = 'chat') => {
+  const handleSendMessage = async (message: string, mentionedAgentIds: string[], messageType: 'feedback' | 'chat' | 'rewrite' = 'chat') => {
     if (!message.trim()) return;
 
     // Add user message
@@ -66,15 +66,22 @@ function App() {
       if (agent) {
         try {
           let response: string;
+          let responseType: 'feedback' | 'rewrite' | 'conversation' | 'error';
           
-          // Determine response type based on message content and type
-          if (messageType === 'feedback' || isRequestingFeedback(message)) {
+          // Determine response type based on message type and content
+          if (messageType === 'rewrite') {
+            response = await TextRewriter.rewrite(message, agent);
+            responseType = 'rewrite';
+          } else if (messageType === 'feedback' || isRequestingFeedback(message)) {
             response = await TextRewriter.provideFeedback(message, agent);
+            responseType = 'feedback';
           } else if (isRequestingRewrite(message)) {
             response = await TextRewriter.rewrite(message, agent);
+            responseType = 'rewrite';
           } else {
             // For general chat, provide conversational feedback/advice
             response = await TextRewriter.provideConversationalResponse(message, agent, chatMessages);
+            responseType = 'conversation';
           }
           
           const agentMessage: ChatMessage = {
@@ -84,8 +91,7 @@ function App() {
             timestamp: new Date(),
             agentId,
             originalMessage: message,
-            responseType: messageType === 'feedback' || isRequestingFeedback(message) ? 'feedback' : 
-                         isRequestingRewrite(message) ? 'rewrite' : 'conversation'
+            responseType
           };
 
           setChatMessages(prev => [...prev, agentMessage]);

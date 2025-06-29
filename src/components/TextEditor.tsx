@@ -8,7 +8,7 @@ interface TextEditorProps {
   onGetFeedback: () => void;
   isProcessing: boolean;
   selectedAgents: Agent[];
-  onSendMessage?: (message: string, mentionedAgentIds: string[], messageType?: 'feedback' | 'chat') => void;
+  onSendMessage?: (message: string, mentionedAgentIds: string[], messageType?: 'feedback' | 'chat' | 'rewrite') => void;
 }
 
 interface ContextMenuPosition {
@@ -109,9 +109,9 @@ export const TextEditor: React.FC<TextEditorProps> = ({
   const handleAgentAction = (agent: Agent, action: 'feedback' | 'rewrite') => {
     if (!onSendMessage || !contextMenu.selectedText) return;
 
-    // Send the text directly without preamble
+    // Send the text directly with the correct message type
     const message = contextMenu.selectedText;
-    const messageType = action === 'feedback' ? 'feedback' : 'chat';
+    const messageType = action; // Use the action directly as the message type
     
     onSendMessage(message, [agent.id], messageType);
     setContextMenu({ show: false, position: { x: 0, y: 0 }, selectedText: '' });
