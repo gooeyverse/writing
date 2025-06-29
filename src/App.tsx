@@ -256,8 +256,6 @@ function App() {
         onShowStats={() => {}}
         onShowSettings={() => {}}
         onCreateAgent={() => setCreateModalOpen(true)}
-        onClearChatHistory={handleClearChatHistory}
-        chatMessageCount={chatMessages.length}
       />
       
       {/* Agents Horizontal Scroll Section - Collapsible */}
@@ -346,6 +344,7 @@ function App() {
               onGetFeedback={handleGetFeedback}
               isProcessing={isProcessing}
               selectedAgents={selectedAgents}
+              onSendMessage={handleSendMessage}
             />
           </div>
         </ResizablePanel>
@@ -369,6 +368,7 @@ function App() {
               onFeedback={handleFeedback}
               isProcessing={isProcessing}
               showInputArea={false}
+              onClearChatHistory={handleClearChatHistory}
             />
           </ResizablePanel>
 

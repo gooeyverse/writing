@@ -1,24 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Bot, Settings, BarChart3, Plus, Zap, ZapOff, MessageCircle, Trash2 } from 'lucide-react';
+import { Bot, Settings, BarChart3, Plus, Zap, ZapOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface HeaderProps {
   onShowStats: () => void;
   onShowSettings: () => void;
   onCreateAgent: () => void;
-  onClearChatHistory?: () => void;
-  chatMessageCount?: number;
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
   onShowStats, 
   onShowSettings, 
-  onCreateAgent, 
-  onClearChatHistory,
-  chatMessageCount = 0
+  onCreateAgent
 }) => {
   const [supabaseStatus, setSupabaseStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking');
-  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   useEffect(() => {
     const checkConnection = async () => {
@@ -39,13 +34,6 @@ export const Header: React.FC<HeaderProps> = ({
     checkConnection();
   }, []);
 
-  const handleClearChat = () => {
-    if (onClearChatHistory) {
-      onClearChatHistory();
-      setShowClearConfirm(false);
-    }
-  };
-
   return (
     <header className="bg-white border-b-2 border-black px-6 py-4">
       <div className="flex items-center justify-between">
@@ -60,53 +48,6 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
         
         <div className="flex items-center space-x-3">
-          {/* Chat History Status & Clear Button */}
-          {chatMessageCount > 0 && (
-            <div className="flex items-center space-x-2">
-              <div className="flex items-center space-x-2 px-3 py-1 rounded-lg border border-gray-400 bg-gray-100">
-                <MessageCircle className="w-4 h-4 text-gray-600" />
-                <span className="text-xs text-gray-700">
-                  {chatMessageCount} messages
-                </span>
-              </div>
-              
-              {/* Clear Chat Button with Confirmation */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowClearConfirm(true)}
-                  className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-gray-300"
-                  title="Clear chat history"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-                
-                {/* Confirmation Dropdown */}
-                {showClearConfirm && (
-                  <div className="absolute right-0 top-full mt-2 bg-white border-2 border-black rounded-lg shadow-lg p-4 z-50 min-w-64">
-                    <div className="text-sm text-black mb-3">
-                      <div className="font-medium mb-1">Clear chat history?</div>
-                      <div className="text-gray-600">This will permanently delete all {chatMessageCount} messages.</div>
-                    </div>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={handleClearChat}
-                        className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors"
-                      >
-                        Clear All
-                      </button>
-                      <button
-                        onClick={() => setShowClearConfirm(false)}
-                        className="px-3 py-1 bg-gray-200 text-black rounded text-sm hover:bg-gray-300 transition-colors"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
           {/* Supabase Status Indicator */}
           <div className="flex items-center space-x-2 px-3 py-1 rounded-lg border border-gray-400 bg-gray-100">
             {supabaseStatus === 'checking' ? (
@@ -145,14 +86,6 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         </div>
       </div>
-      
-      {/* Click outside to close confirmation */}
-      {showClearConfirm && (
-        <div 
-          className="fixed inset-0 z-40" 
-          onClick={() => setShowClearConfirm(false)}
-        />
-      )}
     </header>
   );
 };

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, ThumbsUp, ThumbsDown, Copy, Download, MessageCircle, Bot, Sparkles, Edit3, MessageSquare } from 'lucide-react';
+import { Send, ThumbsUp, ThumbsDown, Copy, Download, MessageCircle, Bot, Sparkles, Edit3, MessageSquare, Trash2 } from 'lucide-react';
 import { Agent, ChatMessage } from '../types';
 
 interface ChatPanelProps {
@@ -11,6 +11,7 @@ interface ChatPanelProps {
   isProcessing: boolean;
   showMessagesArea?: boolean;
   showInputArea?: boolean;
+  onClearChatHistory?: () => void;
 }
 
 export const ChatPanel: React.FC<ChatPanelProps> = ({
@@ -21,12 +22,14 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
   onFeedback,
   isProcessing,
   showMessagesArea = true,
-  showInputArea = true
+  showInputArea = true,
+  onClearChatHistory
 }) => {
   const [inputMessage, setInputMessage] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [mentionQuery, setMentionQuery] = useState('');
   const [cursorPosition, setCursorPosition] = useState(0);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -139,6 +142,13 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
     document.body.removeChild(element);
   };
 
+  const handleClearChat = () => {
+    if (onClearChatHistory) {
+      onClearChatHistory();
+      setShowClearConfirm(false);
+    }
+  };
+
   // Only show selected agents in mention suggestions
   const filteredAgents = selectedAgents.filter(agent => 
     agent.name.toLowerCase().includes(mentionQuery)
@@ -188,24 +198,59 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header - Only show if messages area is visible */}
-      {showMessagesArea && (
-        <div className="px-6 py-4 border-b border-black bg-gray-100 flex-shrink-0">
-          <div className="flex items-center space-x-3">
-            <MessageCircle className="w-6 h-6 text-black" />
-            <div>
-              <h2 className="text-lg font-semibold text-black">Agent Chat</h2>
-              <p className="text-sm text-gray-700">
-                Get feedback, rewrites, and have conversations with your agents • Use @AgentName to mention specific agents
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Messages - Only show if messages area is visible */}
       {showMessagesArea && (
         <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
+          {/* Clear Chat Button - Only show when there are messages */}
+          {messages.length > 0 && (
+            <div className="flex justify-between items-center pb-2 border-b border-gray-200">
+              <div className="text-sm text-gray-600">
+                {messages.length} messages in conversation
+              </div>
+              <div className="relative">
+                <button
+                  onClick={() => setShowClearConfirm(true)}
+                  className="flex items-center space-x-2 px-3 py-1 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-gray-300 text-sm"
+                  title="Clear chat history"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Clear Chat</span>
+                </button>
+                
+                {/* Confirmation Dropdown */}
+                {showClearConfirm && (
+                  <>
+                    <div className="absolute right-0 top-full mt-2 bg-white border-2 border-black rounded-lg shadow-lg p-4 z-50 min-w-64">
+                      <div className="text-sm text-black mb-3">
+                        <div className="font-medium mb-1">Clear chat history?</div>
+                        <div className="text-gray-600">This will permanently delete all {messages.length} messages.</div>
+                      </div>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={handleClearChat}
+                          className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors"
+                        >
+                          Clear All
+                        </button>
+                        <button
+                          onClick={() => setShowClearConfirm(false)}
+                          className="px-3 py-1 bg-gray-200 text-black rounded text-sm hover:bg-gray-300 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                    {/* Click outside to close */}
+                    <div 
+                      className="fixed inset-0 z-40" 
+                      onClick={() => setShowClearConfirm(false)}
+                    />
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
               <Bot className="w-12 h-12 text-gray-500 mb-4" />
