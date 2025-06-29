@@ -19,15 +19,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
 }) => {
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-black mb-2">Text Editor</h2>
-        <p className="text-gray-700">
-          Write your text here and get detailed feedback from your selected agents, or use the chat panel to have conversations with specific agents.
-        </p>
-      </div>
-
-      {/* Text Input */}
+      {/* Text Input - Full height editor */}
       <div className="bg-white rounded-xl border-2 border-black shadow-sm flex-1 flex flex-col">
         <div className="px-6 py-4 border-b border-gray-300 flex items-center justify-between">
           <div className="flex items-center space-x-2">
@@ -46,7 +38,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
           <textarea
             value={originalText}
             onChange={(e) => onOriginalChange(e.target.value)}
-            placeholder="Enter your text here to get detailed feedback from your selected agents..."
+            placeholder="Start writing here..."
             className="w-full flex-1 p-4 border-2 border-gray-400 rounded-lg resize-none focus:ring-2 focus:ring-black focus:border-black min-h-64 bg-white text-black"
           />
           
