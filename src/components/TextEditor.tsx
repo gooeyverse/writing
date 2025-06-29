@@ -55,6 +55,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
   const displayRef = useRef<HTMLDivElement>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
   const submenuRef = useRef<HTMLDivElement>(null);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [history, setHistory] = useState<string[]>([originalText]);
   const [historyIndex, setHistoryIndex] = useState(0);
 
@@ -105,6 +106,15 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     }
   }, [contextMenu.show]);
 
+  // Cleanup hover timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const handleTextSelection = () => {
     if (textareaRef.current) {
       const start = textareaRef.current.selectionStart;
@@ -147,25 +157,31 @@ export const TextEditor: React.FC<TextEditorProps> = ({
   };
 
   const handleAgentHover = (agentId: string, event: React.MouseEvent) => {
+    // Clear any existing timeout
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    const submenuX = rect.right + 8; // 8px gap from the main menu
+    const submenuX = rect.right + 4; // Smaller gap for easier navigation
     const submenuY = rect.top;
     
     // Check if submenu would go off-screen and adjust position
-    const submenuWidth = 200; // Approximate submenu width
-    const submenuHeight = 120; // Increased height for 3 actions
+    const submenuWidth = 180; // Approximate submenu width
+    const submenuHeight = 140; // Height for 3 actions + header
     
     let adjustedX = submenuX;
     let adjustedY = submenuY;
     
     if (submenuX + submenuWidth > window.innerWidth) {
-      adjustedX = rect.left - submenuWidth - 8; // Show on left side instead
+      adjustedX = rect.left - submenuWidth - 4; // Show on left side instead
     }
     
     if (submenuY + submenuHeight > window.innerHeight) {
       adjustedY = window.innerHeight - submenuHeight - 10;
     }
 
+    // Immediate hover response for better UX
     setContextMenu(prev => ({
       ...prev,
       hoveredAgent: agentId,
@@ -173,27 +189,60 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     }));
   };
 
-  const handleAgentLeave = () => {
-    // Small delay to allow moving to submenu
-    setTimeout(() => {
+  const handleAgentLeave = (event: React.MouseEvent) => {
+    // Check if mouse is moving towards the submenu area
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const mouseX = event.clientX;
+    const mouseY = event.clientY;
+    
+    // If mouse is moving towards the right (towards submenu), delay hiding
+    const isMovingTowardsSubmenu = mouseX > rect.right - 10;
+    
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+
+    // Longer delay if moving towards submenu, shorter if moving away
+    const delay = isMovingTowardsSubmenu ? 300 : 150;
+    
+    hoverTimeoutRef.current = setTimeout(() => {
       setContextMenu(prev => ({
         ...prev,
         hoveredAgent: null,
         submenuPosition: null
       }));
-    }, 100);
+    }, delay);
   };
 
   const handleSubmenuEnter = () => {
-    // Keep submenu open when hovering over it
+    // Clear any pending hide timeout when entering submenu
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
   };
 
   const handleSubmenuLeave = () => {
+    // Immediate hide when leaving submenu
     setContextMenu(prev => ({
       ...prev,
       hoveredAgent: null,
       submenuPosition: null
     }));
+  };
+
+  const handleMenuContainerMouseLeave = () => {
+    // Only hide if not hovering over submenu
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    
+    hoverTimeoutRef.current = setTimeout(() => {
+      setContextMenu(prev => ({
+        ...prev,
+        hoveredAgent: null,
+        submenuPosition: null
+      }));
+    }, 200);
   };
 
   const handleAgentAction = (agent: Agent, action: 'feedback' | 'rewrite' | 'question') => {
@@ -681,9 +730,9 @@ export const TextEditor: React.FC<TextEditorProps> = ({
         </div>
       </div>
 
-      {/* Two-Layer Context Menu */}
+      {/* Two-Layer Context Menu with Improved Hover Handling */}
       {contextMenu.show && (
-        <>
+        <div onMouseLeave={handleMenuContainerMouseLeave}>
           {/* Main Menu - Agent List */}
           <div
             ref={contextMenuRef}
@@ -792,7 +841,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
               })()}
             </div>
           )}
-        </>
+        </div>
       )}
     </div>
   );
