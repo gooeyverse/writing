@@ -315,14 +315,22 @@ function App() {
                   </div>
                 ))}
                 
-                {/* Add New Agent Tile - Simplified to just + icon */}
+                {/* Add New Agent Tile - With text */}
                 <div className="flex-shrink-0 w-80">
                   <div
                     onClick={() => setCreateModalOpen(true)}
-                    className="h-full p-5 rounded-xl border-2 border-dashed border-gray-400 cursor-pointer transition-all duration-200 hover:border-black hover:bg-gray-50 group flex flex-col items-center justify-center min-h-[200px] bg-white"
+                    className="h-48 p-5 rounded-xl border-2 border-dashed border-gray-400 cursor-pointer transition-all duration-200 hover:border-black hover:bg-gray-50 group flex flex-col items-center justify-center bg-white"
                   >
-                    <div className="w-16 h-16 rounded-full border-2 border-gray-400 group-hover:border-black flex items-center justify-center transition-colors bg-gray-100 group-hover:bg-gray-200">
+                    <div className="w-16 h-16 rounded-full border-2 border-gray-400 group-hover:border-black flex items-center justify-center transition-colors bg-gray-100 group-hover:bg-gray-200 mb-4">
                       <Plus className="w-8 h-8 text-gray-600 group-hover:text-black transition-colors" />
+                    </div>
+                    <div className="text-center">
+                      <h3 className="text-lg font-semibold text-gray-700 group-hover:text-black transition-colors mb-1">
+                        New Agent
+                      </h3>
+                      <p className="text-sm text-gray-500 group-hover:text-gray-700 transition-colors">
+                        Create a custom writing assistant
+                      </p>
                     </div>
                   </div>
                 </div>
