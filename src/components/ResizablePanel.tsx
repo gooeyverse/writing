@@ -90,14 +90,14 @@ export const ResizablePanel: React.FC<ResizablePanelProps> = ({
         className={`
           absolute z-10 group transition-all duration-200
           ${direction === 'horizontal' 
-            ? 'right-0 top-0 bottom-0 w-1 hover:w-2' 
-            : 'bottom-0 left-0 right-0 h-1 hover:h-2'
+            ? `right-0 top-0 bottom-0 ${isHovering || isDragging ? 'w-2' : 'w-1'}` 
+            : `bottom-0 left-0 right-0 ${isHovering || isDragging ? 'h-2' : 'h-1'}`
           }
           ${isDragging 
-            ? 'bg-black' 
+            ? 'bg-gray-600' 
             : isHovering 
-              ? 'bg-gray-400' 
-              : 'bg-transparent hover:bg-gray-300'
+              ? 'bg-gray-500' 
+              : 'bg-transparent hover:bg-gray-400'
           }
         `}
         style={{ 
@@ -115,13 +115,13 @@ export const ResizablePanel: React.FC<ResizablePanelProps> = ({
         `}>
           <div className={`
             bg-white border border-gray-400 rounded-sm p-1 shadow-sm
-            ${isDragging ? 'border-black bg-gray-100' : ''}
+            ${isDragging ? 'border-gray-600 bg-gray-100' : ''}
           `}>
             <GripVertical 
               className={`
                 w-3 h-3 text-gray-600 transition-colors
                 ${direction === 'vertical' ? 'rotate-90' : ''}
-                ${isDragging ? 'text-black' : ''}
+                ${isDragging ? 'text-gray-700' : ''}
               `} 
             />
           </div>
