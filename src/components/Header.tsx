@@ -38,8 +38,8 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="bg-white border-b-2 border-black px-6 py-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <div className="p-2 bg-black rounded-lg">
-            <PenTool className="w-6 h-6 text-white" />
+          <div className="p-2 bg-white border-2 border-black rounded-lg">
+            <PenTool className="w-6 h-6 text-black" />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-black typewriter-effect">Writing Agents</h1>
