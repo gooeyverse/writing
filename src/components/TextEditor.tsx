@@ -376,7 +376,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
             <button
               onClick={handleUndo}
               disabled={historyIndex <= 0}
-              className="p-2 text-gray-600 hover:text-black hover:bg-gray-200 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               title="Undo (Ctrl+Z)"
             >
               <Undo className="w-4 h-4" />
@@ -384,7 +384,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
             <button
               onClick={handleRedo}
               disabled={historyIndex >= history.length - 1}
-              className="p-2 text-gray-600 hover:text-black hover:bg-gray-200 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               title="Redo (Ctrl+Y)"
             >
               <Redo className="w-4 h-4" />
@@ -447,8 +447,8 @@ export const TextEditor: React.FC<TextEditorProps> = ({
               
               {/* Tooltip */}
               {showTooltip && (
-                <div className="absolute right-0 top-full mt-2 w-80 bg-black text-white text-xs rounded-lg p-3 shadow-lg z-50">
-                  <div className="absolute -top-1 right-4 w-2 h-2 bg-black transform rotate-45"></div>
+                <div className="absolute right-0 top-full mt-2 w-80 bg-gray-800 text-white text-xs rounded-lg p-3 shadow-lg z-50">
+                  <div className="absolute -top-1 right-4 w-2 h-2 bg-gray-800 transform rotate-45"></div>
                   <h4 className="font-medium text-white mb-2 flex items-center space-x-1">
                     <span>💡</span>
                     <span>Editor Tips</span>
@@ -519,7 +519,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
               placeholder={`Start writing here... ${selectedAgents.length > 0 ? `Your ${selectedAgents.length} selected agent${selectedAgents.length > 1 ? 's' : ''} will help you improve your writing.` : 'Select agents to get writing assistance.'}`}
-              className={`relative w-full h-full p-4 rounded-lg resize-none bg-transparent text-black font-mono leading-relaxed focus:outline-none z-10 border-0 transition-all duration-200 ${
+              className={`relative w-full h-full p-4 rounded-lg resize-none bg-transparent text-gray-700 font-mono leading-relaxed focus:outline-none z-10 border-0 transition-all duration-200 ${
                 isInteractive && !isFocused
                   ? 'ring-1 ring-gray-300 ring-opacity-30 bg-gray-50 bg-opacity-10' 
                   : 'bg-transparent'
@@ -528,7 +528,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
                 fontFamily: 'JetBrains Mono, Courier New, monospace',
                 fontSize: '14px',
                 lineHeight: '1.6',
-                color: isEmpty && !isFocused ? 'rgba(0, 0, 0, 0.4)' : 'rgba(0, 0, 0, 0.8)'
+                color: isEmpty && !isFocused ? 'rgba(55, 65, 81, 0.4)' : 'rgba(55, 65, 81, 0.9)'
               }}
             />
 
@@ -552,7 +552,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
                   ? 'bg-gray-200 text-gray-500 border-gray-300 cursor-not-allowed'
                   : isProcessing
                     ? 'bg-gray-600 text-white border-gray-600 cursor-wait'
-                    : 'bg-black text-white border-black hover:bg-gray-800 hover:scale-105 shadow-lg hover:shadow-xl'
+                    : 'bg-gray-800 text-white border-gray-800 hover:bg-gray-700 hover:scale-105 shadow-lg hover:shadow-xl'
               }`}
             >
               {isProcessing ? (
@@ -581,7 +581,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
       {contextMenu.show && (
         <div
           ref={contextMenuRef}
-          className="fixed bg-white border-2 border-black rounded-lg shadow-lg py-2 z-50 min-w-64"
+          className="fixed bg-white border-2 border-gray-800 rounded-lg shadow-lg py-2 z-50 min-w-64"
           style={{
             left: `${Math.min(contextMenu.position.x, window.innerWidth - 280)}px`,
             top: `${Math.min(contextMenu.position.y, window.innerHeight - 200)}px`
@@ -607,7 +607,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
                 {/* Agent Header */}
                 <div className="px-4 py-2 bg-gray-50 flex items-center space-x-2">
                   <span className="text-lg">{agent.avatar}</span>
-                  <span className="font-medium text-black text-sm">{agent.name}</span>
+                  <span className="font-medium text-gray-800 text-sm">{agent.name}</span>
                   <span className="text-xs text-gray-600">({agent.personality})</span>
                 </div>
                 
@@ -615,14 +615,14 @@ export const TextEditor: React.FC<TextEditorProps> = ({
                 <div className="px-4 py-2 space-y-1">
                   <button
                     onClick={() => handleAgentAction(agent, 'feedback')}
-                    className="w-full flex items-center space-x-2 px-3 py-2 text-left text-sm text-black hover:bg-gray-100 rounded transition-colors"
+                    className="w-full flex items-center space-x-2 px-3 py-2 text-left text-sm text-gray-800 hover:bg-gray-100 rounded transition-colors"
                   >
                     <FileText className="w-4 h-4 text-blue-600" />
                     <span>Ask {agent.name} for feedback</span>
                   </button>
                   <button
                     onClick={() => handleAgentAction(agent, 'rewrite')}
-                    className="w-full flex items-center space-x-2 px-3 py-2 text-left text-sm text-black hover:bg-gray-100 rounded transition-colors"
+                    className="w-full flex items-center space-x-2 px-3 py-2 text-left text-sm text-gray-800 hover:bg-gray-100 rounded transition-colors"
                   >
                     <Edit3 className="w-4 h-4 text-green-600" />
                     <span>Ask {agent.name} to help me rewrite</span>

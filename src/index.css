@@ -8,6 +8,27 @@
   font-family: 'JetBrains Mono', 'Courier New', monospace;
 }
 
+/* Override default text colors to use dark gray instead of black */
+@layer base {
+  body {
+    color: #374151; /* gray-700 - primary dark gray text */
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    color: #1f2937; /* gray-800 - slightly darker for headings */
+  }
+  
+  /* Ensure form elements use dark gray text */
+  input, textarea, select {
+    color: #374151; /* gray-700 */
+  }
+  
+  /* Placeholder text should be lighter */
+  input::placeholder, textarea::placeholder {
+    color: #9ca3af; /* gray-400 */
+  }
+}
+
 /* Custom animations for typewriter effect */
 @keyframes typewriter {
   from { width: 0; }
@@ -16,12 +37,12 @@
 
 @keyframes blink {
   0%, 50% { border-color: transparent; }
-  51%, 100% { border-color: #000; }
+  51%, 100% { border-color: #374151; /* Updated to dark gray */ }
 }
 
 .typewriter-effect {
   overflow: hidden;
-  border-right: 2px solid #000;
+  border-right: 2px solid #374151; /* Updated to dark gray */
   white-space: nowrap;
   animation: typewriter 2s steps(40, end), blink 1s step-end infinite;
 }

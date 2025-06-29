@@ -6,7 +6,7 @@ interface ChatPanelProps {
   messages: ChatMessage[];
   agents: Agent[];
   selectedAgents: Agent[];
-  onSendMessage: (message: string, mentionedAgentIds: string[], messageType?: 'feedback' | 'chat') => void;
+  onSendMessage: (message: string, mentionedAgentIds: string[], messageType?: 'feedback' | 'chat' | 'rewrite') => void;
   onFeedback: (messageId: string, rating: 'positive' | 'negative') => void;
   isProcessing: boolean;
   showMessagesArea?: boolean;
@@ -98,18 +98,32 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
     return mentionedAgentIds;
   };
 
-  const detectMessageIntent = (message: string): 'feedback' | 'chat' => {
+  const detectMessageIntent = (message: string): 'feedback' | 'chat' | 'rewrite' => {
     const feedbackKeywords = [
       'feedback', 'analyze', 'review', 'critique', 'assess', 'evaluate', 
       'what do you think', 'how is this', 'thoughts on', 'opinion on',
       'check this', 'look at this', 'rate this', 'judge this'
     ];
     
+    const rewriteKeywords = [
+      'rewrite', 'rephrase', 'reword', 'revise', 'edit', 'improve',
+      'make it', 'change it to', 'turn this into', 'convert this',
+      'make this more', 'make this less', 'simplify', 'formalize',
+      'casualize', 'shorten', 'expand', 'professional version',
+      'casual version', 'better version'
+    ];
+    
     const isRequestingFeedback = feedbackKeywords.some(keyword => 
       message.toLowerCase().includes(keyword.toLowerCase())
     );
     
-    return isRequestingFeedback ? 'feedback' : 'chat';
+    const isRequestingRewrite = rewriteKeywords.some(keyword => 
+      message.toLowerCase().includes(keyword.toLowerCase())
+    );
+    
+    if (isRequestingRewrite) return 'rewrite';
+    if (isRequestingFeedback) return 'feedback';
+    return 'chat';
   };
 
   const handleSend = () => {
@@ -216,8 +230,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                 {/* Confirmation Dropdown */}
                 {showClearConfirm && (
                   <>
-                    <div className="absolute right-0 top-full mt-2 bg-white border-2 border-black rounded-lg shadow-lg p-4 z-50 min-w-64">
-                      <div className="text-sm text-black mb-3">
+                    <div className="absolute right-0 top-full mt-2 bg-white border-2 border-gray-800 rounded-lg shadow-lg p-4 z-50 min-w-64">
+                      <div className="text-sm text-gray-800 mb-3">
                         <div className="font-medium mb-1">Clear chat history?</div>
                         <div className="text-gray-600">This will permanently delete all {messages.length} messages.</div>
                       </div>
@@ -230,7 +244,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                         </button>
                         <button
                           onClick={() => setShowClearConfirm(false)}
-                          className="px-3 py-1 bg-gray-200 text-black rounded text-sm hover:bg-gray-300 transition-colors"
+                          className="px-3 py-1 bg-gray-200 text-gray-800 rounded text-sm hover:bg-gray-300 transition-colors"
                         >
                           Cancel
                         </button>
@@ -256,7 +270,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                 <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[80%] ${message.type === 'user' ? 'order-2' : 'order-1'}`}>
                     {message.type === 'user' ? (
-                      <div className="bg-black text-white rounded-2xl rounded-br-md px-4 py-3 border-2 border-black">
+                      <div className="bg-gray-800 text-white rounded-2xl rounded-br-md px-4 py-3 border-2 border-gray-800">
                         <p className="whitespace-pre-wrap">{message.content}</p>
                         <div className="flex items-center justify-between mt-2 text-xs text-gray-300">
                           <span>{formatTime(message.timestamp)}</span>
@@ -278,7 +292,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                         <div className="px-4 py-3">
                           <div className="flex items-center space-x-2 mb-2">
                             <span className="text-lg">{agents.find(a => a.id === message.agentId)?.avatar}</span>
-                            <span className="font-medium text-black">
+                            <span className="font-medium text-gray-800">
                               {agents.find(a => a.id === message.agentId)?.name}
                             </span>
                             <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded-full border border-gray-300 flex items-center space-x-1">
@@ -288,18 +302,18 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                             {message.rating && (
                               <div className={`px-2 py-1 rounded-full text-xs font-medium border ${
                                 message.rating > 0 
-                                  ? 'bg-gray-100 text-black border-gray-400' 
-                                  : 'bg-gray-200 text-black border-gray-500'
+                                  ? 'bg-gray-100 text-gray-800 border-gray-400' 
+                                  : 'bg-gray-200 text-gray-800 border-gray-500'
                               }`}>
                                 {message.rating > 0 ? 'Helpful' : 'Needs work'}
                               </div>
                             )}
                           </div>
-                          <div className="text-black whitespace-pre-wrap mb-3 prose prose-sm max-w-none">
+                          <div className="text-gray-700 whitespace-pre-wrap mb-3 prose prose-sm max-w-none">
                             {message.content.split('\n').map((line, index) => (
                               <div key={index}>
                                 {line.startsWith('**') && line.endsWith('**') ? (
-                                  <strong className="text-black">{line.slice(2, -2)}</strong>
+                                  <strong className="text-gray-800">{line.slice(2, -2)}</strong>
                                 ) : line.startsWith('• ') ? (
                                   <div className="ml-4">• {line.slice(2)}</div>
                                 ) : line.startsWith('- ') ? (
@@ -315,14 +329,14 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                             <div className="flex items-center space-x-1">
                               <button
                                 onClick={() => copyToClipboard(message.content)}
-                                className="p-1 text-gray-500 hover:text-black rounded border border-gray-300"
+                                className="p-1 text-gray-500 hover:text-gray-800 rounded border border-gray-300"
                                 title="Copy response"
                               >
                                 <Copy className="w-3 h-3" />
                               </button>
                               <button
                                 onClick={() => downloadText(message.content, `${agents.find(a => a.id === message.agentId)?.name.toLowerCase()}-response.txt`)}
-                                className="p-1 text-gray-500 hover:text-black rounded border border-gray-300"
+                                className="p-1 text-gray-500 hover:text-gray-800 rounded border border-gray-300"
                                 title="Download response"
                               >
                                 <Download className="w-3 h-3" />
@@ -331,8 +345,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                                 onClick={() => onFeedback(message.id, 'positive')}
                                 className={`p-1 rounded transition-colors border ${
                                   message.rating === 1
-                                    ? 'text-black bg-gray-100 border-gray-400'
-                                    : 'text-gray-500 hover:text-black hover:bg-gray-100 border-gray-300'
+                                    ? 'text-gray-800 bg-gray-100 border-gray-400'
+                                    : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100 border-gray-300'
                                 }`}
                                 title="Helpful response"
                               >
@@ -342,8 +356,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                                 onClick={() => onFeedback(message.id, 'negative')}
                                 className={`p-1 rounded transition-colors border ${
                                   message.rating === -1
-                                    ? 'text-black bg-gray-100 border-gray-400'
-                                    : 'text-gray-500 hover:text-black hover:bg-gray-100 border-gray-300'
+                                    ? 'text-gray-800 bg-gray-100 border-gray-400'
+                                    : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100 border-gray-300'
                                 }`}
                                 title="Needs improvement"
                               >
@@ -363,9 +377,9 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                   <div className="bg-gray-100 rounded-2xl rounded-bl-md px-4 py-3 border border-gray-400">
                     <div className="flex items-center space-x-2">
                       <div className="flex space-x-1">
-                        <div className="w-2 h-2 bg-black rounded-full animate-bounce"></div>
-                        <div className="w-2 h-2 bg-black rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                        <div className="w-2 h-2 bg-black rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                        <div className="w-2 h-2 bg-gray-800 rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-gray-800 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                        <div className="w-2 h-2 bg-gray-800 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                       </div>
                       <span className="text-sm text-gray-700">Agents are thinking...</span>
                     </div>
@@ -392,7 +406,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
         >
           {/* Mention Suggestions - Only show selected agents */}
           {showSuggestions && filteredAgents.length > 0 && (
-            <div className="absolute bottom-full left-4 right-4 mb-2 bg-white border-2 border-black rounded-lg shadow-lg max-h-40 overflow-y-auto z-10">
+            <div className="absolute bottom-full left-4 right-4 mb-2 bg-white border-2 border-gray-800 rounded-lg shadow-lg max-h-40 overflow-y-auto z-10">
               <div className="px-3 py-2 text-xs text-gray-600 border-b border-gray-300 bg-gray-100">
                 Selected agents only
               </div>
@@ -404,7 +418,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                 >
                   <span className="text-lg">{agent.avatar}</span>
                   <div>
-                    <div className="font-medium text-black">{agent.name}</div>
+                    <div className="font-medium text-gray-800">{agent.name}</div>
                     <div className="text-xs text-gray-600">{agent.personality}</div>
                   </div>
                 </button>
@@ -422,7 +436,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                 onChange={handleInputChange}
                 onKeyPress={handleKeyPress}
                 placeholder={`Ask for feedback, request rewrites, or chat naturally... Use @AgentName to mention specific agents (${selectedAgents.map(a => a.name).join(', ')})`}
-                className="w-full h-24 p-4 border-2 border-gray-400 rounded-lg resize-none focus:ring-2 focus:ring-black focus:border-black bg-white text-black"
+                className="w-full h-24 p-4 border-2 border-gray-400 rounded-lg resize-none focus:ring-2 focus:ring-gray-800 focus:border-gray-800 bg-white text-gray-700"
               />
             </div>
             
@@ -453,7 +467,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
               <button
                 onClick={handleSend}
                 disabled={!inputMessage.trim() || isProcessing}
-                className="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2 border-2 border-black"
+                className="px-6 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2 border-2 border-gray-800"
               >
                 <Send className="w-4 h-4" />
                 <span>Send</span>
