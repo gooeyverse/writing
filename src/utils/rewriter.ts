@@ -1,10 +1,10 @@
 import { supabase } from '../lib/supabase';
-import { Agent } from '../types';
+import { Agent, ChatMessage } from '../types';
 
 export class TextRewriter {
   static async provideFeedback(text: string, agent: Agent): Promise<string> {
     try {
-      // Call Supabase Edge Function for feedback instead of rewriting
+      // Call Supabase Edge Function for feedback
       const { data, error } = await supabase.functions.invoke('openai-feedback', {
         body: {
           text,
@@ -31,9 +31,67 @@ export class TextRewriter {
     }
   }
 
-  // Legacy method name for backward compatibility
   static async rewrite(text: string, agent: Agent): Promise<string> {
-    return this.provideFeedback(text, agent);
+    try {
+      // Call Supabase Edge Function for rewriting
+      const { data, error } = await supabase.functions.invoke('openai-rewrite', {
+        body: {
+          text,
+          agent
+        }
+      });
+
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw new Error(`Rewrite failed: ${error.message}`);
+      }
+
+      if (!data?.success || !data?.rewrittenText) {
+        throw new Error('Invalid response from rewrite service');
+      }
+
+      return data.rewrittenText;
+    } catch (error) {
+      console.error('Rewrite generation failed:', error);
+      
+      // Fallback to mock rewrite on error
+      console.warn('Using fallback rewrite due to error');
+      return this.fallbackRewrite(text, agent);
+    }
+  }
+
+  static async provideConversationalResponse(
+    message: string, 
+    agent: Agent, 
+    chatHistory: ChatMessage[]
+  ): Promise<string> {
+    try {
+      // Call Supabase Edge Function for conversational response
+      const { data, error } = await supabase.functions.invoke('openai-conversation', {
+        body: {
+          message,
+          agent,
+          chatHistory: chatHistory.slice(-6) // Send last 6 messages for context
+        }
+      });
+
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw new Error(`Conversation failed: ${error.message}`);
+      }
+
+      if (!data?.success || !data?.response) {
+        throw new Error('Invalid response from conversation service');
+      }
+
+      return data.response;
+    } catch (error) {
+      console.error('Conversation generation failed:', error);
+      
+      // Fallback to mock conversation on error
+      console.warn('Using fallback conversation due to error');
+      return this.fallbackConversation(message, agent);
+    }
   }
 
   // Fallback feedback method
@@ -48,6 +106,87 @@ export class TextRewriter {
       sentenceCount,
       avgWordsPerSentence
     });
+  }
+
+  // Fallback rewrite method
+  private static fallbackRewrite(text: string, agent: Agent): string {
+    // Simple fallback rewrite based on agent personality
+    switch (agent.personality) {
+      case 'Professional and polished':
+        return this.makeProfessional(text);
+      case 'Casual and approachable':
+        return this.makeCasual(text);
+      case 'Casual and concise':
+        return this.makeConcise(text);
+      default:
+        return `Here's a ${agent.personality.toLowerCase()} version:\n\n${text}`;
+    }
+  }
+
+  // Fallback conversation method
+  private static fallbackConversation(message: string, agent: Agent): string {
+    const responses = {
+      'Professional and polished': [
+        "I understand your request. Let me provide some professional guidance on this matter.",
+        "That's an excellent question. From a professional perspective, I'd recommend...",
+        "I appreciate you bringing this to my attention. Here's my professional assessment..."
+      ],
+      'Casual and approachable': [
+        "Great question! I'm happy to help you with that.",
+        "Oh, I love talking about this stuff! Here's what I think...",
+        "That's a really interesting point you've raised. Let me share my thoughts..."
+      ],
+      'Casual and concise': [
+        "Got it. Here's the deal:",
+        "Sure thing. Quick answer:",
+        "Yep. Here's what I'd do:"
+      ]
+    };
+
+    const agentResponses = responses[agent.personality as keyof typeof responses] || [
+      "That's an interesting point. Let me help you with that.",
+      "I see what you're getting at. Here's my take on it:",
+      "Thanks for asking! Here's how I'd approach this:"
+    ];
+
+    const randomResponse = agentResponses[Math.floor(Math.random() * agentResponses.length)];
+    return `${randomResponse}\n\n(I'm currently in fallback mode - please check your connection for full AI responses)`;
+  }
+
+  // Helper methods for simple text transformations
+  private static makeProfessional(text: string): string {
+    return text
+      .replace(/\bcan't\b/g, 'cannot')
+      .replace(/\bwon't\b/g, 'will not')
+      .replace(/\bdon't\b/g, 'do not')
+      .replace(/\bisn't\b/g, 'is not')
+      .replace(/\bI think\b/g, 'I believe')
+      .replace(/\bkinda\b/g, 'somewhat')
+      .replace(/\bgonna\b/g, 'going to');
+  }
+
+  private static makeCasual(text: string): string {
+    return text
+      .replace(/\bcannot\b/g, "can't")
+      .replace(/\bwill not\b/g, "won't")
+      .replace(/\bdo not\b/g, "don't")
+      .replace(/\bis not\b/g, "isn't")
+      .replace(/\bI believe\b/g, 'I think')
+      .replace(/\bsomewhat\b/g, 'kinda')
+      .replace(/\bgoing to\b/g, 'gonna');
+  }
+
+  private static makeConcise(text: string): string {
+    return text
+      .replace(/\bin order to\b/g, 'to')
+      .replace(/\bdue to the fact that\b/g, 'because')
+      .replace(/\bat this point in time\b/g, 'now')
+      .replace(/\bfor the purpose of\b/g, 'to')
+      .split('. ')
+      .map(sentence => sentence.trim())
+      .filter(sentence => sentence.length > 0)
+      .slice(0, 3) // Keep only first 3 sentences for conciseness
+      .join('. ') + (text.endsWith('.') ? '' : '.');
   }
 
   private static generatePersonalityBasedFeedback(
@@ -109,109 +248,6 @@ Hope this helps! 😊`;
 
 **Bottom line:** ${this.getSimpleAssessment(text)}`;
 
-      case 'Confident and compelling':
-        return `**Power Analysis by ${agent.name}:**
-
-**Impact Assessment:** ${this.assessImpact(text)}
-
-**Persuasion Elements:**
-• **Strength:** ${this.hasStrongVerbs(text) ? 'Good use of action words' : 'Needs stronger, more decisive language'}
-• **Urgency:** ${this.hasUrgency(text) ? 'Creates appropriate sense of urgency' : 'Consider adding time-sensitive elements'}
-• **Benefits:** ${this.highlightsBenefits(text) ? 'Clearly communicates value' : 'Focus more on what the reader gains'}
-
-**Call to Action:** ${this.hasCallToAction(text) ? 'Strong directive - tells reader exactly what to do' : 'MISSING - Add a clear next step for your reader'}
-
-**Confidence Level:** ${this.assessConfidence(text)}
-
-**Power Moves:**
-• Replace weak phrases like "I think" with "I know" or "Research shows"
-• ${wordCount < 100 ? 'Add more compelling evidence to support your points' : 'Good depth of content'}
-• End with a strong, specific action step
-
-**Verdict:** ${this.getCompellingAssessment(text)} Transform this into a message that demands action!`;
-
-      case 'Scholarly and methodical':
-        return `**Academic Analysis by ${agent.name}:**
-
-**Structural Evaluation:**
-- **Word Count:** ${wordCount} words (${wordCount < 100 ? 'Consider expanding for thorough analysis' : wordCount > 300 ? 'Appropriate length for detailed examination' : 'Adequate scope'})
-- **Sentence Complexity:** Average ${avgWordsPerSentence} words per sentence ${avgWordsPerSentence < 12 ? '(consider more complex constructions)' : '(appropriate complexity)'}
-
-**Analytical Framework:**
-${this.assessAcademicRigor(text)}
-
-**Evidence and Support:**
-• ${this.hasCitations(text) ? 'Includes supporting references' : 'Lacks scholarly citations - consider adding authoritative sources'}
-• ${this.hasObjectiveTone(text) ? 'Maintains appropriate academic objectivity' : 'Contains subjective language - strive for neutral tone'}
-• ${this.hasLogicalFlow(text) ? 'Demonstrates clear logical progression' : 'Argument structure requires strengthening'}
-
-**Methodological Considerations:**
-${this.assessMethodology(text)}
-
-**Recommendations for Enhancement:**
-1. ${this.needsMoreEvidence(text) ? 'Incorporate additional empirical support' : 'Evidence base is adequate'}
-2. ${this.needsBetterTransitions(text) ? 'Strengthen transitional phrases between concepts' : 'Logical connections are clear'}
-3. Consider implications for future research
-
-**Scholarly Assessment:** ${this.getAcademicAssessment(text)}`;
-
-      case 'Imaginative and expressive':
-        return `**Creative Feedback from ${agent.name}:**
-
-*Stepping into your words like entering a new world...*
-
-**Imagery & Atmosphere:** ${this.assessImagery(text)}
-
-**Emotional Resonance:**
-Your text ${this.hasEmotionalDepth(text) ? 'pulses with feeling - I can sense the emotion behind each word' : 'feels a bit distant - try adding more heart, more personal connection'}
-
-**Sensory Experience:**
-• **Visual:** ${this.hasVisualElements(text) ? 'I can see it!' : 'Paint me a picture with your words'}
-• **Sound:** ${this.hasRhythm(text) ? 'Nice rhythm and flow' : 'Try reading aloud - add some musical quality'}
-• **Feel:** ${this.hasTactileElements(text) ? 'I can almost touch what you\'re describing' : 'Make it more tangible'}
-
-**Story Elements:**
-${this.assessNarrative(text)}
-
-**Creative Spark:**
-• ${wordCount < 75 ? 'Like a haiku - beautifully concise' : wordCount > 200 ? 'Rich and expansive like a flowing river' : 'Perfect length for impact'}
-• ${this.hasMetaphors(text) ? 'Love the figurative language!' : 'Consider adding metaphors or comparisons'}
-• ${this.hasUnexpectedElements(text) ? 'Delightful surprises in your phrasing' : 'Try adding an unexpected twist or unique perspective'}
-
-**The Magic:** ${this.getCreativeAssessment(text)}
-
-*Keep painting with words...* ✨`;
-
-      case 'Precise and logical':
-        return `**Technical Analysis by ${agent.name}:**
-
-**Structural Metrics:**
-- Lines of text: ${sentenceCount}
-- Word density: ${wordCount} total words
-- Average complexity: ${avgWordsPerSentence} words/sentence
-- Readability index: ${this.calculateReadability(avgWordsPerSentence)}
-
-**Logic Flow Assessment:**
-\`\`\`
-${this.assessLogicalStructure(text)}
-\`\`\`
-
-**Precision Audit:**
-• **Ambiguity Level:** ${this.hasAmbiguousTerms(text) ? 'HIGH - Contains undefined terms' : 'LOW - Clear definitions'}
-• **Specificity:** ${this.hasSpecificDetails(text) ? 'GOOD - Includes concrete details' : 'NEEDS IMPROVEMENT - Add measurable specifics'}
-• **Consistency:** ${this.hasConsistentTerminology(text) ? 'PASS - Terminology usage is consistent' : 'FAIL - Inconsistent term usage detected'}
-
-**Error Detection:**
-${this.detectLogicalErrors(text)}
-
-**Optimization Recommendations:**
-1. ${this.needsMorePrecision(text) ? 'Replace vague terms with specific measurements' : 'Precision level acceptable'}
-2. ${this.needsBetterStructure(text) ? 'Implement hierarchical information structure' : 'Structure is logically sound'}
-3. ${this.needsValidation(text) ? 'Add verification steps or checkpoints' : 'Validation approach is adequate'}
-
-**System Status:** ${this.getTechnicalAssessment(text)}
-**Recommended Action:** ${this.getNextSteps(text)}`;
-
       default:
         return `**Feedback from ${agent.name}:**
 
@@ -228,7 +264,7 @@ I've reviewed your ${wordCount}-word text. Here are my observations:
     }
   }
 
-  // Helper methods for feedback analysis
+  // Helper methods for feedback analysis (keeping existing methods)
   private static hasContractions(text: string): boolean {
     return /\b(can't|won't|don't|isn't|aren't|wasn't|weren't|haven't|hasn't|hadn't|wouldn't|couldn't|shouldn't)\b/i.test(text);
   }
@@ -312,258 +348,12 @@ I've reviewed your ${wordCount}-word text. Here are my observations:
     return assessments[Math.floor(Math.random() * assessments.length)];
   }
 
-  // Additional helper methods for other personality types
-  private static assessImpact(text: string): string {
-    return this.hasStrongVerbs(text) ? 
-      'Strong impact - uses powerful action words' : 
-      'Moderate impact - could use stronger language';
-  }
-
-  private static hasStrongVerbs(text: string): boolean {
-    const strongVerbs = ['achieve', 'create', 'deliver', 'drive', 'execute', 'generate', 'launch', 'maximize', 'transform'];
-    return strongVerbs.some(verb => new RegExp(`\\b${verb}\\b`, 'i').test(text));
-  }
-
-  private static hasUrgency(text: string): boolean {
-    const urgencyWords = ['now', 'today', 'immediately', 'urgent', 'deadline', 'limited time', 'act fast'];
-    return urgencyWords.some(word => new RegExp(word, 'i').test(text));
-  }
-
-  private static highlightsBenefits(text: string): boolean {
-    const benefitWords = ['benefit', 'advantage', 'gain', 'improve', 'better', 'save', 'increase'];
-    return benefitWords.some(word => new RegExp(`\\b${word}\\b`, 'i').test(text));
-  }
-
-  private static hasCallToAction(text: string): boolean {
-    const ctaWords = ['click', 'call', 'contact', 'visit', 'download', 'sign up', 'register', 'buy', 'order'];
-    return ctaWords.some(word => new RegExp(`\\b${word}\\b`, 'i').test(text));
-  }
-
-  private static assessConfidence(text: string): string {
-    const weakPhrases = ['i think', 'maybe', 'perhaps', 'might', 'could be'];
-    const hasWeakLanguage = weakPhrases.some(phrase => new RegExp(phrase, 'i').test(text));
-    return hasWeakLanguage ? 'WEAK - Contains uncertain language' : 'STRONG - Confident and decisive';
-  }
-
-  private static getCompellingAssessment(text: string): string {
-    const score = [
-      this.hasStrongVerbs(text),
-      this.hasUrgency(text),
-      this.highlightsBenefits(text),
-      this.hasCallToAction(text),
-      !this.assessConfidence(text).includes('WEAK')
-    ].filter(Boolean).length;
-
-    if (score >= 4) return 'POWERFUL - This text commands attention and drives action!';
-    if (score >= 3) return 'STRONG - Good persuasive elements, minor tweaks needed.';
-    if (score >= 2) return 'MODERATE - Has potential, needs more compelling elements.';
-    return 'WEAK - Requires significant strengthening to be persuasive.';
-  }
-
-  // Academic assessment helpers
-  private static assessAcademicRigor(text: string): string {
-    return this.hasObjectiveTone(text) && this.hasLogicalFlow(text) ? 
-      'Demonstrates appropriate scholarly approach with objective analysis' : 
-      'Requires enhancement of academic rigor and objectivity';
-  }
-
-  private static hasCitations(text: string): boolean {
-    return /\([^)]*\d{4}[^)]*\)|\[\d+\]|et al\.|according to/i.test(text);
-  }
-
-  private static hasObjectiveTone(text: string): boolean {
-    const subjectiveWords = ['i believe', 'i feel', 'obviously', 'clearly', 'definitely'];
-    return !subjectiveWords.some(phrase => new RegExp(phrase, 'i').test(text));
-  }
-
-  private static hasLogicalFlow(text: string): boolean {
-    const logicalConnectors = ['therefore', 'consequently', 'furthermore', 'however', 'moreover', 'thus'];
-    return logicalConnectors.some(word => new RegExp(`\\b${word}\\b`, 'i').test(text));
-  }
-
-  private static assessMethodology(text: string): string {
-    return this.hasSpecificDetails(text) ? 
-      'Includes methodological specificity' : 
-      'Would benefit from more detailed methodological description';
-  }
-
-  private static needsMoreEvidence(text: string): boolean {
-    return !this.hasCitations(text) && text.split(/\s+/).length > 50;
-  }
-
-  private static needsBetterTransitions(text: string): boolean {
-    return !this.hasLogicalFlow(text) && text.split('.').length > 2;
-  }
-
-  private static getAcademicAssessment(text: string): string {
-    const score = [
-      this.hasObjectiveTone(text),
-      this.hasLogicalFlow(text),
-      this.hasCitations(text),
-      this.hasSpecificDetails(text)
-    ].filter(Boolean).length;
-
-    if (score >= 3) return 'Meets academic standards with strong scholarly approach.';
-    if (score >= 2) return 'Adequate academic foundation, some enhancement needed.';
-    return 'Requires significant development to meet scholarly standards.';
-  }
-
-  // Creative assessment helpers
-  private static assessImagery(text: string): string {
-    return this.hasVisualElements(text) ? 
-      'Rich visual imagery that brings the text to life' : 
-      'Could benefit from more vivid, sensory descriptions';
-  }
-
-  private static hasEmotionalDepth(text: string): boolean {
-    const emotionalWords = ['feel', 'heart', 'soul', 'passion', 'love', 'fear', 'joy', 'pain', 'hope'];
-    return emotionalWords.some(word => new RegExp(`\\b${word}\\b`, 'i').test(text));
-  }
-
-  private static hasVisualElements(text: string): boolean {
-    const visualWords = ['see', 'look', 'bright', 'dark', 'color', 'light', 'shadow', 'gleam', 'sparkle'];
-    return visualWords.some(word => new RegExp(`\\b${word}\\b`, 'i').test(text));
-  }
-
-  private static hasRhythm(text: string): boolean {
-    const sentences = text.split(/[.!?]+/).filter(s => s.trim());
-    const lengths = sentences.map(s => s.split(/\s+/).length);
-    const hasVariation = Math.max(...lengths) - Math.min(...lengths) > 3;
-    return hasVariation;
-  }
-
-  private static hasTactileElements(text: string): boolean {
-    const tactileWords = ['touch', 'feel', 'smooth', 'rough', 'soft', 'hard', 'warm', 'cold', 'texture'];
-    return tactileWords.some(word => new RegExp(`\\b${word}\\b`, 'i').test(text));
-  }
-
-  private static assessNarrative(text: string): string {
-    const hasCharacters = /\b(he|she|they|character|person|people)\b/i.test(text);
-    const hasAction = /\b(went|came|said|did|made|took|gave)\b/i.test(text);
-    
-    if (hasCharacters && hasAction) return 'Contains narrative elements with characters and action';
-    if (hasCharacters) return 'Has character elements - consider adding more action';
-    if (hasAction) return 'Good action elements - could use more character development';
-    return 'Consider adding story elements like characters or action';
-  }
-
-  private static hasMetaphors(text: string): boolean {
-    const metaphorIndicators = ['like', 'as', 'is a', 'was a', 'seems like', 'appears to be'];
-    return metaphorIndicators.some(indicator => new RegExp(indicator, 'i').test(text));
-  }
-
-  private static hasUnexpectedElements(text: string): boolean {
-    // Simple check for creative or unusual word combinations
-    const unusualWords = ['whisper', 'dance', 'melody', 'symphony', 'paint', 'weave', 'bloom'];
-    return unusualWords.some(word => new RegExp(`\\b${word}\\b`, 'i').test(text));
-  }
-
-  private static getCreativeAssessment(text: string): string {
-    const score = [
-      this.hasEmotionalDepth(text),
-      this.hasVisualElements(text),
-      this.hasMetaphors(text),
-      this.hasUnexpectedElements(text),
-      this.hasRhythm(text)
-    ].filter(Boolean).length;
-
-    if (score >= 4) return 'Bursting with creativity and artistic flair!';
-    if (score >= 3) return 'Good creative elements - let your imagination soar even higher!';
-    if (score >= 2) return 'Shows creative potential - add more artistic touches.';
-    return 'Ready for a creative transformation - let\'s add some magic!';
-  }
-
-  // Technical assessment helpers
-  private static calculateReadability(avgWordsPerSentence: number): string {
-    if (avgWordsPerSentence < 10) return 'HIGH (Simple)';
-    if (avgWordsPerSentence < 15) return 'MEDIUM (Moderate)';
-    if (avgWordsPerSentence < 20) return 'LOW (Complex)';
-    return 'VERY LOW (Highly Complex)';
-  }
-
-  private static assessLogicalStructure(text: string): string {
-    const sentences = text.split(/[.!?]+/).filter(s => s.trim());
-    return `Structure Analysis:
-- Total statements: ${sentences.length}
-- Logic flow: ${this.hasLogicalFlow(text) ? 'SEQUENTIAL' : 'NEEDS_IMPROVEMENT'}
-- Coherence: ${sentences.length > 1 ? 'MULTI_POINT' : 'SINGLE_POINT'}`;
-  }
-
-  private static hasAmbiguousTerms(text: string): boolean {
-    const ambiguousWords = ['thing', 'stuff', 'something', 'somehow', 'various', 'several', 'many'];
-    return ambiguousWords.some(word => new RegExp(`\\b${word}\\b`, 'i').test(text));
-  }
-
-  private static hasSpecificDetails(text: string): boolean {
-    return /\b\d+(\.\d+)?(%|percent|dollars?|\$|hours?|minutes?|seconds?|days?|weeks?|months?|years?)\b/i.test(text);
-  }
-
-  private static hasConsistentTerminology(text: string): boolean {
-    // Simple check - in a real implementation, this would be more sophisticated
-    const words = text.toLowerCase().split(/\s+/);
-    const uniqueWords = new Set(words);
-    return uniqueWords.size / words.length > 0.7; // High ratio suggests good vocabulary variety
-  }
-
-  private static detectLogicalErrors(text: string): string {
-    const errors = [];
-    
-    if (this.hasAmbiguousTerms(text)) {
-      errors.push('• Ambiguous terminology detected');
-    }
-    
-    if (!this.hasSpecificDetails(text) && text.split(/\s+/).length > 30) {
-      errors.push('• Lacks quantitative specificity');
-    }
-    
-    if (!this.hasLogicalFlow(text) && text.split('.').length > 2) {
-      errors.push('• Missing logical connectors');
-    }
-    
-    return errors.length > 0 ? errors.join('\n') : '• No critical errors detected';
-  }
-
-  private static needsMorePrecision(text: string): boolean {
-    return this.hasAmbiguousTerms(text) || !this.hasSpecificDetails(text);
-  }
-
-  private static needsBetterStructure(text: string): boolean {
-    return !this.hasLogicalFlow(text) && text.split('.').length > 2;
-  }
-
-  private static needsValidation(text: string): boolean {
-    const validationWords = ['verify', 'check', 'confirm', 'validate', 'test', 'ensure'];
-    return !validationWords.some(word => new RegExp(`\\b${word}\\b`, 'i').test(text));
-  }
-
-  private static getTechnicalAssessment(text: string): string {
-    const issues = [
-      this.needsMorePrecision(text),
-      this.needsBetterStructure(text),
-      this.needsValidation(text)
-    ].filter(Boolean).length;
-
-    if (issues === 0) return 'OPTIMAL - All systems functioning correctly';
-    if (issues === 1) return 'MINOR_ISSUES - One area needs attention';
-    if (issues === 2) return 'MODERATE_ISSUES - Multiple areas need improvement';
-    return 'CRITICAL_ISSUES - Significant optimization required';
-  }
-
-  private static getNextSteps(text: string): string {
-    if (this.needsMorePrecision(text)) return 'Increase precision and specificity';
-    if (this.needsBetterStructure(text)) return 'Implement logical structure improvements';
-    if (this.needsValidation(text)) return 'Add validation and verification steps';
-    return 'Continue with current approach - system is optimized';
-  }
-
-  // General assessment helpers
   private static getGeneralStrengths(text: string): string {
     const strengths = [];
     
     if (this.hasPersonalPronouns(text)) strengths.push('Personal and engaging tone');
-    if (this.hasSpecificDetails(text)) strengths.push('Includes specific details');
-    if (this.hasLogicalFlow(text)) strengths.push('Good logical structure');
-    if (!this.hasAmbiguousTerms(text)) strengths.push('Clear and precise language');
+    if (!this.hasJargon(text)) strengths.push('Clear and accessible language');
+    if (!this.isTooWordy(text)) strengths.push('Concise communication');
     
     return strengths.length > 0 ? strengths[0] : 'Communicates the main message';
   }
@@ -571,9 +361,9 @@ I've reviewed your ${wordCount}-word text. Here are my observations:
   private static getGeneralWeaknesses(text: string): string {
     const weaknesses = [];
     
-    if (this.hasAmbiguousTerms(text)) weaknesses.push('Contains vague terms');
-    if (!this.hasLogicalFlow(text) && text.split('.').length > 2) weaknesses.push('Could improve flow between ideas');
-    if (!this.hasSpecificDetails(text)) weaknesses.push('Could use more specific examples');
+    if (this.hasJargon(text)) weaknesses.push('Contains technical jargon');
+    if (this.isTooWordy(text)) weaknesses.push('Could be more concise');
+    if (!this.hasPersonalPronouns(text)) weaknesses.push('Could be more personal');
     
     return weaknesses.length > 0 ? weaknesses[0] : 'Minor areas for improvement';
   }
@@ -583,7 +373,6 @@ I've reviewed your ${wordCount}-word text. Here are my observations:
     
     if (text.split(/\s+/).length < 30) suggestions.push('Consider expanding with more detail');
     if (text.split(/\s+/).length > 200) suggestions.push('Consider condensing for better impact');
-    if (!this.hasCallToAction(text)) suggestions.push('Add a clear next step for readers');
     
     return suggestions.length > 0 ? suggestions[0] : 'Continue refining based on your audience needs';
   }

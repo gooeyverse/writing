@@ -44,7 +44,7 @@ function App() {
     });
   };
 
-  const handleSendMessage = async (message: string, mentionedAgentIds: string[]) => {
+  const handleSendMessage = async (message: string, mentionedAgentIds: string[], messageType: 'feedback' | 'chat' = 'chat') => {
     if (!message.trim()) return;
 
     // Add user message
@@ -53,7 +53,8 @@ function App() {
       type: 'user',
       content: message,
       timestamp: new Date(),
-      mentionedAgents: mentionedAgentIds
+      mentionedAgents: mentionedAgentIds,
+      messageType
     };
 
     setChatMessages(prev => [...prev, userMessage]);
@@ -62,20 +63,32 @@ function App() {
     // Determine which agents to respond
     const respondingAgentIds = mentionedAgentIds.length > 0 ? mentionedAgentIds : selectedAgentIds;
     
-    // Generate feedback from mentioned or selected agents
+    // Generate responses from mentioned or selected agents
     for (const agentId of respondingAgentIds) {
       const agent = agents.find(a => a.id === agentId);
       if (agent) {
         try {
-          const feedback = await TextRewriter.provideFeedback(message, agent);
+          let response: string;
+          
+          // Determine response type based on message content and type
+          if (messageType === 'feedback' || isRequestingFeedback(message)) {
+            response = await TextRewriter.provideFeedback(message, agent);
+          } else if (isRequestingRewrite(message)) {
+            response = await TextRewriter.rewrite(message, agent);
+          } else {
+            // For general chat, provide conversational feedback/advice
+            response = await TextRewriter.provideConversationalResponse(message, agent, chatMessages);
+          }
           
           const agentMessage: ChatMessage = {
             id: `${agentId}-${Date.now()}-${Math.random()}`,
             type: 'agent',
-            content: feedback,
+            content: response,
             timestamp: new Date(),
             agentId,
-            originalMessage: message
+            originalMessage: message,
+            responseType: messageType === 'feedback' || isRequestingFeedback(message) ? 'feedback' : 
+                         isRequestingRewrite(message) ? 'rewrite' : 'conversation'
           };
 
           setChatMessages(prev => [...prev, agentMessage]);
@@ -89,16 +102,17 @@ function App() {
             )
           );
         } catch (error) {
-          console.error(`Error getting feedback from agent ${agent.name}:`, error);
+          console.error(`Error getting response from agent ${agent.name}:`, error);
           
           // Add error message
           const errorMessage: ChatMessage = {
             id: `${agentId}-error-${Date.now()}-${Math.random()}`,
             type: 'agent',
-            content: `Sorry, I encountered an error while analyzing your text. Please try again.`,
+            content: `Sorry, I encountered an error while processing your request. Please try again.`,
             timestamp: new Date(),
             agentId,
-            originalMessage: message
+            originalMessage: message,
+            responseType: 'error'
           };
 
           setChatMessages(prev => [...prev, errorMessage]);
@@ -110,6 +124,31 @@ function App() {
     }
 
     setIsProcessing(false);
+  };
+
+  // Helper functions to detect message intent
+  const isRequestingFeedback = (message: string): boolean => {
+    const feedbackKeywords = [
+      'feedback', 'analyze', 'review', 'critique', 'assess', 'evaluate', 
+      'what do you think', 'how is this', 'thoughts on', 'opinion on',
+      'check this', 'look at this', 'rate this', 'judge this'
+    ];
+    return feedbackKeywords.some(keyword => 
+      message.toLowerCase().includes(keyword.toLowerCase())
+    );
+  };
+
+  const isRequestingRewrite = (message: string): boolean => {
+    const rewriteKeywords = [
+      'rewrite', 'rephrase', 'reword', 'revise', 'edit', 'improve',
+      'make it', 'change it to', 'turn this into', 'convert this',
+      'make this more', 'make this less', 'simplify', 'formalize',
+      'casualize', 'shorten', 'expand', 'professional version',
+      'casual version', 'better version'
+    ];
+    return rewriteKeywords.some(keyword => 
+      message.toLowerCase().includes(keyword.toLowerCase())
+    );
   };
 
   const handleFeedback = (messageId: string, rating: 'positive' | 'negative') => {
@@ -140,9 +179,8 @@ function App() {
   const handleGetFeedback = async () => {
     if (!originalText.trim() || selectedAgentIds.length === 0) return;
     
-    // Send message but DON'T clear the text editor
-    await handleSendMessage(originalText, []);
-    // Remove this line: setOriginalText('');
+    // Send message as feedback type but DON'T clear the text editor
+    await handleSendMessage(originalText, [], 'feedback');
   };
 
   const handleTrainAgent = (agent: Agent) => {

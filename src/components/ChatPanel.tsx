@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, ThumbsUp, ThumbsDown, Copy, Download, MessageCircle, Bot } from 'lucide-react';
+import { Send, ThumbsUp, ThumbsDown, Copy, Download, MessageCircle, Bot, Sparkles, Edit3, MessageSquare } from 'lucide-react';
 import { Agent, ChatMessage } from '../types';
 
 interface ChatPanelProps {
   messages: ChatMessage[];
   agents: Agent[];
   selectedAgents: Agent[];
-  onSendMessage: (message: string, mentionedAgentIds: string[]) => void;
+  onSendMessage: (message: string, mentionedAgentIds: string[], messageType?: 'feedback' | 'chat') => void;
   onFeedback: (messageId: string, rating: 'positive' | 'negative') => void;
   isProcessing: boolean;
   showMessagesArea?: boolean;
@@ -94,11 +94,27 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
     return mentionedAgentIds;
   };
 
+  const detectMessageIntent = (message: string): 'feedback' | 'chat' => {
+    const feedbackKeywords = [
+      'feedback', 'analyze', 'review', 'critique', 'assess', 'evaluate', 
+      'what do you think', 'how is this', 'thoughts on', 'opinion on',
+      'check this', 'look at this', 'rate this', 'judge this'
+    ];
+    
+    const isRequestingFeedback = feedbackKeywords.some(keyword => 
+      message.toLowerCase().includes(keyword.toLowerCase())
+    );
+    
+    return isRequestingFeedback ? 'feedback' : 'chat';
+  };
+
   const handleSend = () => {
     if (!inputMessage.trim() || isProcessing) return;
     
     const mentionedAgentIds = extractMentions(inputMessage);
-    onSendMessage(inputMessage, mentionedAgentIds);
+    const messageType = detectMessageIntent(inputMessage);
+    
+    onSendMessage(inputMessage, mentionedAgentIds, messageType);
     setInputMessage('');
   };
 
@@ -136,6 +152,40 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
     }).format(date);
   };
 
+  const getResponseIcon = (responseType?: string) => {
+    switch (responseType) {
+      case 'feedback':
+        return <MessageSquare className="w-3 h-3" />;
+      case 'rewrite':
+        return <Edit3 className="w-3 h-3" />;
+      case 'conversation':
+        return <MessageCircle className="w-3 h-3" />;
+      default:
+        return <Sparkles className="w-3 h-3" />;
+    }
+  };
+
+  const getResponseLabel = (responseType?: string) => {
+    switch (responseType) {
+      case 'feedback':
+        return 'Feedback';
+      case 'rewrite':
+        return 'Rewrite';
+      case 'conversation':
+        return 'Chat';
+      default:
+        return 'Response';
+    }
+  };
+
+  // Quick action suggestions
+  const quickActions = [
+    { text: "Can you give me feedback on this?", icon: MessageSquare },
+    { text: "Please rewrite this to be more professional", icon: Edit3 },
+    { text: "Make this more casual and friendly", icon: MessageCircle },
+    { text: "How can I improve this writing?", icon: Sparkles }
+  ];
+
   return (
     <div className="flex flex-col h-full">
       {/* Header - Only show if messages area is visible */}
@@ -144,9 +194,9 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
           <div className="flex items-center space-x-3">
             <MessageCircle className="w-6 h-6 text-black" />
             <div>
-              <h2 className="text-lg font-semibold text-black">Agent Feedback</h2>
+              <h2 className="text-lg font-semibold text-black">Agent Chat</h2>
               <p className="text-sm text-gray-700">
-                Get detailed feedback from your selected agents • Use @AgentName to mention specific agents
+                Get feedback, rewrites, and have conversations with your agents • Use @AgentName to mention specific agents
               </p>
             </div>
           </div>
@@ -159,10 +209,25 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
               <Bot className="w-12 h-12 text-gray-500 mb-4" />
-              <h3 className="text-lg font-medium text-black mb-2">Start getting feedback</h3>
-              <p className="text-gray-600 mb-4 max-w-sm">
-                Send a message to get detailed feedback from your selected agents, or mention specific agents using @AgentName
+              <h3 className="text-lg font-medium text-black mb-2">Start a conversation</h3>
+              <p className="text-gray-600 mb-6 max-w-sm">
+                Chat naturally with your agents. Ask for feedback, request rewrites, or have conversations about your writing.
               </p>
+              
+              {/* Quick action buttons */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-md mb-6">
+                {quickActions.map((action, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setInputMessage(action.text)}
+                    className="flex items-center space-x-2 px-3 py-2 bg-white border-2 border-gray-400 rounded-lg hover:border-black hover:bg-gray-100 transition-colors text-sm text-left"
+                  >
+                    <action.icon className="w-4 h-4 text-gray-600" />
+                    <span className="text-black">{action.text}</span>
+                  </button>
+                ))}
+              </div>
+              
               <div className="flex flex-wrap gap-2 justify-center">
                 {selectedAgents.slice(0, 3).map(agent => (
                   <div key={agent.id} className="flex items-center space-x-2 px-3 py-1 bg-gray-100 rounded-full text-sm text-black border border-gray-400">
@@ -208,8 +273,9 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                             <span className="font-medium text-black">
                               {agents.find(a => a.id === message.agentId)?.name}
                             </span>
-                            <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded-full border border-gray-300">
-                              Feedback
+                            <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded-full border border-gray-300 flex items-center space-x-1">
+                              {getResponseIcon(message.responseType)}
+                              <span>{getResponseLabel(message.responseType)}</span>
                             </span>
                             {message.rating && (
                               <div className={`px-2 py-1 rounded-full text-xs font-medium border ${
@@ -242,14 +308,14 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                               <button
                                 onClick={() => copyToClipboard(message.content)}
                                 className="p-1 text-gray-500 hover:text-black rounded border border-gray-300"
-                                title="Copy feedback"
+                                title="Copy response"
                               >
                                 <Copy className="w-3 h-3" />
                               </button>
                               <button
-                                onClick={() => downloadText(message.content, `${agents.find(a => a.id === message.agentId)?.name.toLowerCase()}-feedback.txt`)}
+                                onClick={() => downloadText(message.content, `${agents.find(a => a.id === message.agentId)?.name.toLowerCase()}-response.txt`)}
                                 className="p-1 text-gray-500 hover:text-black rounded border border-gray-300"
-                                title="Download feedback"
+                                title="Download response"
                               >
                                 <Download className="w-3 h-3" />
                               </button>
@@ -260,7 +326,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                                     ? 'text-black bg-gray-100 border-gray-400'
                                     : 'text-gray-500 hover:text-black hover:bg-gray-100 border-gray-300'
                                 }`}
-                                title="Helpful feedback"
+                                title="Helpful response"
                               >
                                 <ThumbsUp className="w-3 h-3" />
                               </button>
@@ -293,7 +359,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                         <div className="w-2 h-2 bg-black rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                         <div className="w-2 h-2 bg-black rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                       </div>
-                      <span className="text-sm text-gray-700">Agents are analyzing...</span>
+                      <span className="text-sm text-gray-700">Agents are thinking...</span>
                     </div>
                   </div>
                 </div>
@@ -339,28 +405,33 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                 value={inputMessage}
                 onChange={handleInputChange}
                 onKeyPress={handleKeyPress}
-                placeholder={`Type your text here to get feedback... Use @AgentName to mention specific selected agents (${selectedAgents.map(a => a.name).join(', ')})`}
+                placeholder={`Ask for feedback, request rewrites, or chat naturally... Use @AgentName to mention specific agents (${selectedAgents.map(a => a.name).join(', ')})`}
                 className="w-full h-full p-4 border-2 border-gray-400 rounded-lg resize-none focus:ring-2 focus:ring-black focus:border-black bg-white text-black"
               />
             </div>
             
             {/* Bottom controls */}
             <div className="flex items-center justify-between">
-              {/* Agent info */}
-              {selectedAgents.length > 0 && (
-                <div className="flex items-center space-x-2 text-xs text-gray-600">
-                  <span>Default feedback from:</span>
-                  {selectedAgents.slice(0, 3).map(agent => (
-                    <span key={agent.id} className="flex items-center space-x-1">
-                      <span>{agent.avatar}</span>
-                      <span>{agent.name}</span>
-                    </span>
-                  ))}
-                  {selectedAgents.length > 3 && (
-                    <span>+{selectedAgents.length - 3} more</span>
-                  )}
+              {/* Agent info and examples */}
+              <div className="flex flex-col space-y-1">
+                {selectedAgents.length > 0 && (
+                  <div className="flex items-center space-x-2 text-xs text-gray-600">
+                    <span>Available agents:</span>
+                    {selectedAgents.slice(0, 3).map(agent => (
+                      <span key={agent.id} className="flex items-center space-x-1">
+                        <span>{agent.avatar}</span>
+                        <span>{agent.name}</span>
+                      </span>
+                    ))}
+                    {selectedAgents.length > 3 && (
+                      <span>+{selectedAgents.length - 3} more</span>
+                    )}
+                  </div>
+                )}
+                <div className="text-xs text-gray-500">
+                  Try: "Give me feedback", "Rewrite this professionally", "Make it more casual"
                 </div>
-              )}
+              </div>
               
               {/* Send button */}
               <button
@@ -369,7 +440,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                 className="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2 border-2 border-black"
               >
                 <Send className="w-4 h-4" />
-                <span>Get Feedback</span>
+                <span>Send</span>
               </button>
             </div>
           </div>
