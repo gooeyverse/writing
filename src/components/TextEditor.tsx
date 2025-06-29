@@ -92,6 +92,12 @@ export const TextEditor: React.FC<TextEditorProps> = ({
       
       setSelectedText(selected);
       setSelectionRange({ start, end });
+
+      // Trigger first highlight callback when text is selected for the first time
+      if (selected.trim() && !hasHighlightedBefore && onFirstHighlight) {
+        setHasHighlightedBefore(true);
+        onFirstHighlight();
+      }
     }
   };
 
@@ -177,12 +183,6 @@ export const TextEditor: React.FC<TextEditorProps> = ({
       };
       
       setHighlights([...remainingHighlights, newHighlight]);
-
-      // Trigger first highlight callback if this is the first time highlighting
-      if (!hasHighlightedBefore && onFirstHighlight) {
-        setHasHighlightedBefore(true);
-        onFirstHighlight();
-      }
     }
 
     // Restore focus and selection
@@ -494,7 +494,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
                     <li>• Right-click to ask agents for feedback or rewriting help</li>
                     <li>• Highlighted text is preserved when sharing with agents</li>
                     <li>• Highlights are visual only - no special syntax added to text</li>
-                    <li>• <strong>First highlight opens the chat panel automatically!</strong></li>
+                    <li>• <strong>Selecting text for the first time opens the chat panel automatically!</strong></li>
                   </ul>
                 </div>
               )}
