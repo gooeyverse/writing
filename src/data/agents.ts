@@ -28,19 +28,6 @@ export const defaultAgents: Agent[] = [
     customInstructions: 'Keep it friendly and conversational, use contractions naturally'
   },
   {
-    id: 'victoria',
-    name: 'Victoria',
-    description: 'Sales expert who knows how to persuade',
-    avatar: '🎯',
-    personality: 'Confident and compelling',
-    writingStyle: 'Persuasive with strong calls-to-action',
-    active: true,
-    accuracy: 91,
-    totalRewrites: 634,
-    createdAt: new Date('2024-01-25'),
-    customInstructions: 'Focus on benefits, create urgency, and include clear action steps'
-  },
-  {
     id: 'professor-chen',
     name: 'Professor Chen',
     description: 'Academic researcher with scholarly precision',
@@ -78,18 +65,5 @@ export const defaultAgents: Agent[] = [
     totalRewrites: 356,
     createdAt: new Date('2024-02-10'),
     customInstructions: 'Use precise technical language, include step-by-step instructions, avoid ambiguity'
-  },
-  {
-    id: 'sam',
-    name: 'Sam',
-    description: 'Straight-talking communicator who keeps it simple',
-    avatar: '😊',
-    personality: 'Casual and concise',
-    writingStyle: 'Simple, direct language with short sentences',
-    active: true,
-    accuracy: 88,
-    totalRewrites: 0,
-    createdAt: new Date('2024-02-15'),
-    customInstructions: 'Use everyday words, keep sentences short, avoid jargon, be friendly but brief'
   }
 ];
