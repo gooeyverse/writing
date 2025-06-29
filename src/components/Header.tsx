@@ -1,4 +1,5 @@
 import React from 'react';
+import boltLogo from '../assets/black_circle_360x360.svg';
 
 interface HeaderProps {
   onShowStats: () => void;
@@ -49,7 +50,7 @@ const BoltBadge: React.FC = () => (
     title="Built with Bolt"
   >
     <img 
-      src="/src/assets/black_circle_360x360.svg" 
+      src={boltLogo}
       alt="Bolt" 
       className="w-10 h-10"
     />
