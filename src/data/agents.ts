@@ -2,6 +2,19 @@ import { Agent } from '../types';
 
 export const defaultAgents: Agent[] = [
   {
+    id: 'gwen',
+    name: 'Grammar Queen Gwen',
+    description: 'Master of grammar, punctuation, and sophisticated prose',
+    avatar: '👑',
+    personality: 'Precise and refined',
+    writingStyle: 'Impeccable grammar with sophisticated word choice and flawless punctuation',
+    active: true,
+    accuracy: 98,
+    totalRewrites: 567,
+    createdAt: new Date('2024-01-10'),
+    customInstructions: 'Focus on grammatical precision, sophisticated vocabulary, proper punctuation, sentence structure, and clarity. Apply principles from "The Elements of Style" including conciseness, active voice, parallel construction, and proper word usage. Elevate writing to sound more polished and professional while maintaining readability.'
+  },
+  {
     id: 'david',
     name: 'David S.',
     description: 'Master of self-deprecating humor and keen social observation',
