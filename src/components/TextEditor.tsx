@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, Users, Highlighter, Undo, Redo, HelpCircle, Edit3, FileText, Type, X, ChevronRight, Send } from 'lucide-react';
+import { MessageSquare, Users, Highlighter, Undo, Redo, HelpCircle, Edit3, FileText, Type, X, ChevronRight, Send, Sparkles } from 'lucide-react';
 import { Agent } from '../types';
 
 interface TextEditorProps {
@@ -188,6 +188,30 @@ export const TextEditor: React.FC<TextEditorProps> = ({
         questionAgent: null
       });
     }
+  };
+
+  // Handle toolbar context menu button click
+  const handleToolbarContextMenu = () => {
+    if (selectedAgents.length === 0) return;
+    
+    // Use selected text if available, otherwise use full text
+    const textToUse = selectedText.trim() || originalText.trim();
+    if (!textToUse) return;
+
+    // Position the context menu in the center of the viewport
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+
+    setContextMenu({
+      show: true,
+      position: { x: centerX - 100, y: centerY - 100 }, // Offset to center the menu
+      selectedText: textToUse,
+      hoveredAgent: null,
+      submenuPosition: null,
+      showQuestionInput: false,
+      questionText: '',
+      questionAgent: null
+    });
   };
 
   const handleAgentHover = (agentId: string, event: React.MouseEvent) => {
@@ -574,6 +598,9 @@ export const TextEditor: React.FC<TextEditorProps> = ({
   const selectionWithinHighlight = selectionRange ? 
     findContainingHighlight(selectionRange.start, selectionRange.end) !== null : false;
 
+  // Determine if we should show the context menu button
+  const showContextMenuButton = (selectedText.trim() || originalText.trim()) && selectedAgents.length > 0;
+
   return (
     <div className="flex flex-col h-full">
       {/* Rich Text Editor - Takes full height without header */}
@@ -652,6 +679,25 @@ export const TextEditor: React.FC<TextEditorProps> = ({
                 <Highlighter className="w-4 h-4" />
               )}
             </button>
+
+            {/* Context Menu Button - Only show when text is available and agents are selected */}
+            {showContextMenuButton && (
+              <>
+                {/* Divider */}
+                <div className="w-px h-6 bg-gray-300 mx-2" />
+                
+                <button
+                  onClick={handleToolbarContextMenu}
+                  className="p-2 text-purple-600 hover:text-purple-800 hover:bg-purple-100 rounded transition-colors"
+                  title={selectedText.trim() 
+                    ? `Ask agents about selected text: "${selectedText.length > 20 ? selectedText.substring(0, 20) + '...' : selectedText}"`
+                    : 'Ask agents about your writing'
+                  }
+                >
+                  <Sparkles className="w-4 h-4" />
+                </button>
+              </>
+            )}
           </div>
 
           {/* Status Info with Help Tooltip */}
@@ -713,7 +759,11 @@ export const TextEditor: React.FC<TextEditorProps> = ({
                       <Redo className="w-3 h-3" />
                       <span>buttons for undo/redo</span>
                     </li>
-                    <li>• Right-click to ask agents for feedback or rewriting help</li>
+                    <li className="flex items-center space-x-1">
+                      <span>• Click the</span>
+                      <Sparkles className="w-3 h-3 text-purple-400" />
+                      <span>button or right-click to ask agents for help</span>
+                    </li>
                     <li>• Highlighted text is preserved when sharing with agents</li>
                     <li>• Highlights are visual only - no special syntax added to text</li>
                   </ul>
