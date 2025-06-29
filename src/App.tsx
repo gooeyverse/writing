@@ -22,7 +22,6 @@ function App() {
   
   // Layout state - Chat panel now defaults to 33%
   const [editorWidth, setEditorWidth] = useState<number>(67);
-  const [chatHeight, setChatHeight] = useState<number>(70);
 
   // Scroll control ref
   const agentsScrollRef = useRef<HTMLDivElement>(null);
@@ -344,17 +343,10 @@ function App() {
           </div>
         </ResizablePanel>
 
-        {/* Right Panel - Chat Interface (Resizable) - Now defaults to 33% */}
+        {/* Right Panel - Chat Interface - Fixed Layout with Anchored Input */}
         <div className="flex-1 border-l border-black bg-white flex flex-col overflow-hidden">
-          {/* Chat Messages Area (Resizable) */}
-          <ResizablePanel
-            direction="vertical"
-            initialSize={chatHeight}
-            minSize={40}
-            maxSize={85}
-            onResize={setChatHeight}
-            className="flex flex-col"
-          >
+          {/* Chat Messages Area - Scrollable */}
+          <div className="flex-1 overflow-hidden">
             <ChatPanel
               messages={chatMessages}
               agents={agents}
@@ -364,10 +356,10 @@ function App() {
               isProcessing={isProcessing}
               showInputArea={false}
             />
-          </ResizablePanel>
+          </div>
 
-          {/* Chat Input Area (Fixed at bottom) */}
-          <div className="flex-1 border-t-2 border-black bg-white">
+          {/* Chat Input Area - Fixed at bottom, always visible */}
+          <div className="flex-shrink-0 border-t-2 border-black bg-white">
             <ChatPanel
               messages={[]}
               agents={agents}
