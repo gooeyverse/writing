@@ -249,10 +249,18 @@ export const TextEditor: React.FC<TextEditorProps> = ({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Rich Text Editor */}
-      <div className="bg-white rounded-xl border-2 border-black shadow-sm flex-1 flex flex-col">
+      {/* Header */}
+      <div className="mb-6 flex-shrink-0">
+        <h2 className="text-2xl font-bold text-black mb-2">Text Editor</h2>
+        <p className="text-gray-700">
+          Write your text here and get detailed feedback from your selected agents, or use the chat panel to have conversations with specific agents.
+        </p>
+      </div>
+
+      {/* Rich Text Editor - Takes remaining height */}
+      <div className="bg-white rounded-xl border-2 border-black shadow-sm flex-1 flex flex-col min-h-0">
         {/* Simplified Toolbar */}
-        <div className="toolbar-container px-4 py-3 border-b border-gray-300 flex items-center justify-between bg-gray-50">
+        <div className="toolbar-container px-4 py-3 border-b border-gray-300 flex items-center justify-between bg-gray-50 flex-shrink-0">
           <div className="flex items-center space-x-1">
             {/* Undo/Redo */}
             <button
@@ -338,10 +346,10 @@ export const TextEditor: React.FC<TextEditorProps> = ({
           </div>
         </div>
         
-        {/* Text Area Container */}
-        <div className="p-6 flex-1 flex flex-col relative">
+        {/* Text Area Container - Takes remaining height */}
+        <div className="p-6 flex-1 flex flex-col relative min-h-0">
           {/* Always-visible Text Editor with Rich Text Background */}
-          <div className="relative flex-1">
+          <div className="relative flex-1 min-h-0">
             {/* Rich Text Background Layer - Shows highlighted text without == markers */}
             <div 
               className="absolute inset-0 p-4 border-2 border-transparent rounded-lg pointer-events-none overflow-hidden whitespace-pre-wrap break-words z-0"
@@ -375,7 +383,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
               onKeyDown={handleKeyDown}
               onContextMenu={handleContextMenu}
               placeholder="Start writing here... Select text and click the highlight button to apply yellow highlighting."
-              className="relative w-full h-full p-4 border-2 border-gray-400 rounded-lg resize-none focus:ring-2 focus:ring-black focus:border-black min-h-64 bg-transparent text-black font-mono leading-relaxed focus:outline-none z-10"
+              className="relative w-full h-full p-4 border-2 border-gray-400 rounded-lg resize-none focus:ring-2 focus:ring-black focus:border-black bg-transparent text-black font-mono leading-relaxed focus:outline-none z-10"
               style={{ 
                 fontFamily: 'JetBrains Mono, Courier New, monospace',
                 fontSize: '14px',
@@ -386,7 +394,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
           </div>
 
           {/* Bottom Controls */}
-          <div className="flex justify-between items-center mt-4">
+          <div className="flex justify-between items-center mt-4 flex-shrink-0">
             <div className="flex items-center space-x-3 text-sm text-gray-600">
               {selectedAgents.length > 1 && (
                 <div className="flex items-center space-x-2">

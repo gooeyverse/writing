@@ -257,7 +257,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="h-screen bg-white flex flex-col overflow-hidden">
       <Header 
         onShowStats={() => {}}
         onShowSettings={() => {}}
@@ -332,8 +332,8 @@ function App() {
         )}
       </div>
 
-      {/* Main Content - Resizable Split Layout */}
-      <div className="flex-1 flex overflow-hidden">
+      {/* Main Content - Resizable Split Layout with full height */}
+      <div className="flex-1 flex overflow-hidden min-h-0">
         {/* Left Panel - Text Editor (Resizable) */}
         <ResizablePanel
           direction="horizontal"
@@ -341,22 +341,24 @@ function App() {
           minSize={30}
           maxSize={70}
           onResize={setEditorWidth}
-          className="overflow-y-auto"
+          className="overflow-hidden"
         >
-          <div className="p-6 h-full">
-            <TextEditor
-              originalText={originalText}
-              onOriginalChange={setOriginalText}
-              onGetFeedback={handleGetFeedback}
-              isProcessing={isProcessing}
-              selectedAgents={selectedAgents}
-              onSendMessage={handleSendMessage}
-            />
+          <div className="h-full overflow-y-auto">
+            <div className="p-6 h-full">
+              <TextEditor
+                originalText={originalText}
+                onOriginalChange={setOriginalText}
+                onGetFeedback={handleGetFeedback}
+                isProcessing={isProcessing}
+                selectedAgents={selectedAgents}
+                onSendMessage={handleSendMessage}
+              />
+            </div>
           </div>
         </ResizablePanel>
 
         {/* Right Panel - Chat Interface (Resizable) */}
-        <div className="flex-1 border-l border-black bg-white flex flex-col overflow-hidden">
+        <div className="flex-1 border-l border-black bg-white flex flex-col overflow-hidden min-w-0">
           {/* Chat Messages Area (Resizable) */}
           <ResizablePanel
             direction="vertical"
@@ -364,7 +366,7 @@ function App() {
             minSize={40}
             maxSize={85}
             onResize={setChatHeight}
-            className="flex flex-col"
+            className="flex flex-col overflow-hidden"
           >
             <ChatPanel
               messages={chatMessages}
@@ -379,7 +381,7 @@ function App() {
           </ResizablePanel>
 
           {/* Chat Input Area (Fixed at bottom) */}
-          <div className="flex-1 border-t-2 border-black bg-white">
+          <div className="flex-shrink-0 border-t-2 border-black bg-white">
             <ChatPanel
               messages={[]}
               agents={agents}
