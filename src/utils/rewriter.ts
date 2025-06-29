@@ -66,12 +66,22 @@ export class TextRewriter {
     chatHistory: ChatMessage[]
   ): Promise<string> {
     try {
+      // Filter chat history to include relevant context for this agent
+      // Include the last 10 messages but prioritize messages involving this agent
+      const relevantHistory = chatHistory
+        .filter(msg => 
+          msg.type === 'user' || 
+          msg.agentId === agent.id || 
+          (msg.type === 'user' && msg.mentionedAgents?.includes(agent.id))
+        )
+        .slice(-10); // Keep last 10 relevant messages
+
       // Call Supabase Edge Function for conversational response
       const { data, error } = await supabase.functions.invoke('openai-conversation', {
         body: {
           message,
           agent,
-          chatHistory: chatHistory.slice(-6) // Send last 6 messages for context
+          chatHistory: relevantHistory
         }
       });
 
