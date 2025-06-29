@@ -126,19 +126,55 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     setContextMenu({ show: false, position: { x: 0, y: 0 }, selectedText: '' });
   };
 
+  // Check if a range overlaps with any existing highlights
+  const findOverlappingHighlight = (start: number, end: number): HighlightRange | null => {
+    return highlights.find(highlight => 
+      // Check for any overlap
+      (start < highlight.end && end > highlight.start)
+    ) || null;
+  };
+
+  // Check if a range is completely contained within an existing highlight
+  const findContainingHighlight = (start: number, end: number): HighlightRange | null => {
+    return highlights.find(highlight => 
+      start >= highlight.start && end <= highlight.end
+    ) || null;
+  };
+
   const applyHighlight = () => {
     if (!selectionRange || !textareaRef.current) return;
 
     const { start, end } = selectionRange;
     
-    // Add highlight range to our highlights array
-    const newHighlight: HighlightRange = {
-      start,
-      end,
-      id: Date.now().toString()
-    };
+    // If no text is selected, do nothing
+    if (start === end) return;
+
+    // Check if the selection is completely within an existing highlight
+    const containingHighlight = findContainingHighlight(start, end);
     
-    setHighlights(prev => [...prev, newHighlight]);
+    if (containingHighlight) {
+      // Remove the containing highlight
+      setHighlights(prev => prev.filter(h => h.id !== containingHighlight.id));
+    } else {
+      // Check for overlapping highlights and remove them
+      const overlappingHighlights = highlights.filter(highlight => 
+        start < highlight.end && end > highlight.start
+      );
+      
+      // Remove overlapping highlights
+      const remainingHighlights = highlights.filter(highlight => 
+        !(start < highlight.end && end > highlight.start)
+      );
+      
+      // Add new highlight
+      const newHighlight: HighlightRange = {
+        start,
+        end,
+        id: Date.now().toString()
+      };
+      
+      setHighlights([...remainingHighlights, newHighlight]);
+    }
 
     // Restore focus and selection
     setTimeout(() => {
@@ -178,6 +214,77 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     }
   };
 
+  // Handle clicks on highlighted text to remove highlights
+  const handleHighlightClick = (e: React.MouseEvent) => {
+    if (!textareaRef.current) return;
+
+    // Get click position in textarea
+    const rect = textareaRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    // Get character position from click coordinates
+    const clickPosition = getCharacterPositionFromCoordinates(x, y);
+    
+    if (clickPosition !== null) {
+      // Find highlight at this position
+      const clickedHighlight = highlights.find(highlight => 
+        clickPosition >= highlight.start && clickPosition < highlight.end
+      );
+      
+      if (clickedHighlight) {
+        // Remove the clicked highlight
+        setHighlights(prev => prev.filter(h => h.id !== clickedHighlight.id));
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    }
+  };
+
+  // Helper function to get character position from coordinates (approximate)
+  const getCharacterPositionFromCoordinates = (x: number, y: number): number | null => {
+    if (!textareaRef.current) return null;
+
+    // Create a temporary element to measure text
+    const temp = document.createElement('div');
+    temp.style.position = 'absolute';
+    temp.style.visibility = 'hidden';
+    temp.style.whiteSpace = 'pre-wrap';
+    temp.style.font = window.getComputedStyle(textareaRef.current).font;
+    temp.style.width = textareaRef.current.clientWidth + 'px';
+    temp.style.padding = window.getComputedStyle(textareaRef.current).padding;
+    temp.style.border = window.getComputedStyle(textareaRef.current).border;
+    temp.style.lineHeight = window.getComputedStyle(textareaRef.current).lineHeight;
+    
+    document.body.appendChild(temp);
+
+    // Estimate character position based on coordinates
+    const lineHeight = parseInt(window.getComputedStyle(textareaRef.current).lineHeight);
+    const estimatedLine = Math.floor(y / lineHeight);
+    
+    // Split text into lines
+    const lines = originalText.split('\n');
+    let characterPosition = 0;
+    
+    // Add characters from previous lines
+    for (let i = 0; i < estimatedLine && i < lines.length; i++) {
+      characterPosition += lines[i].length + 1; // +1 for newline
+    }
+    
+    // Estimate position within the current line
+    if (estimatedLine < lines.length) {
+      const currentLine = lines[estimatedLine];
+      temp.textContent = currentLine;
+      const lineWidth = temp.offsetWidth;
+      const estimatedCharInLine = Math.round((x / lineWidth) * currentLine.length);
+      characterPosition += Math.min(estimatedCharInLine, currentLine.length);
+    }
+    
+    document.body.removeChild(temp);
+    
+    return Math.min(characterPosition, originalText.length);
+  };
+
   // Render text with highlights (no markdown syntax)
   const renderHighlightedText = (text: string) => {
     if (!text || highlights.length === 0) return text;
@@ -198,9 +305,14 @@ export const TextEditor: React.FC<TextEditorProps> = ({
         );
       }
 
-      // Add highlighted text
+      // Add highlighted text with click handler
       result.push(
-        <span key={highlight.id} className="bg-yellow-200 rounded px-1">
+        <span 
+          key={highlight.id} 
+          className="bg-yellow-200 rounded px-1 cursor-pointer hover:bg-yellow-300 transition-colors"
+          onClick={handleHighlightClick}
+          title="Click to remove highlight"
+        >
           {text.substring(highlight.start, highlight.end)}
         </span>
       );
@@ -224,6 +336,13 @@ export const TextEditor: React.FC<TextEditorProps> = ({
   const isEmpty = !originalText.trim();
   const isInteractive = isHovered && !isFocused; // Only show hover effects when not focused
   
+  // Check if current selection overlaps with existing highlights
+  const selectionOverlapsHighlight = selectionRange ? 
+    findOverlappingHighlight(selectionRange.start, selectionRange.end) !== null : false;
+  
+  const selectionWithinHighlight = selectionRange ? 
+    findContainingHighlight(selectionRange.start, selectionRange.end) !== null : false;
+
   return (
     <div className="flex flex-col h-full">
       {/* Rich Text Editor - Takes full height without header */}
@@ -274,12 +393,24 @@ export const TextEditor: React.FC<TextEditorProps> = ({
             {/* Divider */}
             <div className="w-px h-6 bg-gray-300 mx-2" />
 
-            {/* Yellow Highlight */}
+            {/* Yellow Highlight - Updated with toggle functionality */}
             <button
               onClick={applyHighlight}
               disabled={!selectedText}
-              className="p-2 text-yellow-600 hover:text-yellow-800 hover:bg-yellow-100 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              title="Highlight selected text"
+              className={`p-2 rounded transition-colors ${
+                !selectedText 
+                  ? 'text-gray-400 cursor-not-allowed' 
+                  : selectionWithinHighlight
+                    ? 'text-red-600 hover:text-red-800 hover:bg-red-100'
+                    : 'text-yellow-600 hover:text-yellow-800 hover:bg-yellow-100'
+              }`}
+              title={
+                !selectedText 
+                  ? 'Select text to highlight' 
+                  : selectionWithinHighlight
+                    ? 'Remove highlight from selected text'
+                    : 'Highlight selected text'
+              }
             >
               <Highlighter className="w-4 h-4" />
             </button>
@@ -288,8 +419,18 @@ export const TextEditor: React.FC<TextEditorProps> = ({
           {/* Status Info with Help Tooltip */}
           <div className="flex items-center space-x-4 text-sm text-gray-600">
             {selectedText && (
-              <span className="text-yellow-600 font-medium">
+              <span className={`font-medium ${
+                selectionWithinHighlight ? 'text-red-600' : 'text-yellow-600'
+              }`}>
                 "{selectedText.length > 15 ? selectedText.substring(0, 15) + '...' : selectedText}" selected
+                {selectionWithinHighlight && ' (will remove highlight)'}
+              </span>
+            )}
+            
+            {/* Highlight count */}
+            {highlights.length > 0 && (
+              <span className="text-yellow-600 font-medium">
+                {highlights.length} highlight{highlights.length > 1 ? 's' : ''}
               </span>
             )}
             
@@ -318,6 +459,8 @@ export const TextEditor: React.FC<TextEditorProps> = ({
                       <Highlighter className="w-3 h-3 text-yellow-400" />
                       <span>to apply yellow highlighting</span>
                     </li>
+                    <li>• Click on highlighted text to remove the highlight</li>
+                    <li>• Selecting text within a highlight will remove that highlight</li>
                     <li className="flex items-center space-x-1">
                       <span>• Use Ctrl+Z/Ctrl+Y or the</span>
                       <Undo className="w-3 h-3" />
