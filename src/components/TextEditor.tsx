@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, Users, Highlighter, Undo, Redo, HelpCircle, Edit3, FileText, Type, X, ChevronRight, Send } from 'lucide-react';
+import { MessageSquare, Users, Highlighter, Undo, Redo, HelpCircle, Edit3, FileText, Type, X, ChevronRight, Send, Wand2 } from 'lucide-react';
 import { Agent } from '../types';
 
 interface TextEditorProps {
@@ -38,6 +38,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
   const [showTooltip, setShowTooltip] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [magicWandPosition, setMagicWandPosition] = useState<{ x: number; y: number } | null>(null);
   const [contextMenu, setContextMenu] = useState<{ 
     show: boolean; 
     position: ContextMenuPosition; 
@@ -62,6 +63,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
   const contextMenuRef = useRef<HTMLDivElement>(null);
   const submenuRef = useRef<HTMLDivElement>(null);
   const questionInputRef = useRef<HTMLTextAreaElement>(null);
+  const magicWandRef = useRef<HTMLButtonElement>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [history, setHistory] = useState<string[]>([originalText]);
   const [historyIndex, setHistoryIndex] = useState(0);
@@ -80,7 +82,8 @@ export const TextEditor: React.FC<TextEditorProps> = ({
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (contextMenuRef.current && !contextMenuRef.current.contains(event.target as Node) &&
-          (!submenuRef.current || !submenuRef.current.contains(event.target as Node))) {
+          (!submenuRef.current || !submenuRef.current.contains(event.target as Node)) &&
+          (!magicWandRef.current || !magicWandRef.current.contains(event.target as Node))) {
         setContextMenu({ 
           show: false, 
           position: { x: 0, y: 0 }, 
@@ -146,6 +149,48 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     };
   }, []);
 
+  const calculateMagicWandPosition = () => {
+    if (!textareaRef.current || !selectionRange || selectionRange.start === selectionRange.end) {
+      setMagicWandPosition(null);
+      return;
+    }
+
+    const textarea = textareaRef.current;
+    const textBeforeSelection = originalText.substring(0, selectionRange.end);
+    
+    // Create a temporary element to measure text position
+    const temp = document.createElement('div');
+    temp.style.position = 'absolute';
+    temp.style.visibility = 'hidden';
+    temp.style.whiteSpace = 'pre-wrap';
+    temp.style.font = window.getComputedStyle(textarea).font;
+    temp.style.width = textarea.clientWidth + 'px';
+    temp.style.padding = window.getComputedStyle(textarea).padding;
+    temp.style.border = window.getComputedStyle(textarea).border;
+    temp.style.lineHeight = window.getComputedStyle(textarea).lineHeight;
+    temp.textContent = textBeforeSelection;
+    
+    document.body.appendChild(temp);
+    
+    const textareaRect = textarea.getBoundingClientRect();
+    const tempRect = temp.getBoundingClientRect();
+    
+    // Calculate position relative to the textarea
+    const x = textareaRect.left + (tempRect.width % textarea.clientWidth) + 8; // Small offset
+    const y = textareaRect.top + Math.floor(tempRect.width / textarea.clientWidth) * parseInt(window.getComputedStyle(textarea).lineHeight) - 8; // Above the line
+    
+    document.body.removeChild(temp);
+    
+    // Ensure the button stays within viewport bounds
+    const buttonWidth = 40; // Approximate button width
+    const buttonHeight = 40; // Approximate button height
+    
+    const adjustedX = Math.min(Math.max(x, 10), window.innerWidth - buttonWidth - 10);
+    const adjustedY = Math.max(y, 10);
+    
+    setMagicWandPosition({ x: adjustedX, y: adjustedY });
+  };
+
   const handleTextSelection = () => {
     if (textareaRef.current) {
       const start = textareaRef.current.selectionStart;
@@ -155,11 +200,39 @@ export const TextEditor: React.FC<TextEditorProps> = ({
       setSelectedText(selected);
       setSelectionRange({ start, end });
       
+      // Calculate magic wand position
+      setTimeout(() => {
+        calculateMagicWandPosition();
+      }, 0);
+      
       // Notify parent component about text selection
       if (onTextSelection) {
         onTextSelection(selected);
       }
     }
+  };
+
+  const handleMagicWandClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!selectedText.trim() || selectedAgents.length === 0) return;
+    
+    // Position context menu near the magic wand button
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const menuX = rect.right + 8;
+    const menuY = rect.top;
+    
+    setContextMenu({
+      show: true,
+      position: { x: menuX, y: menuY },
+      selectedText: selectedText,
+      hoveredAgent: null,
+      submenuPosition: null,
+      showQuestionInput: false,
+      questionText: '',
+      questionAgent: null
+    });
   };
 
   const handleContextMenu = (e: React.MouseEvent) => {
@@ -310,7 +383,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     
     onSendMessage(message, [contextMenu.questionAgent.id], 'chat');
     
-    // Close the entire context menu
+    // Close the entire context menu and hide magic wand
     setContextMenu({ 
       show: false, 
       position: { x: 0, y: 0 }, 
@@ -321,6 +394,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
       questionText: '',
       questionAgent: null
     });
+    setMagicWandPosition(null);
   };
 
   const handleQuestionKeyPress = (e: React.KeyboardEvent) => {
@@ -353,6 +427,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
       questionText: '',
       questionAgent: null
     });
+    setMagicWandPosition(null);
   };
 
   // Check if a range overlaps with any existing highlights
@@ -711,6 +786,11 @@ export const TextEditor: React.FC<TextEditorProps> = ({
                       <Redo className="w-3 h-3" />
                       <span>buttons for undo/redo</span>
                     </li>
+                    <li className="flex items-center space-x-1">
+                      <span>• Select text and click the</span>
+                      <Wand2 className="w-3 h-3 text-purple-400" />
+                      <span>magic wand for quick agent help</span>
+                    </li>
                     <li>• Right-click to ask agents for feedback or rewriting help</li>
                     <li>• Highlighted text is preserved when sharing with agents</li>
                     <li>• Highlights are visual only - no special syntax added to text</li>
@@ -813,6 +893,22 @@ export const TextEditor: React.FC<TextEditorProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Magic Wand Button - Appears when text is selected */}
+      {magicWandPosition && selectedText.trim() && selectedAgents.length > 0 && (
+        <button
+          ref={magicWandRef}
+          onClick={handleMagicWandClick}
+          className="fixed z-40 w-10 h-10 bg-purple-600 hover:bg-purple-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center transform hover:scale-110 animate-pulse"
+          style={{
+            left: `${magicWandPosition.x}px`,
+            top: `${magicWandPosition.y}px`
+          }}
+          title="Get help from your agents"
+        >
+          <Wand2 className="w-5 h-5" />
+        </button>
+      )}
 
       {/* Two-Layer Context Menu with Question Input */}
       {contextMenu.show && (
