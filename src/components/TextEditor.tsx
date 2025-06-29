@@ -19,7 +19,9 @@ export const TextEditor: React.FC<TextEditorProps> = ({
 }) => {
   const [selectedText, setSelectedText] = useState('');
   const [selectionRange, setSelectionRange] = useState<{ start: number; end: number } | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const displayRef = useRef<HTMLDivElement>(null);
   const [history, setHistory] = useState<string[]>([originalText]);
   const [historyIndex, setHistoryIndex] = useState(0);
 
@@ -82,6 +84,59 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     }
   };
 
+  // Convert text with ==highlight== to rich text display
+  const renderRichText = (text: string) => {
+    if (!text) return <span className="text-gray-400">Start writing here...</span>;
+
+    const parts = text.split(/(==.*?==)/g);
+    return parts.map((part, index) => {
+      if (part.startsWith('==') && part.endsWith('==')) {
+        const highlightedText = part.slice(2, -2);
+        return (
+          <span key={index} className="bg-yellow-200 px-1 rounded">
+            {highlightedText}
+          </span>
+        );
+      }
+      return part;
+    });
+  };
+
+  const handleDisplayClick = () => {
+    setIsEditing(true);
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+      }
+    }, 0);
+  };
+
+  const handleTextareaBlur = () => {
+    // Small delay to allow for toolbar interactions
+    setTimeout(() => {
+      if (!document.activeElement?.closest('.toolbar-container')) {
+        setIsEditing(false);
+      }
+    }, 100);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      setIsEditing(false);
+      textareaRef.current?.blur();
+    }
+    // Handle Ctrl+Z and Ctrl+Y
+    if (e.ctrlKey || e.metaKey) {
+      if (e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        handleUndo();
+      } else if ((e.key === 'y') || (e.key === 'z' && e.shiftKey)) {
+        e.preventDefault();
+        handleRedo();
+      }
+    }
+  };
+
   const wordCount = originalText.trim().split(/\s+/).filter(word => word.length > 0).length;
   const charCount = originalText.length;
 
@@ -90,14 +145,14 @@ export const TextEditor: React.FC<TextEditorProps> = ({
       {/* Rich Text Editor */}
       <div className="bg-white rounded-xl border-2 border-black shadow-sm flex-1 flex flex-col">
         {/* Simplified Toolbar */}
-        <div className="px-4 py-3 border-b border-gray-300 flex items-center justify-between bg-gray-50">
+        <div className="toolbar-container px-4 py-3 border-b border-gray-300 flex items-center justify-between bg-gray-50">
           <div className="flex items-center space-x-1">
             {/* Undo/Redo */}
             <button
               onClick={handleUndo}
               disabled={historyIndex <= 0}
               className="p-2 text-gray-600 hover:text-black hover:bg-gray-200 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              title="Undo"
+              title="Undo (Ctrl+Z)"
             >
               <Undo className="w-4 h-4" />
             </button>
@@ -105,7 +160,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
               onClick={handleRedo}
               disabled={historyIndex >= history.length - 1}
               className="p-2 text-gray-600 hover:text-black hover:bg-gray-200 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              title="Redo"
+              title="Redo (Ctrl+Y)"
             >
               <Redo className="w-4 h-4" />
             </button>
@@ -116,7 +171,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
             {/* Yellow Highlight */}
             <button
               onClick={applyHighlight}
-              disabled={!selectedText}
+              disabled={!selectedText || !isEditing}
               className="p-2 text-yellow-600 hover:text-yellow-800 hover:bg-yellow-100 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               title="Highlight selected text"
             >
@@ -126,7 +181,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
 
           {/* Status Info */}
           <div className="flex items-center space-x-4 text-sm text-gray-600">
-            {selectedText && (
+            {selectedText && isEditing && (
               <span className="text-yellow-600 font-medium">
                 "{selectedText.length > 15 ? selectedText.substring(0, 15) + '...' : selectedText}" selected
               </span>
@@ -136,24 +191,52 @@ export const TextEditor: React.FC<TextEditorProps> = ({
           </div>
         </div>
         
-        {/* Text Area */}
-        <div className="p-6 flex-1 flex flex-col">
-          <textarea
-            ref={textareaRef}
-            value={originalText}
-            onChange={(e) => onOriginalChange(e.target.value)}
-            onSelect={handleTextSelection}
-            onMouseUp={handleTextSelection}
-            onKeyUp={handleTextSelection}
-            placeholder="Start writing here... Select text and click the highlight button to apply yellow highlighting."
-            className="w-full flex-1 p-4 border-2 border-gray-400 rounded-lg resize-none focus:ring-2 focus:ring-black focus:border-black min-h-64 bg-white text-black font-mono leading-relaxed"
-            style={{ 
-              fontFamily: 'JetBrains Mono, Courier New, monospace',
-              fontSize: '14px',
-              lineHeight: '1.6'
-            }}
-          />
+        {/* Text Area Container */}
+        <div className="p-6 flex-1 flex flex-col relative">
+          {/* Rich Text Display */}
+          {!isEditing && (
+            <div
+              ref={displayRef}
+              onClick={handleDisplayClick}
+              className="w-full flex-1 p-4 border-2 border-gray-400 rounded-lg min-h-64 bg-white text-black font-mono leading-relaxed cursor-text overflow-y-auto whitespace-pre-wrap"
+              style={{ 
+                fontFamily: 'JetBrains Mono, Courier New, monospace',
+                fontSize: '14px',
+                lineHeight: '1.6'
+              }}
+            >
+              {renderRichText(originalText)}
+            </div>
+          )}
+
+          {/* Raw Text Editor (hidden when not editing) */}
+          {isEditing && (
+            <textarea
+              ref={textareaRef}
+              value={originalText}
+              onChange={(e) => onOriginalChange(e.target.value)}
+              onSelect={handleTextSelection}
+              onMouseUp={handleTextSelection}
+              onKeyUp={handleTextSelection}
+              onKeyDown={handleKeyDown}
+              onBlur={handleTextareaBlur}
+              placeholder="Start writing here... Select text and click the highlight button to apply yellow highlighting."
+              className="w-full flex-1 p-4 border-2 border-black rounded-lg resize-none focus:ring-2 focus:ring-black focus:border-black min-h-64 bg-white text-black font-mono leading-relaxed focus:outline-none"
+              style={{ 
+                fontFamily: 'JetBrains Mono, Courier New, monospace',
+                fontSize: '14px',
+                lineHeight: '1.6'
+              }}
+            />
+          )}
           
+          {/* Edit Mode Indicator */}
+          {isEditing && (
+            <div className="absolute top-2 right-2 px-2 py-1 bg-black text-white text-xs rounded">
+              Editing - Press Esc to finish
+            </div>
+          )}
+
           {/* Bottom Controls */}
           <div className="flex justify-between items-center mt-4">
             <div className="flex items-center space-x-3 text-sm text-gray-600">
@@ -162,6 +245,14 @@ export const TextEditor: React.FC<TextEditorProps> = ({
                   <Users className="w-4 h-4" />
                   <span>{selectedAgents.length} agents selected</span>
                 </div>
+              )}
+              {!isEditing && (
+                <button
+                  onClick={handleDisplayClick}
+                  className="text-blue-600 hover:text-blue-800 underline"
+                >
+                  Click to edit
+                </button>
               )}
             </div>
             
@@ -192,10 +283,11 @@ export const TextEditor: React.FC<TextEditorProps> = ({
       <div className="mt-6 p-4 bg-gray-100 rounded-lg border-2 border-gray-400">
         <h4 className="font-medium text-black mb-2">💡 Editor Tips</h4>
         <ul className="text-sm text-gray-700 space-y-1">
-          <li>• Select text and click the <Highlighter className="w-3 h-3 inline text-yellow-600" /> button to apply yellow highlighting</li>
-          <li>• Use <Undo className="w-3 h-3 inline" /> and <Redo className="w-3 h-3 inline" /> buttons or Ctrl+Z/Ctrl+Y for undo/redo</li>
-          <li>• Highlighted text uses ==text== format for compatibility with agents</li>
-          <li>• Use the chat panel to have conversations with specific agents</li>
+          <li>• Click anywhere in the text area to start editing</li>
+          <li>• Select text and click <Highlighter className="w-3 h-3 inline text-yellow-600" /> to apply yellow highlighting</li>
+          <li>• Use Ctrl+Z/Ctrl+Y or the <Undo className="w-3 h-3 inline" />/<Redo className="w-3 h-3 inline" /> buttons for undo/redo</li>
+          <li>• Press Escape to finish editing and see rich text formatting</li>
+          <li>• Highlighted text is preserved when sharing with agents</li>
         </ul>
       </div>
     </div>
