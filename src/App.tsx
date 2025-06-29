@@ -274,6 +274,24 @@ function App() {
                 {selectedAgentIds.length} of {agents.length} selected
               </span>
             </div>
+            
+            {/* Collapse button - Top right */}
+            <button
+              onClick={() => setAgentsSectionCollapsed(!agentsSectionCollapsed)}
+              className="flex items-center space-x-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors border border-gray-300 group"
+            >
+              {agentsSectionCollapsed ? (
+                <>
+                  <ChevronDown className="w-4 h-4 text-gray-600 group-hover:text-black" />
+                  <span className="text-sm text-gray-600 group-hover:text-black font-medium">Expand</span>
+                </>
+              ) : (
+                <>
+                  <ChevronUp className="w-4 h-4 text-gray-600 group-hover:text-black" />
+                  <span className="text-sm text-gray-600 group-hover:text-black font-medium">Collapse</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
         
@@ -320,26 +338,6 @@ function App() {
             </div>
           </div>
         )}
-
-        {/* Collapse button - Bottom center */}
-        <div className="flex justify-center pb-4">
-          <button
-            onClick={() => setAgentsSectionCollapsed(!agentsSectionCollapsed)}
-            className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors border border-gray-300 group"
-          >
-            {agentsSectionCollapsed ? (
-              <>
-                <ChevronDown className="w-4 h-4 text-gray-600 group-hover:text-black" />
-                <span className="text-sm text-gray-600 group-hover:text-black font-medium">Expand</span>
-              </>
-            ) : (
-              <>
-                <ChevronUp className="w-4 h-4 text-gray-600 group-hover:text-black" />
-                <span className="text-sm text-gray-600 group-hover:text-black font-medium">Collapse</span>
-              </>
-            )}
-          </button>
-        </div>
       </div>
 
       {/* Main Content - Resizable Split Layout with full height */}
