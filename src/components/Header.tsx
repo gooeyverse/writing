@@ -41,6 +41,23 @@ const CustomIcon: React.FC<{ className?: string }> = ({ className = "w-16 h-16" 
   </svg>
 );
 
+// Bolt Badge Component
+const BoltBadge: React.FC = () => (
+  <a 
+    href="https://bolt.new/" 
+    target="_blank" 
+    rel="noopener noreferrer"
+    className="flex items-center justify-center w-12 h-12 rounded-full bg-black hover:bg-gray-800 transition-colors duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+    title="Built with Bolt"
+  >
+    <img 
+      src="/src/assets/black_circle_360x360.svg" 
+      alt="Bolt" 
+      className="w-10 h-10"
+    />
+  </a>
+);
+
 export const Header: React.FC<HeaderProps> = ({ 
   onShowStats, 
   onShowSettings, 
@@ -78,7 +95,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
         
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-4">
           {/* Supabase Status Indicator */}
           <div className="flex items-center space-x-2 px-3 py-1 rounded-lg border border-gray-400 bg-gray-100">
             {supabaseStatus === 'checking' ? (
@@ -93,6 +110,9 @@ export const Header: React.FC<HeaderProps> = ({
                supabaseStatus === 'connected' ? 'AI Connected' : 'AI Disconnected'}
             </span>
           </div>
+
+          {/* Bolt Badge */}
+          <BoltBadge />
         </div>
       </div>
     </header>
