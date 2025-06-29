@@ -144,9 +144,9 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
           <div className="flex items-center space-x-3">
             <MessageCircle className="w-6 h-6 text-black" />
             <div>
-              <h2 className="text-lg font-semibold text-black">Agent Chat</h2>
+              <h2 className="text-lg font-semibold text-black">Agent Feedback</h2>
               <p className="text-sm text-gray-700">
-                Chat with your selected agents • Use @AgentName to mention specific agents
+                Get detailed feedback from your selected agents • Use @AgentName to mention specific agents
               </p>
             </div>
           </div>
@@ -159,9 +159,9 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
               <Bot className="w-12 h-12 text-gray-500 mb-4" />
-              <h3 className="text-lg font-medium text-black mb-2">Start a conversation</h3>
+              <h3 className="text-lg font-medium text-black mb-2">Start getting feedback</h3>
               <p className="text-gray-600 mb-4 max-w-sm">
-                Send a message to get rewrites from your selected agents, or mention specific agents using @AgentName
+                Send a message to get detailed feedback from your selected agents, or mention specific agents using @AgentName
               </p>
               <div className="flex flex-wrap gap-2 justify-center">
                 {selectedAgents.slice(0, 3).map(agent => (
@@ -208,31 +208,48 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                             <span className="font-medium text-black">
                               {agents.find(a => a.id === message.agentId)?.name}
                             </span>
+                            <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded-full border border-gray-300">
+                              Feedback
+                            </span>
                             {message.rating && (
                               <div className={`px-2 py-1 rounded-full text-xs font-medium border ${
                                 message.rating > 0 
                                   ? 'bg-gray-100 text-black border-gray-400' 
                                   : 'bg-gray-200 text-black border-gray-500'
                               }`}>
-                                {message.rating > 0 ? 'Liked' : 'Needs work'}
+                                {message.rating > 0 ? 'Helpful' : 'Needs work'}
                               </div>
                             )}
                           </div>
-                          <p className="text-black whitespace-pre-wrap mb-3">{message.content}</p>
+                          <div className="text-black whitespace-pre-wrap mb-3 prose prose-sm max-w-none">
+                            {message.content.split('\n').map((line, index) => (
+                              <div key={index}>
+                                {line.startsWith('**') && line.endsWith('**') ? (
+                                  <strong className="text-black">{line.slice(2, -2)}</strong>
+                                ) : line.startsWith('• ') ? (
+                                  <div className="ml-4">• {line.slice(2)}</div>
+                                ) : line.startsWith('- ') ? (
+                                  <div className="ml-4">- {line.slice(2)}</div>
+                                ) : (
+                                  line
+                                )}
+                              </div>
+                            ))}
+                          </div>
                           <div className="flex items-center justify-between">
                             <span className="text-xs text-gray-600">{formatTime(message.timestamp)}</span>
                             <div className="flex items-center space-x-1">
                               <button
                                 onClick={() => copyToClipboard(message.content)}
                                 className="p-1 text-gray-500 hover:text-black rounded border border-gray-300"
-                                title="Copy"
+                                title="Copy feedback"
                               >
                                 <Copy className="w-3 h-3" />
                               </button>
                               <button
-                                onClick={() => downloadText(message.content, `${agents.find(a => a.id === message.agentId)?.name.toLowerCase()}-response.txt`)}
+                                onClick={() => downloadText(message.content, `${agents.find(a => a.id === message.agentId)?.name.toLowerCase()}-feedback.txt`)}
                                 className="p-1 text-gray-500 hover:text-black rounded border border-gray-300"
-                                title="Download"
+                                title="Download feedback"
                               >
                                 <Download className="w-3 h-3" />
                               </button>
@@ -243,7 +260,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                                     ? 'text-black bg-gray-100 border-gray-400'
                                     : 'text-gray-500 hover:text-black hover:bg-gray-100 border-gray-300'
                                 }`}
-                                title="Good response"
+                                title="Helpful feedback"
                               >
                                 <ThumbsUp className="w-3 h-3" />
                               </button>
@@ -276,7 +293,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                         <div className="w-2 h-2 bg-black rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                         <div className="w-2 h-2 bg-black rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                       </div>
-                      <span className="text-sm text-gray-700">Agents are thinking...</span>
+                      <span className="text-sm text-gray-700">Agents are analyzing...</span>
                     </div>
                   </div>
                 </div>
@@ -322,7 +339,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                 value={inputMessage}
                 onChange={handleInputChange}
                 onKeyPress={handleKeyPress}
-                placeholder={`Type a message... Use @AgentName to mention specific selected agents (${selectedAgents.map(a => a.name).join(', ')})`}
+                placeholder={`Type your text here to get feedback... Use @AgentName to mention specific selected agents (${selectedAgents.map(a => a.name).join(', ')})`}
                 className="w-full h-full p-4 border-2 border-gray-400 rounded-lg resize-none focus:ring-2 focus:ring-black focus:border-black bg-white text-black"
               />
             </div>
@@ -332,7 +349,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
               {/* Agent info */}
               {selectedAgents.length > 0 && (
                 <div className="flex items-center space-x-2 text-xs text-gray-600">
-                  <span>Default recipients:</span>
+                  <span>Default feedback from:</span>
                   {selectedAgents.slice(0, 3).map(agent => (
                     <span key={agent.id} className="flex items-center space-x-1">
                       <span>{agent.avatar}</span>
@@ -352,7 +369,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                 className="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2 border-2 border-black"
               >
                 <Send className="w-4 h-4" />
-                <span>Send</span>
+                <span>Get Feedback</span>
               </button>
             </div>
           </div>

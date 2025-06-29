@@ -1,20 +1,20 @@
 import React from 'react';
-import { RefreshCw, Users, FileText } from 'lucide-react';
+import { MessageSquare, Users, FileText } from 'lucide-react';
 import { Agent } from '../types';
 
 interface TextEditorProps {
   originalText: string;
   onOriginalChange: (text: string) => void;
-  onRewrite: () => void;
-  isRewriting: boolean;
+  onGetFeedback: () => void;
+  isProcessing: boolean;
   selectedAgents: Agent[];
 }
 
 export const TextEditor: React.FC<TextEditorProps> = ({
   originalText,
   onOriginalChange,
-  onRewrite,
-  isRewriting,
+  onGetFeedback,
+  isProcessing,
   selectedAgents
 }) => {
   return (
@@ -23,7 +23,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-black mb-2">Text Editor</h2>
         <p className="text-gray-700">
-          Write your text here and get rewrites from your selected agents, or use the chat panel to have conversations with specific agents.
+          Write your text here and get detailed feedback from your selected agents, or use the chat panel to have conversations with specific agents.
         </p>
       </div>
 
@@ -46,7 +46,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
           <textarea
             value={originalText}
             onChange={(e) => onOriginalChange(e.target.value)}
-            placeholder="Enter your text here to have it rewritten by your selected agents..."
+            placeholder="Enter your text here to get detailed feedback from your selected agents..."
             className="w-full flex-1 p-4 border-2 border-gray-400 rounded-lg resize-none focus:ring-2 focus:ring-black focus:border-black min-h-64 bg-white text-black"
           />
           
@@ -55,21 +55,21 @@ export const TextEditor: React.FC<TextEditorProps> = ({
               {originalText.length} characters
             </span>
             <button
-              onClick={onRewrite}
-              disabled={!originalText.trim() || isRewriting || selectedAgents.length === 0}
+              onClick={onGetFeedback}
+              disabled={!originalText.trim() || isProcessing || selectedAgents.length === 0}
               className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 transition-colors border-2 border-black"
             >
-              {isRewriting ? (
-                <RefreshCw className="w-4 h-4 animate-spin" />
+              {isProcessing ? (
+                <MessageSquare className="w-4 h-4 animate-pulse" />
               ) : (
-                <RefreshCw className="w-4 h-4" />
+                <MessageSquare className="w-4 h-4" />
               )}
               <span>
-                {isRewriting 
-                  ? 'Processing...' 
+                {isProcessing 
+                  ? 'Getting feedback...' 
                   : selectedAgents.length === 1 
-                    ? `Send to ${selectedAgents[0].name}`
-                    : `Send to ${selectedAgents.length} agents`
+                    ? `Get feedback from ${selectedAgents[0].name}`
+                    : `Get feedback from ${selectedAgents.length} agents`
                 }
               </span>
             </button>
@@ -83,8 +83,8 @@ export const TextEditor: React.FC<TextEditorProps> = ({
         <ul className="text-sm text-gray-700 space-y-1">
           <li>• Use the chat panel to have conversations with specific agents</li>
           <li>• Type <code className="bg-white px-1 rounded border border-gray-300">@AgentName</code> to mention specific agents in chat</li>
-          <li>• Selected agents will respond to messages without mentions</li>
-          <li>• Give feedback to help agents improve their responses</li>
+          <li>• Selected agents will provide feedback on messages without mentions</li>
+          <li>• Give feedback ratings to help agents improve their analysis</li>
         </ul>
       </div>
     </div>

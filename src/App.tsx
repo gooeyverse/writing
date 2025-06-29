@@ -62,17 +62,17 @@ function App() {
     // Determine which agents to respond
     const respondingAgentIds = mentionedAgentIds.length > 0 ? mentionedAgentIds : selectedAgentIds;
     
-    // Generate responses from mentioned or selected agents
+    // Generate feedback from mentioned or selected agents
     for (const agentId of respondingAgentIds) {
       const agent = agents.find(a => a.id === agentId);
       if (agent) {
         try {
-          const rewritten = await TextRewriter.rewrite(message, agent);
+          const feedback = await TextRewriter.provideFeedback(message, agent);
           
           const agentMessage: ChatMessage = {
             id: `${agentId}-${Date.now()}-${Math.random()}`,
             type: 'agent',
-            content: rewritten,
+            content: feedback,
             timestamp: new Date(),
             agentId,
             originalMessage: message
@@ -89,13 +89,13 @@ function App() {
             )
           );
         } catch (error) {
-          console.error(`Error rewriting with agent ${agent.name}:`, error);
+          console.error(`Error getting feedback from agent ${agent.name}:`, error);
           
           // Add error message
           const errorMessage: ChatMessage = {
             id: `${agentId}-error-${Date.now()}-${Math.random()}`,
             type: 'agent',
-            content: `Sorry, I encountered an error while rewriting your text. Please try again.`,
+            content: `Sorry, I encountered an error while analyzing your text. Please try again.`,
             timestamp: new Date(),
             agentId,
             originalMessage: message
@@ -137,7 +137,7 @@ function App() {
     );
   };
 
-  const handleRewrite = async () => {
+  const handleGetFeedback = async () => {
     if (!originalText.trim() || selectedAgentIds.length === 0) return;
     
     await handleSendMessage(originalText, []);
@@ -337,8 +337,8 @@ function App() {
             <TextEditor
               originalText={originalText}
               onOriginalChange={setOriginalText}
-              onRewrite={handleRewrite}
-              isRewriting={isProcessing}
+              onGetFeedback={handleGetFeedback}
+              isProcessing={isProcessing}
               selectedAgents={selectedAgents}
             />
           </div>
