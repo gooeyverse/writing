@@ -24,7 +24,7 @@ export const AgentCard: React.FC<AgentCardProps> = ({
   return (
     <div
       className={`
-        relative p-5 rounded-xl border-2 cursor-pointer transition-all duration-200 hover:shadow-lg group
+        relative p-5 rounded-xl border-2 cursor-pointer transition-all duration-200 hover:shadow-lg group h-48 flex flex-col
         ${isSelected 
           ? 'border-4 border-black bg-gray-100 shadow-lg' 
           : 'border-2 border-gray-400 bg-white hover:border-black hover:shadow-md'
@@ -56,19 +56,24 @@ export const AgentCard: React.FC<AgentCardProps> = ({
         )}
       </div>
       
-      <p className="text-sm text-gray-700 mb-4 line-clamp-2">{agent.description}</p>
+      {/* Description - flex-1 to take available space */}
+      <div className="flex-1 mb-4">
+        <p className="text-sm text-gray-700 line-clamp-3">{agent.description}</p>
+      </div>
       
-      {/* Training Status */}
-      {hasTrainingData && (
-        <div className="mb-3 p-2 bg-gray-100 rounded-lg border border-gray-400">
-          <div className="flex items-center space-x-2">
-            <BookOpen className="w-3 h-3 text-black" />
-            <span className="text-xs text-black font-medium">
-              Trained with {agent.trainingData!.samples.length} samples
-            </span>
+      {/* Training Status - Fixed at bottom */}
+      <div className="mt-auto">
+        {hasTrainingData && (
+          <div className="mb-3 p-2 bg-gray-100 rounded-lg border border-gray-400">
+            <div className="flex items-center space-x-2">
+              <BookOpen className="w-3 h-3 text-black" />
+              <span className="text-xs text-black font-medium">
+                Trained with {agent.trainingData!.samples.length} samples
+              </span>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Hover Action Buttons - Bottom Left */}
       <div className="absolute bottom-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
