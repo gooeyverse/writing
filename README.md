@@ -1,4 +1,4 @@
-# Writing Circle - AI-Powered Writing Improvement Tool
+# Writer's circle - AI-Powered Writing Improvement Tool
 
 A sophisticated React application that allows you to create and train personalized AI writing agents to provide detailed feedback and analysis on your text in different styles and perspectives. Build your own personal writer's circle with AI agents that understand your unique writing needs.
 

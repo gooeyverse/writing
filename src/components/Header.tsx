@@ -73,7 +73,7 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center space-x-3">
           <CustomIcon className="w-16 h-16 text-black" />
           <div>
-            <h1 className="text-2xl font-bold text-black typewriter-effect">Writing Circle</h1>
+            <h1 className="text-2xl font-bold text-black typewriter-effect">Writer's circle</h1>
             <p className="text-sm text-gray-600">Improve your writing. Create your own personal writer's circle.</p>
           </div>
         </div>
