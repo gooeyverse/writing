@@ -258,7 +258,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
       </div>
 
       {/* Rich Text Editor - Takes remaining height */}
-      <div className="bg-white rounded-xl border-2 border-black shadow-sm flex-1 flex flex-col min-h-0">
+      <div className="bg-white rounded-xl border border-gray-300 shadow-sm flex-1 flex flex-col min-h-0">
         {/* Simplified Toolbar */}
         <div className="toolbar-container px-4 py-3 border-b border-gray-300 flex items-center justify-between bg-gray-50 flex-shrink-0">
           <div className="flex items-center space-x-1">
