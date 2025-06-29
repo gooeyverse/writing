@@ -350,16 +350,16 @@ export const TextEditor: React.FC<TextEditorProps> = ({
         {/* Enhanced Toolbar with Writing Indicator */}
         <div className="toolbar-container px-4 py-3 border-b border-gray-300 flex items-center justify-between bg-gray-50 flex-shrink-0">
           <div className="flex items-center space-x-1">
-            {/* Writing Indicator */}
+            {/* Writing Indicator - Updated to Gray Theme */}
             <div className="flex items-center space-x-2 mr-4">
               <div className={`p-2 rounded-lg transition-all duration-200 ${
-                isEmpty ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'
+                isEmpty ? 'bg-gray-100 text-gray-600' : 'bg-gray-200 text-gray-700'
               }`}>
                 <Type className="w-4 h-4" />
               </div>
               <div className="text-sm">
                 <div className={`font-medium transition-colors ${
-                  isEmpty ? 'text-blue-600' : 'text-green-600'
+                  isEmpty ? 'text-gray-600' : 'text-gray-700'
                 }`}>
                   {isEmpty ? 'Ready to Write' : 'Writing in Progress'}
                 </div>
@@ -481,7 +481,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
         {/* Enhanced Text Area Container with Visual Cues */}
         <div 
           className={`p-6 flex-1 flex flex-col relative min-h-0 transition-all duration-200 ${
-            isEmpty && !isFocused ? 'bg-gradient-to-br from-blue-50 to-indigo-50' : 'bg-white'
+            isEmpty && !isFocused ? 'bg-gradient-to-br from-gray-50 to-gray-100' : 'bg-white'
           }`}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
@@ -521,7 +521,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
               placeholder={`Start writing here... ${selectedAgents.length > 0 ? `Your ${selectedAgents.length} selected agent${selectedAgents.length > 1 ? 's' : ''} will help you improve your writing.` : 'Select agents to get writing assistance.'}`}
               className={`relative w-full h-full p-4 rounded-lg resize-none bg-transparent text-black font-mono leading-relaxed focus:outline-none z-10 border-0 transition-all duration-200 ${
                 isInteractive && !isFocused
-                  ? 'ring-1 ring-blue-300 ring-opacity-30 bg-blue-50 bg-opacity-10' 
+                  ? 'ring-1 ring-gray-300 ring-opacity-30 bg-gray-50 bg-opacity-10' 
                   : 'bg-transparent'
               }`}
               style={{ 
@@ -532,7 +532,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
               }}
             />
 
-            {/* Typing Indicator - Only show when focused and typing */}
+            {/* Typing Indicator - Updated to Gray Theme */}
             {isFocused && (
               <div className="absolute top-2 right-2 flex items-center space-x-2 bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs z-20">
                 <div className="w-2 h-2 bg-gray-500 rounded-full animate-pulse"></div>
@@ -551,7 +551,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
                 !originalText.trim() || selectedAgents.length === 0
                   ? 'bg-gray-200 text-gray-500 border-gray-300 cursor-not-allowed'
                   : isProcessing
-                    ? 'bg-blue-600 text-white border-blue-600 cursor-wait'
+                    ? 'bg-gray-600 text-white border-gray-600 cursor-wait'
                     : 'bg-black text-white border-black hover:bg-gray-800 hover:scale-105 shadow-lg hover:shadow-xl'
               }`}
             >
