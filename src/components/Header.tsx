@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Zap, ZapOff } from 'lucide-react';
+import { Zap, ZapOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface HeaderProps {
@@ -93,14 +93,6 @@ export const Header: React.FC<HeaderProps> = ({
                supabaseStatus === 'connected' ? 'AI Connected' : 'AI Disconnected'}
             </span>
           </div>
-
-          <button
-            onClick={onCreateAgent}
-            className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors flex items-center space-x-2 border-2 border-black"
-          >
-            <Plus className="w-4 h-4" />
-            <span>New Agent</span>
-          </button>
         </div>
       </div>
     </header>
