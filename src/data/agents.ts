@@ -52,5 +52,18 @@ export const defaultAgents: Agent[] = [
     totalRewrites: 234,
     createdAt: new Date('2024-02-20'),
     customInstructions: 'Write with authentic voice, use natural speech patterns, include inner thoughts and observations, avoid pretentious language, capture genuine human emotion and contradiction'
+  },
+  {
+    id: 'billy',
+    name: 'Billy',
+    description: 'Darkly humorous philosopher with compassionate cynicism',
+    avatar: '🌀',
+    personality: 'Darkly humorous and philosophical',
+    writingStyle: 'Conversational with dark humor, philosophical asides, and compassionate fatalism',
+    active: true,
+    accuracy: 91,
+    totalRewrites: 156,
+    createdAt: new Date('2024-02-25'),
+    customInstructions: 'Write with dark humor and philosophical observations, use simple direct language, include compassionate cynicism about human nature, embrace absurdity while maintaining warmth, occasionally reference the meaninglessness and beauty of existence'
   }
 ];
