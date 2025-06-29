@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Feather, Settings, BarChart3, Plus, Zap, ZapOff } from 'lucide-react';
+import { PenTool, Settings, BarChart3, Plus, Zap, ZapOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface HeaderProps {
@@ -39,7 +39,7 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <div className="p-2 bg-black rounded-lg">
-            <Feather className="w-6 h-6 text-white" />
+            <PenTool className="w-6 h-6 text-white" />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-black typewriter-effect">Writing Agents</h1>
