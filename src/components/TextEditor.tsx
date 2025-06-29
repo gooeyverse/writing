@@ -246,13 +246,8 @@ export const TextEditor: React.FC<TextEditorProps> = ({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="mb-6 flex-shrink-0">
-        <h2 className="text-2xl font-bold text-black">Text Editor</h2>
-      </div>
-
-      {/* Rich Text Editor - Takes remaining height */}
-      <div className="bg-white rounded-xl border border-gray-300 shadow-sm flex-1 flex flex-col min-h-0">
+      {/* Rich Text Editor - Takes full height without header */}
+      <div className="bg-white flex-1 flex flex-col min-h-0">
         {/* Simplified Toolbar */}
         <div className="toolbar-container px-4 py-3 border-b border-gray-300 flex items-center justify-between bg-gray-50 flex-shrink-0">
           <div className="flex items-center space-x-1">
@@ -344,7 +339,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
           <div className="relative flex-1 min-h-0">
             {/* Rich Text Background Layer - Shows highlighted text without == markers */}
             <div 
-              className="absolute inset-0 p-4 border-2 border-transparent rounded-lg pointer-events-none overflow-hidden whitespace-pre-wrap break-words z-0"
+              className="absolute inset-0 p-4 rounded-lg pointer-events-none overflow-hidden whitespace-pre-wrap break-words z-0"
               style={{ 
                 fontFamily: 'JetBrains Mono, Courier New, monospace',
                 fontSize: '14px',
@@ -375,7 +370,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
               onKeyDown={handleKeyDown}
               onContextMenu={handleContextMenu}
               placeholder="Start writing here... Select text and click the highlight button to apply yellow highlighting."
-              className="relative w-full h-full p-4 border-2 border-gray-400 rounded-lg resize-none focus:ring-2 focus:ring-black focus:border-black bg-transparent text-black font-mono leading-relaxed focus:outline-none z-10"
+              className="relative w-full h-full p-4 rounded-lg resize-none focus:ring-2 focus:ring-black focus:border-black bg-transparent text-black font-mono leading-relaxed focus:outline-none z-10 border-0"
               style={{ 
                 fontFamily: 'JetBrains Mono, Courier New, monospace',
                 fontSize: '14px',
