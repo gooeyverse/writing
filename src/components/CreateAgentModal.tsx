@@ -159,11 +159,6 @@ export const CreateAgentModal: React.FC<CreateAgentModalProps> = ({
     ));
   };
 
-  const sampleCategories = [
-    'Email', 'Blog Post', 'Social Media', 'Report', 'Proposal', 
-    'Marketing Copy', 'Technical Writing', 'Creative Writing', 'Other'
-  ];
-
   const validSampleCount = samples.filter(s => s.text.trim()).length;
   const hasPreferences = preferences.tone.trim() || 
                         preferences.formality !== 'mixed' || 
@@ -438,48 +433,18 @@ export const CreateAgentModal: React.FC<CreateAgentModalProps> = ({
                               </button>
                             </div>
 
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
-                              <div>
-                                <label className="block text-sm font-medium text-black mb-2">
-                                  Title (Optional)
-                                </label>
-                                <input
-                                  type="text"
-                                  value={sample.title}
-                                  onChange={(e) => updateSample(sample.id, 'title', e.target.value)}
-                                  placeholder="e.g., Welcome Email"
-                                  className="w-full p-3 border-2 border-gray-400 rounded-lg focus:ring-2 focus:ring-black focus:border-black bg-white text-black"
-                                />
-                              </div>
-
-                              <div>
-                                <label className="block text-sm font-medium text-black mb-2">
-                                  Category
-                                </label>
-                                <select
-                                  value={sample.category}
-                                  onChange={(e) => updateSample(sample.id, 'category', e.target.value)}
-                                  className="w-full p-3 border-2 border-gray-400 rounded-lg focus:ring-2 focus:ring-black focus:border-black bg-white text-black"
-                                >
-                                  <option value="">Select category</option>
-                                  {sampleCategories.map(cat => (
-                                    <option key={cat} value={cat}>{cat}</option>
-                                  ))}
-                                </select>
-                              </div>
-
-                              <div>
-                                <label className="block text-sm font-medium text-black mb-2">
-                                  Source (Optional)
-                                </label>
-                                <input
-                                  type="text"
-                                  value={sample.source}
-                                  onChange={(e) => updateSample(sample.id, 'source', e.target.value)}
-                                  placeholder="e.g., Company newsletter"
-                                  className="w-full p-3 border-2 border-gray-400 rounded-lg focus:ring-2 focus:ring-black focus:border-black bg-white text-black"
-                                />
-                              </div>
+                            {/* Title input only */}
+                            <div className="mb-4">
+                              <label className="block text-sm font-medium text-black mb-2">
+                                Title (Optional)
+                              </label>
+                              <input
+                                type="text"
+                                value={sample.title}
+                                onChange={(e) => updateSample(sample.id, 'title', e.target.value)}
+                                placeholder="e.g., Welcome Email, Blog Post Introduction, Product Description"
+                                className="w-full p-3 border-2 border-gray-400 rounded-lg focus:ring-2 focus:ring-black focus:border-black bg-white text-black"
+                              />
                             </div>
 
                             <div className="mb-4">
