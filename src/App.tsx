@@ -267,24 +267,14 @@ function App() {
       {/* Agents Horizontal Scroll Section - Collapsible */}
       <div className="bg-white border-b border-black flex-shrink-0">
         <div className="px-6 py-4">
-          <button
-            onClick={() => setAgentsSectionCollapsed(!agentsSectionCollapsed)}
-            className="flex items-center justify-between w-full group"
-          >
+          <div className="flex items-center justify-between w-full">
             <div className="flex items-center space-x-4">
               <h2 className="text-xl font-semibold text-black">Your Writing Agents</h2>
               <span className="text-sm text-gray-600">
                 {selectedAgentIds.length} of {agents.length} selected
               </span>
             </div>
-            <div className="p-1 rounded-lg group-hover:bg-gray-100 transition-colors">
-              {agentsSectionCollapsed ? (
-                <ChevronDown className="w-5 h-5 text-gray-600" />
-              ) : (
-                <ChevronUp className="w-5 h-5 text-gray-600" />
-              )}
-            </div>
-          </button>
+          </div>
         </div>
         
         {!agentsSectionCollapsed && (
@@ -330,6 +320,26 @@ function App() {
             </div>
           </div>
         )}
+
+        {/* Collapse button - Bottom center */}
+        <div className="flex justify-center pb-4">
+          <button
+            onClick={() => setAgentsSectionCollapsed(!agentsSectionCollapsed)}
+            className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors border border-gray-300 group"
+          >
+            {agentsSectionCollapsed ? (
+              <>
+                <ChevronDown className="w-4 h-4 text-gray-600 group-hover:text-black" />
+                <span className="text-sm text-gray-600 group-hover:text-black font-medium">Expand</span>
+              </>
+            ) : (
+              <>
+                <ChevronUp className="w-4 h-4 text-gray-600 group-hover:text-black" />
+                <span className="text-sm text-gray-600 group-hover:text-black font-medium">Collapse</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Main Content - Resizable Split Layout with full height */}
