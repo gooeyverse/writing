@@ -19,13 +19,6 @@ export const AgentCard: React.FC<AgentCardProps> = ({
   onDelete,
   multiSelect = false
 }) => {
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('en-US', { 
-      month: 'short', 
-      day: 'numeric' 
-    }).format(date);
-  };
-
   const hasTrainingData = agent.trainingData && agent.trainingData.samples.length > 0;
 
   return (
@@ -68,29 +61,6 @@ export const AgentCard: React.FC<AgentCardProps> = ({
             <span className="text-xs font-medium text-black">{agent.accuracy}%</span>
             <div className={`w-2 h-2 rounded-full ${agent.active ? 'bg-black' : 'bg-gray-400'}`} />
           </div>
-          
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit();
-              }}
-              className="p-1 text-gray-500 hover:text-black hover:bg-gray-100 rounded border border-gray-300"
-              title="Edit agent"
-            >
-              <Settings className="w-4 h-4" />
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-              }}
-              className="p-1 text-gray-500 hover:text-black hover:bg-gray-100 rounded border border-gray-300"
-              title="Delete agent"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          </div>
         </div>
       </div>
       
@@ -107,10 +77,29 @@ export const AgentCard: React.FC<AgentCardProps> = ({
           </div>
         </div>
       )}
-      
-      <div className="flex items-center justify-between text-xs text-gray-600">
-        <span>{agent.totalRewrites.toLocaleString()} rewrites</span>
-        <span>Created {formatDate(agent.createdAt)}</span>
+
+      {/* Hover Action Buttons - Bottom Right */}
+      <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit();
+          }}
+          className="p-2 text-gray-500 hover:text-black hover:bg-gray-100 rounded-lg border border-gray-300 shadow-sm bg-white"
+          title="Edit agent"
+        >
+          <Settings className="w-4 h-4" />
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          className="p-2 text-gray-500 hover:text-black hover:bg-gray-100 rounded-lg border border-gray-300 shadow-sm bg-white"
+          title="Delete agent"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
       </div>
     </div>
   );
