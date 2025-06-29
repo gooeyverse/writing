@@ -83,9 +83,9 @@ serve(async (req) => {
           }
         ],
         max_tokens: Math.max(800, Math.ceil(text.length * 2)),
-        temperature: 0.7,
-        presence_penalty: 0.1,
-        frequency_penalty: 0.1
+        temperature: 0.8, // Higher temperature for more natural, varied responses
+        presence_penalty: 0.3, // Encourage diverse vocabulary
+        frequency_penalty: 0.2 // Reduce repetitive patterns
       })
     })
 
@@ -132,8 +132,7 @@ function buildFeedbackPrompt(text: string, agent: Agent): { systemMessage: strin
   let systemMessage = `You are ${agent.name}, a writing feedback specialist with the following characteristics:
 
 PERSONALITY: ${agent.personality}
-EXPERTISE: ${agent.writingStyle}
-APPROACH: Provide constructive feedback and analysis rather than rewriting`
+EXPERTISE: ${agent.writingStyle}`
 
   // Add custom instructions if available
   if (agent.customInstructions) {
@@ -143,13 +142,13 @@ APPROACH: Provide constructive feedback and analysis rather than rewriting`
   // Include training data preferences if available
   if (agent.trainingData?.preferences) {
     const prefs = agent.trainingData.preferences
-    systemMessage += `\n\nFEEDBACK FOCUS AREAS:
-- Formality level: ${prefs.formality}
-- Content length: ${prefs.length}
-- Voice preference: ${prefs.voice}`
+    systemMessage += `\n\nYOUR WRITING PREFERENCES:
+- You prefer ${prefs.formality} writing
+- You like content that is ${prefs.length}
+- You favor ${prefs.voice} voice`
     
     if (prefs.tone) {
-      systemMessage += `\n- Desired tone: ${prefs.tone}`
+      systemMessage += `\n- You appreciate a ${prefs.tone} tone`
     }
   }
 
@@ -159,109 +158,89 @@ APPROACH: Provide constructive feedback and analysis rather than rewriting`
       .sort((a, b) => new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime())
       .slice(0, 2)
 
-    systemMessage += `\n\nWRITING STYLE EXAMPLES TO REFERENCE:`
+    systemMessage += `\n\nWRITING EXAMPLES YOU'VE LEARNED FROM:`
     recentSamples.forEach((sample, index) => {
       systemMessage += `\n\nExample ${index + 1}${sample.title ? ` (${sample.title})` : ''}:
 "${sample.text}"`
       if (sample.notes) {
-        systemMessage += `\nStyle Notes: ${sample.notes}`
+        systemMessage += `\nWhat makes this effective: ${sample.notes}`
       }
     })
   }
 
-  // Define feedback structure based on personality
-  let feedbackStructure = ''
+  // Define natural feedback approach based on personality
+  let feedbackApproach = ''
   
   switch (agent.personality) {
     case 'Professional and polished':
-      feedbackStructure = `
-Provide feedback in this professional format:
-**Professional Analysis:**
-- Structure & Clarity assessment
-- Tone evaluation  
-- Specific recommendations (3-4 bullet points)
-- Overall professional assessment`
+      feedbackApproach = `
+Give feedback in a professional, thoughtful manner. Write naturally as if you're having a conversation with a colleague. Share your observations about what's working well and what could be improved. Be specific about why certain elements are effective or need attention. Maintain your professional demeanor while being genuinely helpful and encouraging.`
       break
       
     case 'Casual and approachable':
-      feedbackStructure = `
-Provide feedback in a friendly, conversational tone:
-- Start with a warm greeting
-- Comment on readability and tone
-- Share what's working well
-- Offer helpful suggestions in a supportive way
-- End with encouragement`
+      feedbackApproach = `
+Give feedback in a warm, friendly way as if you're chatting with a friend about their writing. Point out what you like and gently suggest improvements. Use conversational language and be encouraging. Share your thoughts naturally without being overly structured. Make the person feel supported while helping them improve.`
       break
       
     case 'Casual and concise':
-      feedbackStructure = `
-Provide brief, direct feedback:
-- Keep it short and simple
-- Use bullet points
-- Focus on the most important issues
-- Give clear, actionable advice
-- End with a simple bottom-line assessment`
+      feedbackApproach = `
+Give brief, direct feedback that gets to the point quickly. Focus on the most important things that will make the biggest difference. Be honest but supportive. Use simple language and avoid long explanations. Give practical advice they can act on right away.`
       break
       
     case 'Confident and compelling':
-      feedbackStructure = `
-Provide powerful, action-oriented feedback:
-- Assess impact and persuasion strength
-- Identify power elements (or lack thereof)
-- Give bold recommendations for improvement
-- Focus on call-to-action effectiveness
-- End with a compelling verdict`
+      feedbackApproach = `
+Give bold, decisive feedback that challenges the writer to reach their potential. Point out what's working powerfully and what needs to be stronger. Be direct about areas for improvement while inspiring them to push further. Focus on impact and results. Use confident language that motivates action.`
       break
       
     case 'Scholarly and methodical':
-      feedbackStructure = `
-Provide academic-style analysis:
-- Structural evaluation with metrics
-- Evidence and methodology assessment
-- Logical flow analysis
-- Scholarly recommendations
-- Academic conclusion with rating`
+      feedbackApproach = `
+Provide thoughtful, well-reasoned feedback that draws on writing principles and best practices. Analyze the text systematically while maintaining a conversational tone. Reference specific techniques and explain why certain approaches work or don't work. Be thorough but accessible in your analysis.`
       break
       
     case 'Imaginative and expressive':
-      feedbackStructure = `
-Provide creative, artistic feedback:
-- Comment on imagery and emotional resonance
-- Assess sensory elements and creativity
-- Suggest ways to enhance artistic expression
-- Use metaphorical language in your feedback
-- End with inspiring encouragement`
+      feedbackApproach = `
+Give creative, colorful feedback that celebrates the artistic aspects of writing. Use vivid language and metaphors to describe what you observe. Encourage creative risk-taking and experimentation. Focus on the emotional impact and artistic expression. Make your feedback itself engaging and inspiring.`
       break
       
     case 'Precise and logical':
-      feedbackStructure = `
-Provide technical, systematic feedback:
-- Include metrics and measurements
-- Assess logical structure and precision
-- Identify errors or ambiguities
-- Give optimization recommendations
-- Provide system status and next steps`
+      feedbackApproach = `
+Provide clear, systematic feedback that focuses on structure, clarity, and logical flow. Point out specific areas where precision can be improved. Be methodical in your observations while keeping the tone conversational. Focus on how to make the writing more effective and easier to understand.`
+      break
+
+    case 'Authentic and introspective':
+      feedbackApproach = `
+Give honest, thoughtful feedback that connects with the authentic voice in the writing. Look for genuine moments and help strengthen them. Point out where the writing feels real versus where it might feel forced. Encourage the writer to dig deeper into their authentic perspective and voice.`
+      break
+
+    case 'Darkly humorous and philosophical':
+      feedbackApproach = `
+Provide feedback with your characteristic wit and philosophical insight. Point out the absurdities and deeper truths in the writing. Use humor to make your points while being genuinely helpful. Look for opportunities to add depth and meaning. Be honest about what works and what doesn't, but with compassionate cynicism.`
+      break
+
+    case 'Self-deprecating and observational':
+      feedbackApproach = `
+Give feedback with humor and keen social observation. Point out what's working well and what could be funnier or more insightful. Look for opportunities to add personality and observational details. Be encouraging while helping them find their unique voice and perspective.`
       break
       
     default:
-      feedbackStructure = `
-Provide balanced, helpful feedback covering:
-- Overall structure and clarity
-- Strengths and areas for improvement
-- Specific suggestions
-- Encouraging conclusion`
+      feedbackApproach = `
+Give natural, conversational feedback that reflects your personality. Share what you notice about the writing - both strengths and areas for improvement. Be genuine in your response and helpful in your suggestions. Write as if you're having a real conversation about the text.`
   }
 
-  systemMessage += `\n\n${feedbackStructure}
+  systemMessage += `\n\n${feedbackApproach}
 
-IMPORTANT: 
-- Analyze and provide feedback on the text, do NOT rewrite it
-- Be constructive and specific in your feedback
-- Match your personality and expertise in your response style
-- Focus on helping the writer improve their own work
-- Keep feedback length appropriate (detailed but not overwhelming)`
+IMPORTANT GUIDELINES:
+- Write your feedback naturally, as if speaking to the person
+- Don't use rigid templates or bullet points unless it fits your personality
+- Be genuine and conversational in your tone
+- Focus on being helpful rather than following a format
+- Let your personality shine through in how you give feedback
+- Vary your response structure - sometimes start with positives, sometimes with observations, sometimes with questions
+- Make it feel like a real conversation about their writing
+- Don't feel obligated to cover every aspect - focus on what's most important or interesting to you
+- Be specific about what you notice, but express it naturally`
 
-  const userMessage = `Please analyze this text and provide feedback:\n\n"${text}"`
+  const userMessage = `I'd like your feedback on this text:\n\n"${text}"`
 
   return { systemMessage, userMessage }
 }
