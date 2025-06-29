@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Upload, BookOpen, FileText, Check } from 'lucide-react';
+import { X, Plus, Trash2, Upload, BookOpen, FileText, Check, Settings } from 'lucide-react';
 import { Agent, WritingSample, TrainingData } from '../types';
 
 interface CreateAgentModalProps {
@@ -21,7 +21,7 @@ export const CreateAgentModal: React.FC<CreateAgentModalProps> = ({
   onSave,
   editingAgent
 }) => {
-  const [activeTab, setActiveTab] = useState<'basic' | 'training'>('basic');
+  const [activeTab, setActiveTab] = useState<'basic' | 'samples' | 'preferences'>('basic');
   const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
   
   // Basic agent data
@@ -108,7 +108,12 @@ export const CreateAgentModal: React.FC<CreateAgentModalProps> = ({
     
     // Prepare training data
     const validSamples = samples.filter(sample => sample.text.trim());
-    const trainingData: TrainingData | undefined = (validSamples.length > 0 || preferences.tone.trim()) ? {
+    const hasPreferences = preferences.tone.trim() || 
+                          preferences.formality !== 'mixed' || 
+                          preferences.length !== 'balanced' || 
+                          preferences.voice !== 'mixed';
+    
+    const trainingData: TrainingData | undefined = (validSamples.length > 0 || hasPreferences) ? {
       samples: validSamples,
       preferences,
       lastUpdated: new Date()
@@ -160,7 +165,11 @@ export const CreateAgentModal: React.FC<CreateAgentModalProps> = ({
   ];
 
   const validSampleCount = samples.filter(s => s.text.trim()).length;
-  const hasTrainingData = validSampleCount > 0 || preferences.tone.trim();
+  const hasPreferences = preferences.tone.trim() || 
+                        preferences.formality !== 'mixed' || 
+                        preferences.length !== 'balanced' || 
+                        preferences.voice !== 'mixed';
+  const hasTrainingData = validSampleCount > 0 || hasPreferences;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -196,10 +205,10 @@ export const CreateAgentModal: React.FC<CreateAgentModalProps> = ({
         )}
 
         {/* Tabs */}
-        <div className="flex border-b-2 border-black">
+        <div className="flex border-b-2 border-black overflow-x-auto">
           <button
             onClick={() => setActiveTab('basic')}
-            className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+            className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
               activeTab === 'basic'
                 ? 'border-black text-black'
                 : 'border-transparent text-gray-600 hover:text-black'
@@ -211,16 +220,32 @@ export const CreateAgentModal: React.FC<CreateAgentModalProps> = ({
             </div>
           </button>
           <button
-            onClick={() => setActiveTab('training')}
-            className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === 'training'
+            onClick={() => setActiveTab('samples')}
+            className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+              activeTab === 'samples'
                 ? 'border-black text-black'
                 : 'border-transparent text-gray-600 hover:text-black'
             }`}
           >
             <div className="flex items-center space-x-2">
-              <BookOpen className="w-4 h-4" />
-              <span>Training ({validSampleCount} samples)</span>
+              <FileText className="w-4 h-4" />
+              <span>Writing Samples ({validSampleCount})</span>
+            </div>
+          </button>
+          <button
+            onClick={() => setActiveTab('preferences')}
+            className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+              activeTab === 'preferences'
+                ? 'border-black text-black'
+                : 'border-transparent text-gray-600 hover:text-black'
+            }`}
+          >
+            <div className="flex items-center space-x-2">
+              <Settings className="w-4 h-4" />
+              <span>Style Preferences</span>
+              {hasPreferences && (
+                <div className="w-2 h-2 bg-black rounded-full" />
+              )}
             </div>
           </button>
         </div>
@@ -340,26 +365,24 @@ export const CreateAgentModal: React.FC<CreateAgentModalProps> = ({
               </div>
             )}
 
-            {activeTab === 'training' && (
+            {activeTab === 'samples' && (
               <div className="space-y-6">
                 {/* Training Overview */}
                 <div className="bg-gray-100 rounded-lg p-4 border border-gray-400">
-                  <h3 className="font-medium text-black mb-2">Training Overview</h3>
+                  <h3 className="font-medium text-black mb-2">Writing Samples Overview</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
                     <div>
-                      <span className="text-gray-600">Writing Samples:</span>
-                      <div className="font-medium text-black">{validSampleCount}</div>
+                      <span className="text-gray-600">Total Samples:</span>
+                      <div className="font-medium text-black">{samples.length}</div>
                     </div>
                     <div>
-                      <span className="text-gray-600">Style Preferences:</span>
-                      <div className="font-medium text-black">
-                        {preferences.tone ? 'Configured' : 'Not set'}
-                      </div>
+                      <span className="text-gray-600">Valid Samples:</span>
+                      <div className="font-medium text-black">{validSampleCount}</div>
                     </div>
                     <div>
                       <span className="text-gray-600">Training Status:</span>
                       <div className="font-medium text-black">
-                        {hasTrainingData ? 'Trained' : 'Untrained'}
+                        {validSampleCount > 0 ? 'Has samples' : 'No samples'}
                       </div>
                     </div>
                   </div>
@@ -368,7 +391,12 @@ export const CreateAgentModal: React.FC<CreateAgentModalProps> = ({
                 {/* Writing Samples Section */}
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-medium text-black">Writing Samples</h3>
+                    <div>
+                      <h3 className="text-lg font-medium text-black">Writing Samples</h3>
+                      <p className="text-sm text-gray-600">
+                        Add examples of writing you want {formData.name || 'this agent'} to learn from
+                      </p>
+                    </div>
                     <button
                       type="button"
                       onClick={addSample}
@@ -489,6 +517,35 @@ export const CreateAgentModal: React.FC<CreateAgentModalProps> = ({
                     </div>
                   )}
                 </div>
+              </div>
+            )}
+
+            {activeTab === 'preferences' && (
+              <div className="space-y-6">
+                {/* Preferences Overview */}
+                <div className="bg-gray-100 rounded-lg p-4 border border-gray-400">
+                  <h3 className="font-medium text-black mb-2">Style Preferences Overview</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-600">Formality:</span>
+                      <div className="font-medium text-black capitalize">{preferences.formality}</div>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Length:</span>
+                      <div className="font-medium text-black capitalize">{preferences.length}</div>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Voice:</span>
+                      <div className="font-medium text-black capitalize">{preferences.voice}</div>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Custom Tone:</span>
+                      <div className="font-medium text-black">
+                        {preferences.tone ? 'Set' : 'Not set'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
                 {/* Style Preferences Section */}
                 <div>
@@ -598,6 +655,17 @@ export const CreateAgentModal: React.FC<CreateAgentModalProps> = ({
                       </p>
                     </div>
                   </div>
+
+                  {/* Additional Preferences */}
+                  <div className="mt-8 p-4 bg-gray-100 rounded-lg border border-gray-400">
+                    <h4 className="font-medium text-black mb-3">Quick Tips</h4>
+                    <ul className="text-sm text-gray-700 space-y-1">
+                      <li>• <strong>Formality:</strong> Choose "Adaptive" if you want the agent to match different contexts</li>
+                      <li>• <strong>Length:</strong> "Balanced" works well for most use cases</li>
+                      <li>• <strong>Voice:</strong> Active voice is generally more engaging and direct</li>
+                      <li>• <strong>Tone:</strong> Be specific about the emotional quality you want (e.g., "warm and encouraging")</li>
+                    </ul>
+                  </div>
                 </div>
               </div>
             )}
@@ -606,8 +674,14 @@ export const CreateAgentModal: React.FC<CreateAgentModalProps> = ({
           {/* Footer */}
           <div className="flex justify-between items-center p-6 border-t-2 border-black">
             <div className="text-sm text-gray-600">
-              {activeTab === 'training' && (
-                <span>{validSampleCount} training samples • {hasTrainingData ? 'Trained' : 'Untrained'}</span>
+              {activeTab === 'samples' && (
+                <span>{validSampleCount} valid samples</span>
+              )}
+              {activeTab === 'preferences' && (
+                <span>{hasPreferences ? 'Preferences configured' : 'Using default preferences'}</span>
+              )}
+              {activeTab === 'basic' && (
+                <span>Basic agent configuration</span>
               )}
             </div>
             <div className="flex space-x-3">
