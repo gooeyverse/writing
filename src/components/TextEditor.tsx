@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, Users, Highlighter, Undo, Redo, HelpCircle, Edit3, FileText, Type, Sparkles } from 'lucide-react';
+import { MessageSquare, Users, Highlighter, Undo, Redo, HelpCircle, Edit3, FileText, Type } from 'lucide-react';
 import { Agent } from '../types';
 
 interface TextEditorProps {
@@ -183,29 +183,6 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     }).join('');
   };
 
-  // Quick start suggestions
-  const quickStartSuggestions = [
-    "Write a professional email to a client...",
-    "Draft a blog post about...",
-    "Create a product description for...",
-    "Write a social media caption for...",
-    "Compose a cover letter for...",
-    "Draft a press release about..."
-  ];
-
-  const handleQuickStart = (suggestion: string) => {
-    onOriginalChange(suggestion);
-    if (textareaRef.current) {
-      textareaRef.current.focus();
-      // Position cursor at the end
-      setTimeout(() => {
-        if (textareaRef.current) {
-          textareaRef.current.setSelectionRange(suggestion.length, suggestion.length);
-        }
-      }, 0);
-    }
-  };
-
   // Calculate dynamic styling based on state
   const isEmpty = !originalText.trim();
   const isInteractive = isFocused || isHovered;
@@ -329,39 +306,6 @@ export const TextEditor: React.FC<TextEditorProps> = ({
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >
-          {/* Empty State with Quick Start Options */}
-          {isEmpty && !isFocused && (
-            <div className="absolute inset-6 flex flex-col items-center justify-center text-center z-5 pointer-events-none">
-              <div className="mb-6">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4 mx-auto">
-                  <Type className="w-8 h-8 text-blue-600" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">Start Writing Here</h3>
-                <p className="text-gray-600 max-w-md">
-                  Click anywhere in this area to begin typing. Your selected agents will help you improve your writing.
-                </p>
-              </div>
-              
-              {/* Quick Start Suggestions */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl pointer-events-auto">
-                {quickStartSuggestions.slice(0, 4).map((suggestion, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleQuickStart(suggestion)}
-                    className="flex items-center space-x-2 px-4 py-3 bg-white border-2 border-blue-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-all duration-200 text-left group"
-                  >
-                    <Sparkles className="w-4 h-4 text-blue-500 group-hover:text-blue-600" />
-                    <span className="text-gray-700 group-hover:text-gray-900 text-sm">{suggestion}</span>
-                  </button>
-                ))}
-              </div>
-              
-              <div className="mt-4 text-xs text-gray-500">
-                Or just click and start typing your own content
-              </div>
-            </div>
-          )}
-
           {/* Enhanced Text Editor with Dynamic Styling */}
           <div 
             className={`relative flex-1 min-h-0 transition-all duration-200 ${
