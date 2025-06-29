@@ -28,8 +28,9 @@ function App() {
   const [editorWidth, setEditorWidth] = useState<number>(65);
   const [chatHeight, setChatHeight] = useState<number>(70);
 
-  // Scroll control ref
+  // Scroll control ref and hover state
   const agentsScrollRef = useRef<HTMLDivElement>(null);
+  const [isAgentsPanelHovered, setIsAgentsPanelHovered] = useState<boolean>(false);
 
   const selectedAgents = agents.filter(agent => selectedAgentIds.includes(agent.id));
 
@@ -321,7 +322,11 @@ function App() {
         
         {/* Accordion Content - Collapsible */}
         {!agentsSectionCollapsed && (
-          <div className="px-6 pb-6 relative">
+          <div 
+            className="px-6 pb-6 relative"
+            onMouseEnter={() => setIsAgentsPanelHovered(true)}
+            onMouseLeave={() => setIsAgentsPanelHovered(false)}
+          >
             {/* Scrollable agents container with custom styled scrollbar */}
             <div 
               ref={agentsScrollRef}
@@ -364,8 +369,10 @@ function App() {
               </div>
             </div>
             
-            {/* Arrow buttons positioned at bottom right */}
-            <div className="absolute bottom-0 right-0 flex items-center space-x-2 bg-white p-2 rounded-tl-lg shadow-md">
+            {/* Arrow buttons positioned at bottom right - Only visible on hover */}
+            <div className={`absolute bottom-0 right-0 flex items-center space-x-2 bg-white p-2 rounded-tl-lg shadow-md transition-opacity duration-200 ${
+              isAgentsPanelHovered ? 'opacity-100' : 'opacity-0'
+            }`}>
               <button
                 onClick={scrollLeft}
                 className="w-8 h-8 bg-white rounded-lg shadow-sm flex items-center justify-center hover:bg-gray-100 transition-colors"
