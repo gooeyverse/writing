@@ -77,13 +77,13 @@ export const TextEditor: React.FC<TextEditorProps> = ({
           
           // Verify the selection was actually set
           setTimeout(() => {
-            if (textareaRef.current) {
+            if (textareaRef.current && pendingSelection) {
               const actualStart = textareaRef.current.selectionStart;
               const actualEnd = textareaRef.current.selectionEnd;
               
               if (actualStart === pendingSelection.start && actualEnd === pendingSelection.end) {
-                setPendingSelection(null);
-                setIsRestoringSelection(false);
+                // Selection successfully restored
+                console.log('Selection restored successfully');
               } else {
                 // Try again if selection wasn't properly restored
                 textareaRef.current.setSelectionRange(pendingSelection.start, pendingSelection.end);
@@ -94,7 +94,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
       };
 
       // Use multiple restoration attempts with different timing
-      const timeouts = [10, 50, 100, 200, 400, 600];
+      const timeouts = [10, 50, 100, 200, 400, 600, 800, 1000];
       timeouts.forEach((delay, index) => {
         setTimeout(() => {
           if (pendingSelection && textareaRef.current) {
@@ -153,8 +153,10 @@ export const TextEditor: React.FC<TextEditorProps> = ({
         // Store the selection to restore after layout changes
         setPendingSelection({ start, end, text: selected });
         
-        // Trigger the chat opening
-        onFirstHighlight();
+        // Small delay to ensure the selection is properly stored before triggering layout change
+        setTimeout(() => {
+          onFirstHighlight();
+        }, 10);
       }
     }
   };
