@@ -14,7 +14,7 @@ function App() {
   const [agents, setAgents] = useState<Agent[]>(defaultAgents);
   const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>(['sophia']);
   const [originalText, setOriginalText] = useState<string>('');
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]); // Start with empty array
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [createModalOpen, setCreateModalOpen] = useState<boolean>(false);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
