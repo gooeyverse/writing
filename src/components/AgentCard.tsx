@@ -48,9 +48,12 @@ export const AgentCard: React.FC<AgentCardProps> = ({
           </div>
         </div>
         
-        <div className="flex items-center space-x-2">
-          <div className={`w-2 h-2 rounded-full ${agent.active ? 'bg-black' : 'bg-gray-400'}`} />
-        </div>
+        {/* Only show status dot for selected agents */}
+        {isSelected && (
+          <div className="flex items-center space-x-2">
+            <div className={`w-2 h-2 rounded-full ${agent.active ? 'bg-black' : 'bg-gray-400'}`} />
+          </div>
+        )}
       </div>
       
       <p className="text-sm text-gray-700 mb-4 line-clamp-2">{agent.description}</p>
