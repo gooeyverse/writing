@@ -112,18 +112,6 @@ export const AgentCard: React.FC<AgentCardProps> = ({
         <span>{agent.totalRewrites.toLocaleString()} rewrites</span>
         <span>Created {formatDate(agent.createdAt)}</span>
       </div>
-      
-      <div className="mt-3 pt-3 border-t border-gray-300">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onEdit();
-          }}
-          className="w-full px-3 py-2 text-sm rounded-lg transition-colors border bg-white hover:bg-gray-100 text-black border-gray-400"
-        >
-          Edit & Train Agent
-        </button>
-      </div>
     </div>
   );
 };
