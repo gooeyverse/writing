@@ -63,7 +63,7 @@ serve(async (req) => {
     // Build the feedback prompt
     const prompt = buildFeedbackPrompt(text, agent)
 
-    // Call OpenAI API
+    // Call OpenAI API with parameters optimized for concise responses
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -82,10 +82,10 @@ serve(async (req) => {
             content: prompt.userMessage
           }
         ],
-        max_tokens: Math.max(800, Math.ceil(text.length * 2)),
-        temperature: 0.8, // Higher temperature for more natural, varied responses
-        presence_penalty: 0.3, // Encourage diverse vocabulary
-        frequency_penalty: 0.2 // Reduce repetitive patterns
+        max_tokens: Math.min(400, Math.max(150, Math.ceil(text.length * 0.8))), // Reduced max tokens for shorter responses
+        temperature: 0.7, // Slightly lower for more focused responses
+        presence_penalty: 0.2,
+        frequency_penalty: 0.3 // Higher to avoid repetition and encourage conciseness
       })
     })
 
@@ -152,95 +152,80 @@ EXPERTISE: ${agent.writingStyle}`
     }
   }
 
-  // Include training samples if available (up to 2 most recent for context)
+  // Include training samples if available (up to 1 most recent for context to keep prompt shorter)
   if (agent.trainingData?.samples && agent.trainingData.samples.length > 0) {
-    const recentSamples = agent.trainingData.samples
-      .sort((a, b) => new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime())
-      .slice(0, 2)
+    const recentSample = agent.trainingData.samples
+      .sort((a, b) => new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime())[0]
 
-    systemMessage += `\n\nWRITING EXAMPLES YOU'VE LEARNED FROM:`
-    recentSamples.forEach((sample, index) => {
-      systemMessage += `\n\nExample ${index + 1}${sample.title ? ` (${sample.title})` : ''}:
-"${sample.text}"`
-      if (sample.notes) {
-        systemMessage += `\nWhat makes this effective: ${sample.notes}`
-      }
-    })
+    systemMessage += `\n\nWRITING EXAMPLE YOU'VE LEARNED FROM:
+"${recentSample.text}"`
+    if (recentSample.notes) {
+      systemMessage += `\nWhat makes this effective: ${recentSample.notes}`
+    }
   }
 
-  // Define natural feedback approach based on personality
+  // Define concise feedback approach based on personality
   let feedbackApproach = ''
   
   switch (agent.personality) {
     case 'Professional and polished':
-      feedbackApproach = `
-Give feedback in a professional, thoughtful manner. Write naturally as if you're having a conversation with a colleague. Share your observations about what's working well and what could be improved. Be specific about why certain elements are effective or need attention. Maintain your professional demeanor while being genuinely helpful and encouraging.`
+      feedbackApproach = `Give brief, professional feedback. Focus on 2-3 key observations about clarity, structure, and tone. Be direct and actionable.`
       break
       
     case 'Casual and approachable':
-      feedbackApproach = `
-Give feedback in a warm, friendly way as if you're chatting with a friend about their writing. Point out what you like and gently suggest improvements. Use conversational language and be encouraging. Share your thoughts naturally without being overly structured. Make the person feel supported while helping them improve.`
+      feedbackApproach = `Give friendly, concise feedback. Point out what works well and 1-2 main areas to improve. Keep it encouraging and conversational.`
       break
       
     case 'Casual and concise':
-      feedbackApproach = `
-Give brief, direct feedback that gets to the point quickly. Focus on the most important things that will make the biggest difference. Be honest but supportive. Use simple language and avoid long explanations. Give practical advice they can act on right away.`
+      feedbackApproach = `Give very brief, direct feedback. Focus on the most important point that will make the biggest difference. Be honest and practical.`
       break
       
     case 'Confident and compelling':
-      feedbackApproach = `
-Give bold, decisive feedback that challenges the writer to reach their potential. Point out what's working powerfully and what needs to be stronger. Be direct about areas for improvement while inspiring them to push further. Focus on impact and results. Use confident language that motivates action.`
+      feedbackApproach = `Give bold, focused feedback. Identify what's powerful and what needs more impact. Be direct about the main improvement needed.`
       break
       
     case 'Scholarly and methodical':
-      feedbackApproach = `
-Provide thoughtful, well-reasoned feedback that draws on writing principles and best practices. Analyze the text systematically while maintaining a conversational tone. Reference specific techniques and explain why certain approaches work or don't work. Be thorough but accessible in your analysis.`
+      feedbackApproach = `Give concise, analytical feedback. Focus on the most important structural or logical issue. Be precise but brief.`
       break
       
     case 'Imaginative and expressive':
-      feedbackApproach = `
-Give creative, colorful feedback that celebrates the artistic aspects of writing. Use vivid language and metaphors to describe what you observe. Encourage creative risk-taking and experimentation. Focus on the emotional impact and artistic expression. Make your feedback itself engaging and inspiring.`
+      feedbackApproach = `Give creative, brief feedback. Focus on emotional impact and one key way to enhance the artistic expression.`
       break
       
     case 'Precise and logical':
-      feedbackApproach = `
-Provide clear, systematic feedback that focuses on structure, clarity, and logical flow. Point out specific areas where precision can be improved. Be methodical in your observations while keeping the tone conversational. Focus on how to make the writing more effective and easier to understand.`
+      feedbackApproach = `Give clear, systematic feedback in 2-3 sentences. Focus on the main clarity or structure issue.`
       break
 
     case 'Authentic and introspective':
-      feedbackApproach = `
-Give honest, thoughtful feedback that connects with the authentic voice in the writing. Look for genuine moments and help strengthen them. Point out where the writing feels real versus where it might feel forced. Encourage the writer to dig deeper into their authentic perspective and voice.`
+      feedbackApproach = `Give honest, brief feedback about the authentic voice. Focus on what feels genuine and one way to strengthen it.`
       break
 
     case 'Darkly humorous and philosophical':
-      feedbackApproach = `
-Provide feedback with your characteristic wit and philosophical insight. Point out the absurdities and deeper truths in the writing. Use humor to make your points while being genuinely helpful. Look for opportunities to add depth and meaning. Be honest about what works and what doesn't, but with compassionate cynicism.`
+      feedbackApproach = `Give witty, concise feedback with philosophical insight. Make one key observation with your characteristic humor.`
       break
 
     case 'Self-deprecating and observational':
-      feedbackApproach = `
-Give feedback with humor and keen social observation. Point out what's working well and what could be funnier or more insightful. Look for opportunities to add personality and observational details. Be encouraging while helping them find their unique voice and perspective.`
+      feedbackApproach = `Give brief feedback with humor and keen observation. Focus on one main way to add personality or insight.`
       break
       
     default:
-      feedbackApproach = `
-Give natural, conversational feedback that reflects your personality. Share what you notice about the writing - both strengths and areas for improvement. Be genuine in your response and helpful in your suggestions. Write as if you're having a real conversation about the text.`
+      feedbackApproach = `Give natural, brief feedback. Focus on 1-2 key observations that will be most helpful.`
   }
 
   systemMessage += `\n\n${feedbackApproach}
 
-IMPORTANT GUIDELINES:
-- Write your feedback naturally, as if speaking to the person
-- Don't use rigid templates or bullet points unless it fits your personality
-- Be genuine and conversational in your tone
-- Focus on being helpful rather than following a format
-- Let your personality shine through in how you give feedback
-- Vary your response structure - sometimes start with positives, sometimes with observations, sometimes with questions
-- Make it feel like a real conversation about their writing
-- Don't feel obligated to cover every aspect - focus on what's most important or interesting to you
-- Be specific about what you notice, but express it naturally`
+CRITICAL REQUIREMENTS:
+- Keep your response SHORT and CONCISE (2-4 sentences maximum)
+- Focus on only the MOST IMPORTANT feedback point
+- Be direct and actionable
+- Don't use bullet points or long explanations
+- Get straight to the point
+- Make every word count
+- If the text is good, say so briefly and suggest one small improvement
+- If it needs work, identify the main issue and how to fix it
+- Write naturally but keep it tight and focused`
 
-  const userMessage = `I'd like your feedback on this text:\n\n"${text}"`
+  const userMessage = `Quick feedback on this text:\n\n"${text}"`
 
   return { systemMessage, userMessage }
 }
