@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, Users, Highlighter, Undo, Redo, HelpCircle, Edit3, FileText, Type, X, ChevronRight } from 'lucide-react';
+import { MessageSquare, Users, Highlighter, Undo, Redo, HelpCircle, Edit3, FileText, Type, X, ChevronRight, Send } from 'lucide-react';
 import { Agent } from '../types';
 
 interface TextEditorProps {
@@ -44,17 +44,24 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     selectedText: string;
     hoveredAgent: string | null;
     submenuPosition: ContextMenuPosition | null;
+    showQuestionInput: boolean;
+    questionText: string;
+    questionAgent: Agent | null;
   }>({
     show: false,
     position: { x: 0, y: 0 },
     selectedText: '',
     hoveredAgent: null,
-    submenuPosition: null
+    submenuPosition: null,
+    showQuestionInput: false,
+    questionText: '',
+    questionAgent: null
   });
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const displayRef = useRef<HTMLDivElement>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
   const submenuRef = useRef<HTMLDivElement>(null);
+  const questionInputRef = useRef<HTMLTextAreaElement>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [history, setHistory] = useState<string[]>([originalText]);
   const [historyIndex, setHistoryIndex] = useState(0);
@@ -79,20 +86,37 @@ export const TextEditor: React.FC<TextEditorProps> = ({
           position: { x: 0, y: 0 }, 
           selectedText: '',
           hoveredAgent: null,
-          submenuPosition: null
+          submenuPosition: null,
+          showQuestionInput: false,
+          questionText: '',
+          questionAgent: null
         });
       }
     };
 
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setContextMenu({ 
-          show: false, 
-          position: { x: 0, y: 0 }, 
-          selectedText: '',
-          hoveredAgent: null,
-          submenuPosition: null
-        });
+        if (contextMenu.showQuestionInput) {
+          // If question input is open, just close it
+          setContextMenu(prev => ({
+            ...prev,
+            showQuestionInput: false,
+            questionText: '',
+            questionAgent: null
+          }));
+        } else {
+          // Otherwise close the entire menu
+          setContextMenu({ 
+            show: false, 
+            position: { x: 0, y: 0 }, 
+            selectedText: '',
+            hoveredAgent: null,
+            submenuPosition: null,
+            showQuestionInput: false,
+            questionText: '',
+            questionAgent: null
+          });
+        }
       }
     };
 
@@ -104,7 +128,14 @@ export const TextEditor: React.FC<TextEditorProps> = ({
         document.removeEventListener('keydown', handleEscape);
       };
     }
-  }, [contextMenu.show]);
+  }, [contextMenu.show, contextMenu.showQuestionInput]);
+
+  // Focus question input when it opens
+  useEffect(() => {
+    if (contextMenu.showQuestionInput && questionInputRef.current) {
+      questionInputRef.current.focus();
+    }
+  }, [contextMenu.showQuestionInput]);
 
   // Cleanup hover timeout on unmount
   useEffect(() => {
@@ -151,12 +182,18 @@ export const TextEditor: React.FC<TextEditorProps> = ({
         position: { x: e.clientX, y: e.clientY },
         selectedText: textToUse,
         hoveredAgent: null,
-        submenuPosition: null
+        submenuPosition: null,
+        showQuestionInput: false,
+        questionText: '',
+        questionAgent: null
       });
     }
   };
 
   const handleAgentHover = (agentId: string, event: React.MouseEvent) => {
+    // Don't show submenu if question input is open
+    if (contextMenu.showQuestionInput) return;
+
     // Clear any existing timeout
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
@@ -190,6 +227,9 @@ export const TextEditor: React.FC<TextEditorProps> = ({
   };
 
   const handleAgentLeave = (event: React.MouseEvent) => {
+    // Don't hide submenu if question input is open
+    if (contextMenu.showQuestionInput) return;
+
     // Check if mouse is moving towards the submenu area
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
     const mouseX = event.clientX;
@@ -222,6 +262,9 @@ export const TextEditor: React.FC<TextEditorProps> = ({
   };
 
   const handleSubmenuLeave = () => {
+    // Don't hide submenu if question input is open
+    if (contextMenu.showQuestionInput) return;
+
     // Immediate hide when leaving submenu
     setContextMenu(prev => ({
       ...prev,
@@ -231,6 +274,9 @@ export const TextEditor: React.FC<TextEditorProps> = ({
   };
 
   const handleMenuContainerMouseLeave = () => {
+    // Don't hide menu if question input is open
+    if (contextMenu.showQuestionInput) return;
+
     // Only hide if not hovering over submenu
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
@@ -245,21 +291,56 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     }, 200);
   };
 
+  const handleShowQuestionInput = (agent: Agent) => {
+    setContextMenu(prev => ({
+      ...prev,
+      showQuestionInput: true,
+      questionAgent: agent,
+      questionText: '',
+      hoveredAgent: null,
+      submenuPosition: null
+    }));
+  };
+
+  const handleQuestionSubmit = () => {
+    if (!onSendMessage || !contextMenu.questionText.trim() || !contextMenu.questionAgent) return;
+
+    // Format the question with the selected text
+    const message = `I have a question about this text: "${contextMenu.selectedText}"\n\n${contextMenu.questionText.trim()}`;
+    
+    onSendMessage(message, [contextMenu.questionAgent.id], 'chat');
+    
+    // Close the entire context menu
+    setContextMenu({ 
+      show: false, 
+      position: { x: 0, y: 0 }, 
+      selectedText: '',
+      hoveredAgent: null,
+      submenuPosition: null,
+      showQuestionInput: false,
+      questionText: '',
+      questionAgent: null
+    });
+  };
+
+  const handleQuestionKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      handleQuestionSubmit();
+    }
+  };
+
   const handleAgentAction = (agent: Agent, action: 'feedback' | 'rewrite' | 'question') => {
     if (!onSendMessage || !contextMenu.selectedText) return;
 
-    let message: string;
-    let messageType: 'feedback' | 'chat' | 'rewrite';
-    
     if (action === 'question') {
-      // For questions, we'll format it as a natural question about the text
-      message = `I have a question about this text: "${contextMenu.selectedText}"\n\nWhat do you think about this? Any insights or observations you can share?`;
-      messageType = 'chat'; // Use chat type for questions to get conversational responses
-    } else {
-      // Send the text directly with the correct message type for feedback/rewrite
-      message = contextMenu.selectedText;
-      messageType = action; // Use the action directly as the message type
+      handleShowQuestionInput(agent);
+      return;
     }
+
+    // Send the text directly with the correct message type for feedback/rewrite
+    const message = contextMenu.selectedText;
+    const messageType = action; // Use the action directly as the message type
     
     onSendMessage(message, [agent.id], messageType);
     setContextMenu({ 
@@ -267,7 +348,10 @@ export const TextEditor: React.FC<TextEditorProps> = ({
       position: { x: 0, y: 0 }, 
       selectedText: '',
       hoveredAgent: null,
-      submenuPosition: null
+      submenuPosition: null,
+      showQuestionInput: false,
+      questionText: '',
+      questionAgent: null
     });
   };
 
@@ -730,64 +814,128 @@ export const TextEditor: React.FC<TextEditorProps> = ({
         </div>
       </div>
 
-      {/* Two-Layer Context Menu with Improved Hover Handling */}
+      {/* Two-Layer Context Menu with Question Input */}
       {contextMenu.show && (
         <div onMouseLeave={handleMenuContainerMouseLeave}>
-          {/* Main Menu - Agent List */}
-          <div
-            ref={contextMenuRef}
-            className="fixed bg-white border-2 border-gray-800 rounded-lg shadow-lg py-2 z-50 min-w-48"
-            style={{
-              left: `${Math.min(contextMenu.position.x, window.innerWidth - 200)}px`,
-              top: `${Math.min(contextMenu.position.y, window.innerHeight - (selectedAgents.length * 50 + 80))}px`
-            }}
-          >
-            {/* Context Menu Header */}
-            <div className="px-4 py-2 border-b border-gray-300 bg-gray-50">
-              <div className="text-xs text-gray-600 font-medium">
-                {contextMenu.selectedText.length > 30 
-                  ? `"${contextMenu.selectedText.substring(0, 30)}..."` 
-                  : `"${contextMenu.selectedText}"`
-                }
-              </div>
-              <div className="text-xs text-gray-500 mt-1">
-                Choose an agent to help
-              </div>
-            </div>
-
-            {/* Agent List */}
-            <div className="max-h-64 overflow-y-auto">
-              {selectedAgents.map((agent) => (
-                <div 
-                  key={agent.id} 
-                  className="relative"
-                  onMouseEnter={(e) => handleAgentHover(agent.id, e)}
-                  onMouseLeave={handleAgentLeave}
-                >
-                  <div className="px-4 py-3 hover:bg-gray-100 transition-colors cursor-pointer flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <span className="text-lg">{agent.avatar}</span>
-                      <div>
-                        <div className="font-medium text-gray-800 text-sm">{agent.name}</div>
-                        <div className="text-xs text-gray-600">{agent.personality}</div>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-gray-400" />
+          {/* Question Input Modal */}
+          {contextMenu.showQuestionInput && contextMenu.questionAgent && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white border-2 border-gray-800 rounded-lg shadow-lg w-full max-w-md">
+                {/* Header */}
+                <div className="px-4 py-3 border-b border-gray-300 bg-gray-50">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-lg">{contextMenu.questionAgent.avatar}</span>
+                    <span className="font-medium text-gray-800">Ask {contextMenu.questionAgent.name}</span>
+                  </div>
+                  <div className="text-xs text-gray-600 mt-1">
+                    About: "{contextMenu.selectedText.length > 40 
+                      ? contextMenu.selectedText.substring(0, 40) + '...' 
+                      : contextMenu.selectedText}"
                   </div>
                 </div>
-              ))}
-            </div>
 
-            {/* Footer */}
-            <div className="px-4 py-2 border-t border-gray-300 bg-gray-50">
-              <div className="text-xs text-gray-500">
-                Hover over an agent to see actions
+                {/* Question Input */}
+                <div className="p-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Your question:
+                  </label>
+                  <textarea
+                    ref={questionInputRef}
+                    value={contextMenu.questionText}
+                    onChange={(e) => setContextMenu(prev => ({ ...prev, questionText: e.target.value }))}
+                    onKeyDown={handleQuestionKeyPress}
+                    placeholder="What would you like to ask about this text?"
+                    rows={4}
+                    className="w-full p-3 border-2 border-gray-400 rounded-lg resize-none focus:ring-2 focus:ring-gray-800 focus:border-gray-800 bg-white text-gray-700"
+                  />
+                  <div className="text-xs text-gray-500 mt-2">
+                    Press Ctrl+Enter to send, or use the button below
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="px-4 py-3 border-t border-gray-300 bg-gray-50 flex justify-end space-x-3">
+                  <button
+                    onClick={() => setContextMenu(prev => ({ 
+                      ...prev, 
+                      showQuestionInput: false, 
+                      questionText: '', 
+                      questionAgent: null 
+                    }))}
+                    className="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-lg transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleQuestionSubmit}
+                    disabled={!contextMenu.questionText.trim()}
+                    className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
+                  >
+                    <Send className="w-4 h-4" />
+                    <span>Ask Question</span>
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Submenu - Actions */}
-          {contextMenu.hoveredAgent && contextMenu.submenuPosition && (
+          {/* Main Menu - Agent List (hidden when question input is open) */}
+          {!contextMenu.showQuestionInput && (
+            <div
+              ref={contextMenuRef}
+              className="fixed bg-white border-2 border-gray-800 rounded-lg shadow-lg py-2 z-50 min-w-48"
+              style={{
+                left: `${Math.min(contextMenu.position.x, window.innerWidth - 200)}px`,
+                top: `${Math.min(contextMenu.position.y, window.innerHeight - (selectedAgents.length * 50 + 80))}px`
+              }}
+            >
+              {/* Context Menu Header */}
+              <div className="px-4 py-2 border-b border-gray-300 bg-gray-50">
+                <div className="text-xs text-gray-600 font-medium">
+                  {contextMenu.selectedText.length > 30 
+                    ? `"${contextMenu.selectedText.substring(0, 30)}..."` 
+                    : `"${contextMenu.selectedText}"`
+                  }
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  Choose an agent to help
+                </div>
+              </div>
+
+              {/* Agent List */}
+              <div className="max-h-64 overflow-y-auto">
+                {selectedAgents.map((agent) => (
+                  <div 
+                    key={agent.id} 
+                    className="relative"
+                    onMouseEnter={(e) => handleAgentHover(agent.id, e)}
+                    onMouseLeave={handleAgentLeave}
+                  >
+                    <div className="px-4 py-3 hover:bg-gray-100 transition-colors cursor-pointer flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <span className="text-lg">{agent.avatar}</span>
+                        <div>
+                          <div className="font-medium text-gray-800 text-sm">{agent.name}</div>
+                          <div className="text-xs text-gray-600">{agent.personality}</div>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-gray-400" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Footer */}
+              <div className="px-4 py-2 border-t border-gray-300 bg-gray-50">
+                <div className="text-xs text-gray-500">
+                  Hover over an agent to see actions
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Submenu - Actions (hidden when question input is open) */}
+          {!contextMenu.showQuestionInput && contextMenu.hoveredAgent && contextMenu.submenuPosition && (
             <div
               ref={submenuRef}
               className="fixed bg-white border-2 border-gray-800 rounded-lg shadow-lg py-2 z-50 min-w-44"
