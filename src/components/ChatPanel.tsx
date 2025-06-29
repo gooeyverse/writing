@@ -205,7 +205,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
 
       {/* Messages - Only show if messages area is visible */}
       {showMessagesArea && (
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
               <Bot className="w-12 h-12 text-gray-500 mb-4" />
@@ -373,7 +373,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
 
       {/* Input Area - Only show if input area is visible */}
       {showInputArea && (
-        <div className="flex flex-col h-full p-4 bg-white relative">
+        <div className="flex flex-col p-4 bg-white relative">
           {/* Mention Suggestions - Only show selected agents */}
           {showSuggestions && filteredAgents.length > 0 && (
             <div className="absolute bottom-full left-4 right-4 mb-2 bg-white border-2 border-black rounded-lg shadow-lg max-h-40 overflow-y-auto z-10">
@@ -396,17 +396,17 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
             </div>
           )}
 
-          {/* Main input area that fills the height */}
-          <div className="flex flex-col h-full space-y-3">
-            {/* Text input - takes up most of the space */}
-            <div className="flex-1 relative">
+          {/* Main input area */}
+          <div className="flex flex-col space-y-3">
+            {/* Text input */}
+            <div className="relative">
               <textarea
                 ref={inputRef}
                 value={inputMessage}
                 onChange={handleInputChange}
                 onKeyPress={handleKeyPress}
                 placeholder={`Ask for feedback, request rewrites, or chat naturally... Use @AgentName to mention specific agents (${selectedAgents.map(a => a.name).join(', ')})`}
-                className="w-full h-full p-4 border-2 border-gray-400 rounded-lg resize-none focus:ring-2 focus:ring-black focus:border-black bg-white text-black"
+                className="w-full h-24 p-4 border-2 border-gray-400 rounded-lg resize-none focus:ring-2 focus:ring-black focus:border-black bg-white text-black"
               />
             </div>
             

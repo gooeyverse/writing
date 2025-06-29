@@ -78,7 +78,7 @@ function App() {
     }
   });
   
-  // Layout state - Chat panel now defaults to 33%
+  // Layout state - Editor defaults to 67%
   const [editorWidth, setEditorWidth] = useState<number>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.EDITOR_WIDTH);
@@ -340,7 +340,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="h-screen bg-white flex flex-col overflow-hidden">
       <Header 
         onShowStats={() => {}}
         onShowSettings={() => {}}
@@ -417,33 +417,35 @@ function App() {
         )}
       </div>
 
-      {/* Main Content - Resizable Split Layout */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left Panel - Text Editor (Resizable) - Now defaults to 67% */}
+      {/* Main Content - Resizable Split Layout with 100% height */}
+      <div className="flex-1 flex overflow-hidden min-h-0">
+        {/* Left Panel - Text Editor (Resizable) */}
         <ResizablePanel
           direction="horizontal"
           initialSize={editorWidth}
           minSize={30}
           maxSize={70}
           onResize={setEditorWidth}
-          className="overflow-y-auto"
+          className="overflow-hidden"
         >
-          <div className="p-6 h-full">
-            <TextEditor
-              originalText={originalText}
-              onOriginalChange={setOriginalText}
-              onGetFeedback={handleGetFeedback}
-              isProcessing={isProcessing}
-              selectedAgents={selectedAgents}
-              onSendMessage={handleSendMessage}
-            />
+          <div className="h-full overflow-y-auto">
+            <div className="p-6 h-full">
+              <TextEditor
+                originalText={originalText}
+                onOriginalChange={setOriginalText}
+                onGetFeedback={handleGetFeedback}
+                isProcessing={isProcessing}
+                selectedAgents={selectedAgents}
+                onSendMessage={handleSendMessage}
+              />
+            </div>
           </div>
         </ResizablePanel>
 
-        {/* Right Panel - Chat Interface - Fixed Layout with Anchored Input */}
-        <div className="flex-1 border-l border-black bg-white flex flex-col overflow-hidden">
+        {/* Right Panel - Chat Interface with Fixed Layout */}
+        <div className="flex-1 border-l border-black bg-white flex flex-col overflow-hidden min-w-0">
           {/* Chat Messages Area - Scrollable */}
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-hidden min-h-0">
             <ChatPanel
               messages={chatMessages}
               agents={agents}
