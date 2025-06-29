@@ -96,7 +96,22 @@ export const TextEditor: React.FC<TextEditorProps> = ({
       // Trigger first highlight callback when text is selected for the first time
       if (selected.trim() && !hasHighlightedBefore && onFirstHighlight) {
         setHasHighlightedBefore(true);
-        onFirstHighlight();
+        
+        // Use setTimeout to ensure the selection is preserved after the chat opens
+        setTimeout(() => {
+          onFirstHighlight();
+          
+          // Restore focus and selection after chat opens
+          setTimeout(() => {
+            if (textareaRef.current) {
+              textareaRef.current.focus();
+              textareaRef.current.setSelectionRange(start, end);
+              // Update the state again to ensure it's preserved
+              setSelectedText(selected);
+              setSelectionRange({ start, end });
+            }
+          }, 100);
+        }, 0);
       }
     }
   };
