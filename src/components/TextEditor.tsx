@@ -548,13 +548,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
               />
             </div>
 
-            {/* Typing Indicator - Updated to Gray Theme */}
-            {isFocused && (
-              <div className="absolute top-2 right-2 flex items-center space-x-2 bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs z-20">
-                <div className="w-2 h-2 bg-gray-500 rounded-full animate-pulse"></div>
-                <span>Typing</span>
-              </div>
-            )}
+            {/* Removed the typing indicator that was covering text */}
           </div>
 
           {/* Enhanced Bottom Controls - Only Get Feedback Button */}
