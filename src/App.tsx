@@ -20,8 +20,8 @@ function App() {
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   const [agentsSectionCollapsed, setAgentsSectionCollapsed] = useState<boolean>(false);
   
-  // Layout state
-  const [editorWidth, setEditorWidth] = useState<number>(50);
+  // Layout state - Changed default editor width to 65% (so chat gets 35%)
+  const [editorWidth, setEditorWidth] = useState<number>(65);
   const [chatHeight, setChatHeight] = useState<number>(70);
 
   // Scroll control ref
