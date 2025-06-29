@@ -264,8 +264,8 @@ function App() {
         onCreateAgent={() => setCreateModalOpen(true)}
       />
       
-      {/* Agents Accordion Section - Light Gray Background, No Bottom Border */}
-      <div className="bg-gray-100 flex-shrink-0">
+      {/* Agents Accordion Section - Darker Gray Background */}
+      <div className="bg-gray-200 flex-shrink-0">
         {/* Accordion Header - Always Visible */}
         <div className="px-6 py-4">
           <button
@@ -282,7 +282,7 @@ function App() {
             </div>
             
             {/* Simple Chevron Button */}
-            <div className="p-1 rounded-lg group-hover:bg-gray-200 transition-colors">
+            <div className="p-1 rounded-lg group-hover:bg-gray-300 transition-colors">
               {agentsSectionCollapsed ? (
                 <ChevronDown className="w-5 h-5 text-gray-600 group-hover:text-black transition-colors" />
               ) : (
