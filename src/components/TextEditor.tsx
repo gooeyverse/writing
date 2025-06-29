@@ -248,10 +248,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="mb-6 flex-shrink-0">
-        <h2 className="text-2xl font-bold text-black mb-2">Text Editor</h2>
-        <p className="text-gray-700">
-          Write your text here and get detailed feedback from your selected agents, or use the chat panel to have conversations with specific agents.
-        </p>
+        <h2 className="text-2xl font-bold text-black">Text Editor</h2>
       </div>
 
       {/* Rich Text Editor - Takes remaining height */}
