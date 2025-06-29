@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, Users, Bold, Italic, Underline, Highlighter, Type, AlignLeft, AlignCenter, AlignRight, Undo, Redo, Copy, Paste } from 'lucide-react';
+import { MessageSquare, Users, Bold, Italic, Underline, Highlighter, Type, AlignLeft, AlignCenter, AlignRight, Undo, Redo, Copy, Cast as Paste } from 'lucide-react';
 import { Agent } from '../types';
 
 interface TextEditorProps {
