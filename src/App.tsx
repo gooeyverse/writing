@@ -20,8 +20,8 @@ function App() {
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   const [agentsSectionCollapsed, setAgentsSectionCollapsed] = useState<boolean>(false);
   
-  // Layout state
-  const [editorWidth, setEditorWidth] = useState<number>(50);
+  // Layout state - Chat panel now defaults to 33%
+  const [editorWidth, setEditorWidth] = useState<number>(67);
   const [chatHeight, setChatHeight] = useState<number>(70);
 
   // Scroll control ref
@@ -323,7 +323,7 @@ function App() {
 
       {/* Main Content - Resizable Split Layout */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Panel - Text Editor (Resizable) */}
+        {/* Left Panel - Text Editor (Resizable) - Now defaults to 67% */}
         <ResizablePanel
           direction="horizontal"
           initialSize={editorWidth}
@@ -343,7 +343,7 @@ function App() {
           </div>
         </ResizablePanel>
 
-        {/* Right Panel - Chat Interface (Resizable) */}
+        {/* Right Panel - Chat Interface (Resizable) - Now defaults to 33% */}
         <div className="flex-1 border-l border-black bg-white flex flex-col overflow-hidden">
           {/* Chat Messages Area (Resizable) */}
           <ResizablePanel
