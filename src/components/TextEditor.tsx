@@ -49,6 +49,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
   const [history, setHistory] = useState<string[]>([originalText]);
   const [historyIndex, setHistoryIndex] = useState(0);
   const [hasHighlightedBefore, setHasHighlightedBefore] = useState(false);
+  const [pendingSelection, setPendingSelection] = useState<{ start: number; end: number; text: string } | null>(null);
 
   // Update history when text changes
   useEffect(() => {
@@ -59,6 +60,27 @@ export const TextEditor: React.FC<TextEditorProps> = ({
       setHistoryIndex(newHistory.length - 1);
     }
   }, [originalText]);
+
+  // Handle pending selection restoration after layout changes
+  useEffect(() => {
+    if (pendingSelection && textareaRef.current) {
+      const restoreSelection = () => {
+        if (textareaRef.current && pendingSelection) {
+          textareaRef.current.focus();
+          textareaRef.current.setSelectionRange(pendingSelection.start, pendingSelection.end);
+          setSelectedText(pendingSelection.text);
+          setSelectionRange({ start: pendingSelection.start, end: pendingSelection.end });
+          setPendingSelection(null);
+        }
+      };
+
+      // Try multiple times with increasing delays to handle layout changes
+      const timeouts = [50, 150, 300, 500];
+      timeouts.forEach(delay => {
+        setTimeout(restoreSelection, delay);
+      });
+    }
+  }, [pendingSelection]);
 
   // Close context menu when clicking outside
   useEffect(() => {
@@ -97,21 +119,11 @@ export const TextEditor: React.FC<TextEditorProps> = ({
       if (selected.trim() && !hasHighlightedBefore && onFirstHighlight) {
         setHasHighlightedBefore(true);
         
-        // Use setTimeout to ensure the selection is preserved after the chat opens
-        setTimeout(() => {
-          onFirstHighlight();
-          
-          // Restore focus and selection after chat opens
-          setTimeout(() => {
-            if (textareaRef.current) {
-              textareaRef.current.focus();
-              textareaRef.current.setSelectionRange(start, end);
-              // Update the state again to ensure it's preserved
-              setSelectedText(selected);
-              setSelectionRange({ start, end });
-            }
-          }, 100);
-        }, 0);
+        // Store the selection to restore after layout changes
+        setPendingSelection({ start, end, text: selected });
+        
+        // Trigger the chat opening
+        onFirstHighlight();
       }
     }
   };
