@@ -49,10 +49,7 @@ export const AgentCard: React.FC<AgentCardProps> = ({
         </div>
         
         <div className="flex items-center space-x-2">
-          <div className="flex items-center space-x-1">
-            <span className="text-xs font-medium text-black">{agent.accuracy}%</span>
-            <div className={`w-2 h-2 rounded-full ${agent.active ? 'bg-black' : 'bg-gray-400'}`} />
-          </div>
+          <div className={`w-2 h-2 rounded-full ${agent.active ? 'bg-black' : 'bg-gray-400'}`} />
         </div>
       </div>
       

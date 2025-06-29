@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Upload, BookOpen, FileText, Check, Settings } from 'lucide-react';
+import { X, Plus, Trash2, Upload, BookOpen, FileText, Check, Settings, TrendingUp } from 'lucide-react';
 import { Agent, WritingSample, TrainingData } from '../types';
 
 interface CreateAgentModalProps {
@@ -21,7 +21,7 @@ export const CreateAgentModal: React.FC<CreateAgentModalProps> = ({
   onSave,
   editingAgent
 }) => {
-  const [activeTab, setActiveTab] = useState<'basic' | 'samples' | 'preferences'>('basic');
+  const [activeTab, setActiveTab] = useState<'basic' | 'samples' | 'preferences' | 'stats'>('basic');
   const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
   
   // Basic agent data
@@ -166,6 +166,14 @@ export const CreateAgentModal: React.FC<CreateAgentModalProps> = ({
                         preferences.voice !== 'mixed';
   const hasTrainingData = validSampleCount > 0 || hasPreferences;
 
+  const formatDate = (date: Date) => {
+    return new Intl.DateTimeFormat('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      year: 'numeric'
+    }).format(date);
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl w-full max-w-5xl h-full max-h-[95vh] flex flex-col border-2 border-black">
@@ -244,6 +252,21 @@ export const CreateAgentModal: React.FC<CreateAgentModalProps> = ({
               )}
             </div>
           </button>
+          {editingAgent && (
+            <button
+              onClick={() => setActiveTab('stats')}
+              className={`px-4 sm:px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                activeTab === 'stats'
+                  ? 'border-black text-black'
+                  : 'border-transparent text-gray-600 hover:text-black'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <TrendingUp className="w-4 h-4" />
+                <span>Statistics</span>
+              </div>
+            </button>
+          )}
         </div>
 
         {/* Content - Scrollable */}
@@ -637,6 +660,164 @@ export const CreateAgentModal: React.FC<CreateAgentModalProps> = ({
                   </div>
                 </div>
               )}
+
+              {activeTab === 'stats' && editingAgent && (
+                <div className="space-y-6">
+                  {/* Performance Overview */}
+                  <div className="bg-gray-100 rounded-lg p-6 border border-gray-400">
+                    <h3 className="text-lg font-medium text-black mb-4">Performance Overview</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-black">{editingAgent.accuracy}%</div>
+                        <div className="text-sm text-gray-600">Accuracy Rating</div>
+                        <div className="mt-2 w-full bg-gray-300 rounded-full h-2">
+                          <div 
+                            className="bg-black h-2 rounded-full transition-all duration-300" 
+                            style={{ width: `${editingAgent.accuracy}%` }}
+                          />
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-black">{editingAgent.totalRewrites.toLocaleString()}</div>
+                        <div className="text-sm text-gray-600">Total Responses</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-black">
+                          {editingAgent.trainingData?.samples.length || 0}
+                        </div>
+                        <div className="text-sm text-gray-600">Training Samples</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-black">
+                          {editingAgent.active ? 'Active' : 'Inactive'}
+                        </div>
+                        <div className="text-sm text-gray-600">Status</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Detailed Statistics */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Agent Information */}
+                    <div className="bg-white rounded-lg p-6 border-2 border-gray-400">
+                      <h4 className="font-medium text-black mb-4 flex items-center space-x-2">
+                        <span className="text-lg">{editingAgent.avatar}</span>
+                        <span>Agent Information</span>
+                      </h4>
+                      <div className="space-y-3 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Created:</span>
+                          <span className="text-black font-medium">{formatDate(editingAgent.createdAt)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Personality:</span>
+                          <span className="text-black font-medium">{editingAgent.personality}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Writing Style:</span>
+                          <span className="text-black font-medium text-right max-w-[60%]">
+                            {editingAgent.writingStyle}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Has Training:</span>
+                          <span className="text-black font-medium">
+                            {editingAgent.trainingData ? 'Yes' : 'No'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Training Information */}
+                    <div className="bg-white rounded-lg p-6 border-2 border-gray-400">
+                      <h4 className="font-medium text-black mb-4 flex items-center space-x-2">
+                        <BookOpen className="w-4 h-4" />
+                        <span>Training Information</span>
+                      </h4>
+                      {editingAgent.trainingData ? (
+                        <div className="space-y-3 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Samples:</span>
+                            <span className="text-black font-medium">
+                              {editingAgent.trainingData.samples.length}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Last Updated:</span>
+                            <span className="text-black font-medium">
+                              {formatDate(editingAgent.trainingData.lastUpdated)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Formality:</span>
+                            <span className="text-black font-medium capitalize">
+                              {editingAgent.trainingData.preferences.formality}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Length Pref:</span>
+                            <span className="text-black font-medium capitalize">
+                              {editingAgent.trainingData.preferences.length}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Voice Pref:</span>
+                            <span className="text-black font-medium capitalize">
+                              {editingAgent.trainingData.preferences.voice}
+                            </span>
+                          </div>
+                          {editingAgent.trainingData.preferences.tone && (
+                            <div className="pt-2 border-t border-gray-300">
+                              <span className="text-gray-600">Custom Tone:</span>
+                              <div className="text-black font-medium mt-1">
+                                "{editingAgent.trainingData.preferences.tone}"
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-center py-4">
+                          <div className="text-gray-500 mb-2">No training data</div>
+                          <div className="text-xs text-gray-600">
+                            Add writing samples and preferences to improve this agent's performance
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Performance Notes */}
+                  <div className="bg-white rounded-lg p-6 border-2 border-gray-400">
+                    <h4 className="font-medium text-black mb-4 flex items-center space-x-2">
+                      <TrendingUp className="w-4 h-4" />
+                      <span>Performance Notes</span>
+                    </h4>
+                    <div className="space-y-3 text-sm text-gray-700">
+                      <div className="flex items-start space-x-2">
+                        <div className="w-2 h-2 bg-black rounded-full mt-2 flex-shrink-0" />
+                        <div>
+                          <strong>Accuracy Rating:</strong> Based on user feedback (thumbs up/down) on agent responses. 
+                          Higher accuracy indicates better user satisfaction.
+                        </div>
+                      </div>
+                      <div className="flex items-start space-x-2">
+                        <div className="w-2 h-2 bg-black rounded-full mt-2 flex-shrink-0" />
+                        <div>
+                          <strong>Total Responses:</strong> Number of times this agent has provided feedback, 
+                          rewrites, or conversational responses.
+                        </div>
+                      </div>
+                      <div className="flex items-start space-x-2">
+                        <div className="w-2 h-2 bg-black rounded-full mt-2 flex-shrink-0" />
+                        <div>
+                          <strong>Training Impact:</strong> Agents with more training samples and specific 
+                          preferences typically provide more consistent and personalized responses.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Footer - Fixed */}
@@ -651,6 +832,9 @@ export const CreateAgentModal: React.FC<CreateAgentModalProps> = ({
                 {activeTab === 'basic' && (
                   <span>Basic agent configuration</span>
                 )}
+                {activeTab === 'stats' && editingAgent && (
+                  <span>{editingAgent.accuracy}% accuracy • {editingAgent.totalRewrites} responses</span>
+                )}
               </div>
               <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 order-1 sm:order-2">
                 <button
@@ -658,15 +842,17 @@ export const CreateAgentModal: React.FC<CreateAgentModalProps> = ({
                   onClick={onClose}
                   className="w-full sm:w-auto px-4 py-2 text-black border-2 border-gray-400 rounded-lg hover:bg-gray-100 transition-colors"
                 >
-                  Cancel
+                  {activeTab === 'stats' ? 'Close' : 'Cancel'}
                 </button>
-                <button
-                  type="submit"
-                  disabled={!formData.name.trim() || !formData.description.trim()}
-                  className="w-full sm:w-auto px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border-2 border-black"
-                >
-                  {editingAgent ? 'Update Agent' : 'Create Agent'}
-                </button>
+                {activeTab !== 'stats' && (
+                  <button
+                    type="submit"
+                    disabled={!formData.name.trim() || !formData.description.trim()}
+                    className="w-full sm:w-auto px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border-2 border-black"
+                  >
+                    {editingAgent ? 'Update Agent' : 'Create Agent'}
+                  </button>
+                )}
               </div>
             </div>
           </form>
