@@ -3,15 +3,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Hide scrollbar for horizontal scroll */
-.scrollbar-hide {
-  -ms-overflow-style: none;  /* Internet Explorer 10+ */
-  scrollbar-width: none;  /* Firefox */
-}
-.scrollbar-hide::-webkit-scrollbar { 
-  display: none;  /* Safari and Chrome */
-}
-
 /* Apply typewriter font globally */
 * {
   font-family: 'JetBrains Mono', 'Courier New', monospace;
@@ -33,4 +24,76 @@
   border-right: 2px solid #000;
   white-space: nowrap;
   animation: typewriter 2s steps(40, end), blink 1s step-end infinite;
+}
+
+/* Custom horizontal scrollbar for agents panel */
+.agents-scroll-container {
+  /* Force scrollbar to always be visible */
+  overflow-x: scroll !important;
+  overflow-y: hidden;
+  scrollbar-width: auto;
+  scrollbar-color: #6b7280 #f3f4f6;
+  /* Ensure minimum content width to trigger scrolling */
+  min-width: 100%;
+}
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+.agents-scroll-container::-webkit-scrollbar {
+  height: 14px;
+  width: 14px;
+}
+
+.agents-scroll-container::-webkit-scrollbar-track {
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 2px solid #e5e7eb;
+  margin: 0 12px;
+}
+
+.agents-scroll-container::-webkit-scrollbar-thumb {
+  background: #9ca3af;
+  border-radius: 8px;
+  border: 2px solid #f9fafb;
+  min-width: 50px;
+  transition: all 0.2s ease;
+}
+
+.agents-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+  border-color: #f3f4f6;
+}
+
+.agents-scroll-container::-webkit-scrollbar-thumb:active {
+  background: #374151;
+  border-color: #e5e7eb;
+}
+
+.agents-scroll-container::-webkit-scrollbar-corner {
+  background: #f9fafb;
+}
+
+/* Firefox scrollbar styling */
+@supports (scrollbar-width: auto) {
+  .agents-scroll-container {
+    scrollbar-width: auto;
+    scrollbar-color: #9ca3af #f9fafb;
+  }
+}
+
+/* Force scrollbar visibility by ensuring content width */
+.agents-scroll-content {
+  display: flex;
+  gap: 1rem;
+  width: max-content;
+  min-width: calc(100% + 1px); /* Force overflow by at least 1px */
+  padding-bottom: 1rem;
+}
+
+/* Hide default scrollbar for other elements */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar { 
+  display: none;  /* Safari and Chrome */
 }

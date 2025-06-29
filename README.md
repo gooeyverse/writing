@@ -1,13 +1,13 @@
-# Writing Agents - AI-Powered Text Rewriting Tool
+# Writing Agents - AI-Powered Text Feedback Tool
 
-A sophisticated React application that allows you to create and train personalized AI writing agents to rewrite text in different styles and tones.
+A sophisticated React application that allows you to create and train personalized AI writing agents to provide detailed feedback and analysis on your text in different styles and perspectives.
 
 ## Features
 
-- **Multiple AI Agents**: Create and manage different writing agents with unique personalities
+- **Multiple AI Agents**: Create and manage different writing agents with unique personalities and expertise
 - **Supabase + OpenAI Integration**: Secure server-side AI processing via Supabase Edge Functions
 - **Agent Training**: Train agents with writing samples and style preferences
-- **Real-time Chat**: Interactive chat interface with agent mentions
+- **Real-time Feedback**: Interactive chat interface with agent mentions for detailed text analysis
 - **Feedback System**: Rate agent responses to improve their accuracy
 - **Responsive Design**: Beautiful, production-ready interface
 
@@ -53,22 +53,23 @@ A sophisticated React application that allows you to create and train personaliz
 ## Usage
 
 1. **Connect to Supabase**: Click the "Connect to Supabase" button in the header
-2. **Select Agents**: Choose which writing agents you want to use
+2. **Select Agents**: Choose which writing agents you want to use for feedback
 3. **Write Text**: Enter your text in the editor or chat interface
-4. **Get Rewrites**: Agents will rewrite your text using OpenAI's GPT models
-5. **Train Agents**: Add writing samples to improve agent performance
+4. **Get Feedback**: Agents will provide detailed analysis using OpenAI's GPT models
+5. **Train Agents**: Add writing samples to improve agent feedback quality
 6. **Provide Feedback**: Rate responses to help agents learn your preferences
 
 ## Agent Types
 
 The app comes with several pre-configured agents:
 
-- **Sophia**: Professional business writing
-- **Marcus**: Casual and friendly communication
-- **Victoria**: Persuasive sales copy
-- **Professor Chen**: Academic and scholarly writing
-- **Luna**: Creative and imaginative content
-- **Alex**: Technical documentation
+- **Sophia**: Professional business writing analysis
+- **Marcus**: Casual and friendly communication feedback
+- **Victoria**: Persuasive sales copy evaluation
+- **Professor Chen**: Academic and scholarly writing review
+- **Luna**: Creative and imaginative content analysis
+- **Alex**: Technical documentation assessment
+- **Sam**: Simple, direct communication feedback
 
 ## Architecture
 

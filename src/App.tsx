@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Header } from './components/Header';
 import { AgentCard } from './components/AgentCard';
 import { TextEditor } from './components/TextEditor';
 import { ChatPanel } from './components/ChatPanel';
-import { TrainingModal } from './components/TrainingModal';
 import { CreateAgentModal } from './components/CreateAgentModal';
+import { ResizablePanel } from './components/ResizablePanel';
 import { defaultAgents } from './data/agents';
 import { TextRewriter } from './utils/rewriter';
 import { Agent, TrainingData, ChatMessage } from './types';
@@ -16,11 +16,16 @@ function App() {
   const [originalText, setOriginalText] = useState<string>('');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const [trainingModalOpen, setTrainingModalOpen] = useState<boolean>(false);
   const [createModalOpen, setCreateModalOpen] = useState<boolean>(false);
-  const [trainingAgent, setTrainingAgent] = useState<Agent | null>(null);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   const [agentsSectionCollapsed, setAgentsSectionCollapsed] = useState<boolean>(false);
+  
+  // Layout state
+  const [editorWidth, setEditorWidth] = useState<number>(50);
+  const [chatHeight, setChatHeight] = useState<number>(70);
+
+  // Scroll control ref
+  const agentsScrollRef = useRef<HTMLDivElement>(null);
 
   const selectedAgents = agents.filter(agent => selectedAgentIds.includes(agent.id));
 
@@ -36,7 +41,7 @@ function App() {
     });
   };
 
-  const handleSendMessage = async (message: string, mentionedAgentIds: string[]) => {
+  const handleSendMessage = async (message: string, mentionedAgentIds: string[], messageType: 'feedback' | 'chat' = 'chat') => {
     if (!message.trim()) return;
 
     // Add user message
@@ -45,7 +50,8 @@ function App() {
       type: 'user',
       content: message,
       timestamp: new Date(),
-      mentionedAgents: mentionedAgentIds
+      mentionedAgents: mentionedAgentIds,
+      messageType
     };
 
     setChatMessages(prev => [...prev, userMessage]);
@@ -59,15 +65,27 @@ function App() {
       const agent = agents.find(a => a.id === agentId);
       if (agent) {
         try {
-          const rewritten = await TextRewriter.rewrite(message, agent);
+          let response: string;
+          
+          // Determine response type based on message content and type
+          if (messageType === 'feedback' || isRequestingFeedback(message)) {
+            response = await TextRewriter.provideFeedback(message, agent);
+          } else if (isRequestingRewrite(message)) {
+            response = await TextRewriter.rewrite(message, agent);
+          } else {
+            // For general chat, provide conversational feedback/advice
+            response = await TextRewriter.provideConversationalResponse(message, agent, chatMessages);
+          }
           
           const agentMessage: ChatMessage = {
             id: `${agentId}-${Date.now()}-${Math.random()}`,
             type: 'agent',
-            content: rewritten,
+            content: response,
             timestamp: new Date(),
             agentId,
-            originalMessage: message
+            originalMessage: message,
+            responseType: messageType === 'feedback' || isRequestingFeedback(message) ? 'feedback' : 
+                         isRequestingRewrite(message) ? 'rewrite' : 'conversation'
           };
 
           setChatMessages(prev => [...prev, agentMessage]);
@@ -81,16 +99,17 @@ function App() {
             )
           );
         } catch (error) {
-          console.error(`Error rewriting with agent ${agent.name}:`, error);
+          console.error(`Error getting response from agent ${agent.name}:`, error);
           
           // Add error message
           const errorMessage: ChatMessage = {
             id: `${agentId}-error-${Date.now()}-${Math.random()}`,
             type: 'agent',
-            content: `Sorry, I encountered an error while rewriting your text. Please try again.`,
+            content: `Sorry, I encountered an error while processing your request. Please try again.`,
             timestamp: new Date(),
             agentId,
-            originalMessage: message
+            originalMessage: message,
+            responseType: 'error'
           };
 
           setChatMessages(prev => [...prev, errorMessage]);
@@ -102,6 +121,31 @@ function App() {
     }
 
     setIsProcessing(false);
+  };
+
+  // Helper functions to detect message intent
+  const isRequestingFeedback = (message: string): boolean => {
+    const feedbackKeywords = [
+      'feedback', 'analyze', 'review', 'critique', 'assess', 'evaluate', 
+      'what do you think', 'how is this', 'thoughts on', 'opinion on',
+      'check this', 'look at this', 'rate this', 'judge this'
+    ];
+    return feedbackKeywords.some(keyword => 
+      message.toLowerCase().includes(keyword.toLowerCase())
+    );
+  };
+
+  const isRequestingRewrite = (message: string): boolean => {
+    const rewriteKeywords = [
+      'rewrite', 'rephrase', 'reword', 'revise', 'edit', 'improve',
+      'make it', 'change it to', 'turn this into', 'convert this',
+      'make this more', 'make this less', 'simplify', 'formalize',
+      'casualize', 'shorten', 'expand', 'professional version',
+      'casual version', 'better version'
+    ];
+    return rewriteKeywords.some(keyword => 
+      message.toLowerCase().includes(keyword.toLowerCase())
+    );
   };
 
   const handleFeedback = (messageId: string, rating: 'positive' | 'negative') => {
@@ -129,16 +173,11 @@ function App() {
     );
   };
 
-  const handleRewrite = async () => {
+  const handleGetFeedback = async () => {
     if (!originalText.trim() || selectedAgentIds.length === 0) return;
     
-    await handleSendMessage(originalText, []);
-    setOriginalText(''); // Clear the text editor after sending
-  };
-
-  const handleTrainAgent = (agent: Agent) => {
-    setTrainingAgent(agent);
-    setTrainingModalOpen(true);
+    // Send message as feedback type but DON'T clear the text editor
+    await handleSendMessage(originalText, [], 'feedback');
   };
 
   const handleEditAgent = (agent: Agent) => {
@@ -159,37 +198,6 @@ function App() {
     if (selectedAgentIds.includes(agentId) && selectedAgentIds.length === 1 && remainingAgents.length > 0) {
       setSelectedAgentIds([remainingAgents[0].id]);
     }
-  };
-
-  const handleSaveTraining = (trainingData: TrainingData) => {
-    if (!trainingAgent) return;
-    
-    // Save the training data to the agent
-    const updatedTrainingData = {
-      ...trainingData,
-      lastUpdated: new Date()
-    };
-    
-    // Update agent accuracy based on training data quality
-    const sampleCount = trainingData.samples.length;
-    const accuracyBoost = Math.min(8, sampleCount * 1.5); // More samples = better training
-    
-    setAgents(prevAgents =>
-      prevAgents.map(agent =>
-        agent.id === trainingAgent.id
-          ? { 
-              ...agent, 
-              accuracy: Math.min(100, agent.accuracy + accuracyBoost),
-              trainingData: updatedTrainingData
-            }
-          : agent
-      )
-    );
-  };
-
-  const handleCloseTrainingModal = () => {
-    setTrainingModalOpen(false);
-    setTrainingAgent(null);
   };
 
   const handleCreateAgent = (agentData: Omit<Agent, 'id' | 'accuracy' | 'totalRewrites' | 'createdAt'>) => {
@@ -218,14 +226,22 @@ function App() {
     setEditingAgent(null);
   };
 
-  const handleSelectAll = () => {
-    const activeAgents = agents.filter(agent => agent.active);
-    setSelectedAgentIds(activeAgents.map(agent => agent.id));
+  // Scroll control functions
+  const scrollLeft = () => {
+    if (agentsScrollRef.current) {
+      agentsScrollRef.current.scrollBy({
+        left: -320, // Scroll by approximately one agent card width
+        behavior: 'smooth'
+      });
+    }
   };
 
-  const handleDeselectAll = () => {
-    if (agents.length > 0) {
-      setSelectedAgentIds([agents[0].id]); // Keep at least one selected
+  const scrollRight = () => {
+    if (agentsScrollRef.current) {
+      agentsScrollRef.current.scrollBy({
+        left: 320, // Scroll by approximately one agent card width
+        behavior: 'smooth'
+      });
     }
   };
 
@@ -250,66 +266,30 @@ function App() {
                 {selectedAgentIds.length} of {agents.length} selected
               </span>
             </div>
-            <div className="flex items-center space-x-3">
-              {!agentsSectionCollapsed && (
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleSelectAll();
-                    }}
-                    className="px-3 py-1 text-sm text-black hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors border border-black"
-                  >
-                    Select All
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeselectAll();
-                    }}
-                    className="px-3 py-1 text-sm text-gray-600 hover:text-black hover:bg-gray-100 rounded-lg transition-colors border border-gray-400"
-                  >
-                    Select One
-                  </button>
-                </div>
+            <div className="p-1 rounded-lg group-hover:bg-gray-100 transition-colors">
+              {agentsSectionCollapsed ? (
+                <ChevronDown className="w-5 h-5 text-gray-600" />
+              ) : (
+                <ChevronUp className="w-5 h-5 text-gray-600" />
               )}
-              <div className="p-1 rounded-lg group-hover:bg-gray-100 transition-colors">
-                {agentsSectionCollapsed ? (
-                  <ChevronDown className="w-5 h-5 text-gray-600" />
-                ) : (
-                  <ChevronUp className="w-5 h-5 text-gray-600" />
-                )}
-              </div>
             </div>
           </button>
         </div>
         
         {!agentsSectionCollapsed && (
-          <div className="px-6 pb-6">
-            <div className="relative">
-              {/* Left scroll indicator */}
-              <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-white via-white to-transparent pointer-events-none z-10 flex items-center justify-start pl-2">
-                <div className="w-8 h-8 bg-white rounded-full shadow-md border border-black flex items-center justify-center opacity-60">
-                  <ChevronLeft className="w-4 h-4 text-black" />
-                </div>
-              </div>
-              
-              {/* Right scroll indicator */}
-              <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-white via-white to-transparent pointer-events-none z-10 flex items-center justify-end pr-2">
-                <div className="w-8 h-8 bg-white rounded-full shadow-md border border-black flex items-center justify-center opacity-60">
-                  <ChevronRight className="w-4 h-4 text-black" />
-                </div>
-              </div>
-              
-              {/* Scrollable agents container */}
-              <div className="flex space-x-4 overflow-x-auto pb-2 scrollbar-hide px-12">
+          <div className="px-6 pb-6 relative">
+            {/* Scrollable agents container with custom styled scrollbar */}
+            <div 
+              ref={agentsScrollRef}
+              className="agents-scroll-container"
+            >
+              <div className="agents-scroll-content">
                 {agents.map(agent => (
                   <div key={agent.id} className="flex-shrink-0 w-80">
                     <AgentCard
                       agent={agent}
                       isSelected={selectedAgentIds.includes(agent.id)}
                       onSelect={() => handleAgentSelect(agent.id)}
-                      onTrain={() => handleTrainAgent(agent)}
                       onEdit={() => handleEditAgent(agent)}
                       onDelete={() => handleDeleteAgent(agent.id)}
                       multiSelect={true}
@@ -317,55 +297,91 @@ function App() {
                   </div>
                 ))}
               </div>
+            </div>
+            
+            {/* Arrow buttons positioned at bottom right */}
+            <div className="absolute bottom-0 right-0 flex items-center space-x-2 bg-white p-2 rounded-tl-lg shadow-md">
+              <button
+                onClick={scrollLeft}
+                className="w-8 h-8 bg-white rounded-lg shadow-sm flex items-center justify-center hover:bg-gray-100 transition-colors"
+                title="Scroll left"
+              >
+                <ChevronLeft className="w-4 h-4 text-black" />
+              </button>
               
-              {/* Scroll hint text */}
-              <div className="text-center mt-2">
-                <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full border border-gray-300">
-                  ← Scroll horizontally to see all agents →
-                </span>
-              </div>
+              <button
+                onClick={scrollRight}
+                className="w-8 h-8 bg-white rounded-lg shadow-sm flex items-center justify-center hover:bg-gray-100 transition-colors"
+                title="Scroll right"
+              >
+                <ChevronRight className="w-4 h-4 text-black" />
+              </button>
             </div>
           </div>
         )}
       </div>
 
-      {/* Main Content - Split Layout */}
+      {/* Main Content - Resizable Split Layout */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Panel - Text Editor */}
-        <div className="flex-1 p-6 overflow-y-auto">
-          <TextEditor
-            originalText={originalText}
-            onOriginalChange={setOriginalText}
-            onRewrite={handleRewrite}
-            isRewriting={isProcessing}
-            selectedAgents={selectedAgents}
-          />
-        </div>
+        {/* Left Panel - Text Editor (Resizable) */}
+        <ResizablePanel
+          direction="horizontal"
+          initialSize={editorWidth}
+          minSize={30}
+          maxSize={70}
+          onResize={setEditorWidth}
+          className="overflow-y-auto"
+        >
+          <div className="p-6 h-full">
+            <TextEditor
+              originalText={originalText}
+              onOriginalChange={setOriginalText}
+              onGetFeedback={handleGetFeedback}
+              isProcessing={isProcessing}
+              selectedAgents={selectedAgents}
+            />
+          </div>
+        </ResizablePanel>
 
-        {/* Right Panel - Chat Interface */}
-        <div className="w-1/2 border-l border-black bg-white flex flex-col">
-          <ChatPanel
-            messages={chatMessages}
-            agents={agents}
-            selectedAgents={selectedAgents}
-            onSendMessage={handleSendMessage}
-            onFeedback={handleFeedback}
-            isProcessing={isProcessing}
-          />
+        {/* Right Panel - Chat Interface (Resizable) */}
+        <div className="flex-1 border-l border-black bg-white flex flex-col overflow-hidden">
+          {/* Chat Messages Area (Resizable) */}
+          <ResizablePanel
+            direction="vertical"
+            initialSize={chatHeight}
+            minSize={40}
+            maxSize={85}
+            onResize={setChatHeight}
+            className="flex flex-col"
+          >
+            <ChatPanel
+              messages={chatMessages}
+              agents={agents}
+              selectedAgents={selectedAgents}
+              onSendMessage={handleSendMessage}
+              onFeedback={handleFeedback}
+              isProcessing={isProcessing}
+              showInputArea={false}
+            />
+          </ResizablePanel>
+
+          {/* Chat Input Area (Fixed at bottom) */}
+          <div className="flex-1 border-t-2 border-black bg-white">
+            <ChatPanel
+              messages={[]}
+              agents={agents}
+              selectedAgents={selectedAgents}
+              onSendMessage={handleSendMessage}
+              onFeedback={handleFeedback}
+              isProcessing={isProcessing}
+              showMessagesArea={false}
+              showInputArea={true}
+            />
+          </div>
         </div>
       </div>
 
-      {/* Training Modal */}
-      {trainingAgent && (
-        <TrainingModal
-          agent={trainingAgent}
-          isOpen={trainingModalOpen}
-          onClose={handleCloseTrainingModal}
-          onSave={handleSaveTraining}
-        />
-      )}
-
-      {/* Create/Edit Agent Modal */}
+      {/* Create/Edit Agent Modal with Training */}
       <CreateAgentModal
         isOpen={createModalOpen}
         onClose={() => {
