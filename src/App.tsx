@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { Header } from './components/Header';
 import { AgentCard } from './components/AgentCard';
 import { TextEditor } from './components/TextEditor';
@@ -10,111 +10,22 @@ import { TextRewriter } from './utils/rewriter';
 import { Agent, TrainingData, ChatMessage } from './types';
 import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
 
-// Local storage keys
-const STORAGE_KEYS = {
-  CHAT_MESSAGES: 'writing-agents-chat-messages',
-  AGENTS: 'writing-agents-agents',
-  SELECTED_AGENT_IDS: 'writing-agents-selected-agents',
-  ORIGINAL_TEXT: 'writing-agents-original-text',
-  AGENTS_SECTION_COLLAPSED: 'writing-agents-section-collapsed',
-  EDITOR_WIDTH: 'writing-agents-editor-width'
-};
-
 function App() {
-  // Load initial state from localStorage
-  const [agents, setAgents] = useState<Agent[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.AGENTS);
-      return saved ? JSON.parse(saved) : defaultAgents;
-    } catch {
-      return defaultAgents;
-    }
-  });
-
-  const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.SELECTED_AGENT_IDS);
-      return saved ? JSON.parse(saved) : ['sophia'];
-    } catch {
-      return ['sophia'];
-    }
-  });
-
-  const [originalText, setOriginalText] = useState<string>(() => {
-    try {
-      return localStorage.getItem(STORAGE_KEYS.ORIGINAL_TEXT) || '';
-    } catch {
-      return '';
-    }
-  });
-
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.CHAT_MESSAGES);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        // Convert timestamp strings back to Date objects
-        return parsed.map((msg: any) => ({
-          ...msg,
-          timestamp: new Date(msg.timestamp)
-        }));
-      }
-      return [];
-    } catch {
-      return [];
-    }
-  });
-
+  const [agents, setAgents] = useState<Agent[]>(defaultAgents);
+  const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>(['sophia']);
+  const [originalText, setOriginalText] = useState<string>('');
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [createModalOpen, setCreateModalOpen] = useState<boolean>(false);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
+  const [agentsSectionCollapsed, setAgentsSectionCollapsed] = useState<boolean>(false);
   
-  const [agentsSectionCollapsed, setAgentsSectionCollapsed] = useState<boolean>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.AGENTS_SECTION_COLLAPSED);
-      return saved ? JSON.parse(saved) : false;
-    } catch {
-      return false;
-    }
-  });
-  
-  // Layout state - Editor defaults to 67%
-  const [editorWidth, setEditorWidth] = useState<number>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.EDITOR_WIDTH);
-      return saved ? JSON.parse(saved) : 67;
-    } catch {
-      return 67;
-    }
-  });
+  // Layout state
+  const [editorWidth, setEditorWidth] = useState<number>(50);
+  const [chatHeight, setChatHeight] = useState<number>(70);
 
   // Scroll control ref
   const agentsScrollRef = useRef<HTMLDivElement>(null);
-
-  // Persist state changes to localStorage
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.AGENTS, JSON.stringify(agents));
-  }, [agents]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.SELECTED_AGENT_IDS, JSON.stringify(selectedAgentIds));
-  }, [selectedAgentIds]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.ORIGINAL_TEXT, originalText);
-  }, [originalText]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.CHAT_MESSAGES, JSON.stringify(chatMessages));
-  }, [chatMessages]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.AGENTS_SECTION_COLLAPSED, JSON.stringify(agentsSectionCollapsed));
-  }, [agentsSectionCollapsed]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.EDITOR_WIDTH, JSON.stringify(editorWidth));
-  }, [editorWidth]);
 
   const selectedAgents = agents.filter(agent => selectedAgentIds.includes(agent.id));
 
@@ -340,7 +251,7 @@ function App() {
   };
 
   return (
-    <div className="h-screen bg-white flex flex-col overflow-hidden">
+    <div className="min-h-screen bg-white flex flex-col">
       <Header 
         onShowStats={() => {}}
         onShowSettings={() => {}}
@@ -417,8 +328,8 @@ function App() {
         )}
       </div>
 
-      {/* Main Content - Resizable Split Layout with 100% height */}
-      <div className="flex-1 flex overflow-hidden min-h-0">
+      {/* Main Content - Resizable Split Layout */}
+      <div className="flex-1 flex overflow-hidden">
         {/* Left Panel - Text Editor (Resizable) */}
         <ResizablePanel
           direction="horizontal"
@@ -426,26 +337,30 @@ function App() {
           minSize={30}
           maxSize={70}
           onResize={setEditorWidth}
-          className="overflow-hidden"
+          className="overflow-y-auto"
         >
-          <div className="h-full overflow-y-auto">
-            <div className="p-6 h-full">
-              <TextEditor
-                originalText={originalText}
-                onOriginalChange={setOriginalText}
-                onGetFeedback={handleGetFeedback}
-                isProcessing={isProcessing}
-                selectedAgents={selectedAgents}
-                onSendMessage={handleSendMessage}
-              />
-            </div>
+          <div className="p-6 h-full">
+            <TextEditor
+              originalText={originalText}
+              onOriginalChange={setOriginalText}
+              onGetFeedback={handleGetFeedback}
+              isProcessing={isProcessing}
+              selectedAgents={selectedAgents}
+            />
           </div>
         </ResizablePanel>
 
-        {/* Right Panel - Chat Interface with Fixed Layout */}
-        <div className="flex-1 border-l border-black bg-white flex flex-col overflow-hidden min-w-0">
-          {/* Chat Messages Area - Scrollable */}
-          <div className="flex-1 overflow-hidden min-h-0">
+        {/* Right Panel - Chat Interface (Resizable) */}
+        <div className="flex-1 border-l border-black bg-white flex flex-col overflow-hidden">
+          {/* Chat Messages Area (Resizable) */}
+          <ResizablePanel
+            direction="vertical"
+            initialSize={chatHeight}
+            minSize={40}
+            maxSize={85}
+            onResize={setChatHeight}
+            className="flex flex-col"
+          >
             <ChatPanel
               messages={chatMessages}
               agents={agents}
@@ -453,13 +368,12 @@ function App() {
               onSendMessage={handleSendMessage}
               onFeedback={handleFeedback}
               isProcessing={isProcessing}
-              showMessagesArea={true}
               showInputArea={false}
             />
-          </div>
+          </ResizablePanel>
 
-          {/* Chat Input Area - Fixed at bottom, always visible */}
-          <div className="flex-shrink-0 border-t-2 border-black bg-white">
+          {/* Chat Input Area (Fixed at bottom) */}
+          <div className="flex-1 border-t-2 border-black bg-white">
             <ChatPanel
               messages={[]}
               agents={agents}
