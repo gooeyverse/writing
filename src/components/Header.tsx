@@ -68,7 +68,7 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center space-x-3">
           <CustomIcon className="w-16 h-16 text-gray-800" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-800 typewriter-effect">Writer's circle</h1>
+            <h1 className="text-2xl font-bold text-gray-800 typewriter-effect">Writer's Circle</h1>
             <p className="text-sm text-gray-600">Be your best writer with the help of a personal writer's circle</p>
           </div>
         </div>
