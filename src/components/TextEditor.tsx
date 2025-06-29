@@ -50,6 +50,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
   const [historyIndex, setHistoryIndex] = useState(0);
   const [hasHighlightedBefore, setHasHighlightedBefore] = useState(false);
   const [pendingSelection, setPendingSelection] = useState<{ start: number; end: number; text: string } | null>(null);
+  const [isRestoringSelection, setIsRestoringSelection] = useState(false);
 
   // Update history when text changes
   useEffect(() => {
@@ -63,24 +64,54 @@ export const TextEditor: React.FC<TextEditorProps> = ({
 
   // Handle pending selection restoration after layout changes
   useEffect(() => {
-    if (pendingSelection && textareaRef.current) {
+    if (pendingSelection && textareaRef.current && !isRestoringSelection) {
+      setIsRestoringSelection(true);
+      
       const restoreSelection = () => {
         if (textareaRef.current && pendingSelection) {
+          // Force focus and selection
           textareaRef.current.focus();
           textareaRef.current.setSelectionRange(pendingSelection.start, pendingSelection.end);
           setSelectedText(pendingSelection.text);
           setSelectionRange({ start: pendingSelection.start, end: pendingSelection.end });
-          setPendingSelection(null);
+          
+          // Verify the selection was actually set
+          setTimeout(() => {
+            if (textareaRef.current) {
+              const actualStart = textareaRef.current.selectionStart;
+              const actualEnd = textareaRef.current.selectionEnd;
+              
+              if (actualStart === pendingSelection.start && actualEnd === pendingSelection.end) {
+                setPendingSelection(null);
+                setIsRestoringSelection(false);
+              } else {
+                // Try again if selection wasn't properly restored
+                textareaRef.current.setSelectionRange(pendingSelection.start, pendingSelection.end);
+              }
+            }
+          }, 50);
         }
       };
 
-      // Try multiple times with increasing delays to handle layout changes
-      const timeouts = [50, 150, 300, 500];
-      timeouts.forEach(delay => {
-        setTimeout(restoreSelection, delay);
+      // Use multiple restoration attempts with different timing
+      const timeouts = [10, 50, 100, 200, 400, 600];
+      timeouts.forEach((delay, index) => {
+        setTimeout(() => {
+          if (pendingSelection && textareaRef.current) {
+            restoreSelection();
+          }
+          
+          // Clear pending selection after final attempt
+          if (index === timeouts.length - 1) {
+            setTimeout(() => {
+              setPendingSelection(null);
+              setIsRestoringSelection(false);
+            }, 100);
+          }
+        }, delay);
       });
     }
-  }, [pendingSelection]);
+  }, [pendingSelection, isRestoringSelection]);
 
   // Close context menu when clicking outside
   useEffect(() => {
