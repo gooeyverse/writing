@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, Users, Highlighter, Undo, Redo, HelpCircle, Edit3, FileText, Type } from 'lucide-react';
+import { MessageSquare, Users, Highlighter, Undo, Redo, HelpCircle, Edit3, FileText, Type, X } from 'lucide-react';
 import { Agent } from '../types';
 
 interface TextEditorProps {
@@ -393,15 +393,15 @@ export const TextEditor: React.FC<TextEditorProps> = ({
             {/* Divider */}
             <div className="w-px h-6 bg-gray-300 mx-2" />
 
-            {/* Yellow Highlight - Updated with toggle functionality */}
+            {/* Yellow Highlight Button - Updated with X icon for removal */}
             <button
               onClick={applyHighlight}
               disabled={!selectedText}
-              className={`p-2 rounded transition-colors ${
+              className={`p-2 rounded transition-colors relative ${
                 !selectedText 
                   ? 'text-gray-400 cursor-not-allowed' 
                   : selectionWithinHighlight
-                    ? 'text-red-600 hover:text-red-800 hover:bg-red-100'
+                    ? 'text-yellow-600 hover:text-yellow-800 hover:bg-yellow-100 bg-yellow-50'
                     : 'text-yellow-600 hover:text-yellow-800 hover:bg-yellow-100'
               }`}
               title={
@@ -412,7 +412,14 @@ export const TextEditor: React.FC<TextEditorProps> = ({
                     : 'Highlight selected text'
               }
             >
-              <Highlighter className="w-4 h-4" />
+              {selectionWithinHighlight ? (
+                <div className="relative">
+                  <Highlighter className="w-4 h-4" />
+                  <X className="w-2 h-2 absolute -top-0.5 -right-0.5 text-yellow-800 bg-yellow-200 rounded-full" />
+                </div>
+              ) : (
+                <Highlighter className="w-4 h-4" />
+              )}
             </button>
           </div>
 
@@ -420,7 +427,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
           <div className="flex items-center space-x-4 text-sm text-gray-600">
             {selectedText && (
               <span className={`font-medium ${
-                selectionWithinHighlight ? 'text-red-600' : 'text-yellow-600'
+                selectionWithinHighlight ? 'text-yellow-600' : 'text-yellow-600'
               }`}>
                 "{selectedText.length > 15 ? selectedText.substring(0, 15) + '...' : selectedText}" selected
                 {selectionWithinHighlight && ' (will remove highlight)'}
@@ -460,7 +467,14 @@ export const TextEditor: React.FC<TextEditorProps> = ({
                       <span>to apply yellow highlighting</span>
                     </li>
                     <li>• Click on highlighted text to remove the highlight</li>
-                    <li>• Selecting text within a highlight will remove that highlight</li>
+                    <li className="flex items-center space-x-1">
+                      <span>• Selecting text within a highlight shows</span>
+                      <div className="relative inline-flex">
+                        <Highlighter className="w-3 h-3 text-yellow-400" />
+                        <X className="w-1.5 h-1.5 absolute -top-0.5 -right-0.5 text-yellow-200 bg-yellow-600 rounded-full" />
+                      </div>
+                      <span>to remove</span>
+                    </li>
                     <li className="flex items-center space-x-1">
                       <span>• Use Ctrl+Z/Ctrl+Y or the</span>
                       <Undo className="w-3 h-3" />
