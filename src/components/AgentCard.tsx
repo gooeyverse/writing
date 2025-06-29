@@ -26,8 +26,8 @@ export const AgentCard: React.FC<AgentCardProps> = ({
       className={`
         relative p-5 rounded-xl border-2 cursor-pointer transition-all duration-200 hover:shadow-lg group h-48 flex flex-col
         ${isSelected 
-          ? 'border-4 border-gray-800 bg-gray-100 shadow-lg' 
-          : 'border-2 border-gray-400 bg-white hover:border-gray-800 hover:shadow-md'
+          ? 'border-4 border-gray-700 bg-gray-100 shadow-lg' 
+          : 'border-2 border-gray-400 bg-white hover:border-gray-700 hover:shadow-md'
         }
       `}
       onClick={onSelect}
@@ -35,7 +35,7 @@ export const AgentCard: React.FC<AgentCardProps> = ({
       {/* Selection indicator for multi-select - only show circle on hover when not selected */}
       {multiSelect && !isSelected && (
         <div className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-          <div className="w-6 h-6 rounded-full border-2 border-gray-400 bg-white group-hover:border-gray-800" />
+          <div className="w-6 h-6 rounded-full border-2 border-gray-400 bg-white group-hover:border-gray-700" />
         </div>
       )}
 
@@ -51,7 +51,7 @@ export const AgentCard: React.FC<AgentCardProps> = ({
         {/* Only show status dot for selected agents */}
         {isSelected && (
           <div className="flex items-center space-x-2">
-            <div className={`w-2 h-2 rounded-full ${agent.active ? 'bg-gray-800' : 'bg-gray-400'}`} />
+            <div className={`w-2 h-2 rounded-full ${agent.active ? 'bg-gray-700' : 'bg-gray-400'}`} />
           </div>
         )}
       </div>
@@ -66,8 +66,8 @@ export const AgentCard: React.FC<AgentCardProps> = ({
         {hasTrainingData && (
           <div className="mb-3 p-2 bg-gray-100 rounded-lg border border-gray-400">
             <div className="flex items-center space-x-2">
-              <BookOpen className="w-3 h-3 text-gray-800" />
-              <span className="text-xs text-gray-800 font-medium">
+              <BookOpen className="w-3 h-3 text-gray-700" />
+              <span className="text-xs text-gray-700 font-medium">
                 Trained with {agent.trainingData!.samples.length} samples
               </span>
             </div>
@@ -82,7 +82,7 @@ export const AgentCard: React.FC<AgentCardProps> = ({
             e.stopPropagation();
             onEdit();
           }}
-          className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg border border-gray-300 shadow-sm bg-white"
+          className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg border border-gray-300 shadow-sm bg-white"
           title="Edit agent"
         >
           <Settings className="w-4 h-4" />
@@ -92,7 +92,7 @@ export const AgentCard: React.FC<AgentCardProps> = ({
             e.stopPropagation();
             onDelete();
           }}
-          className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg border border-gray-300 shadow-sm bg-white"
+          className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg border border-gray-300 shadow-sm bg-white"
           title="Delete agent"
         >
           <Trash2 className="w-4 h-4" />
