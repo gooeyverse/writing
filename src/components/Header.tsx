@@ -1,6 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { Zap, ZapOff } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import React from 'react';
 
 interface HeaderProps {
   onShowStats: () => void;
@@ -63,27 +61,6 @@ export const Header: React.FC<HeaderProps> = ({
   onShowSettings, 
   onCreateAgent
 }) => {
-  const [supabaseStatus, setSupabaseStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking');
-
-  useEffect(() => {
-    const checkConnection = async () => {
-      try {
-        // Test Supabase connection by calling a simple function
-        const { error } = await supabase.functions.invoke('openai-rewrite', {
-          body: { test: true }
-        });
-        
-        // If we get a response (even an error), Supabase is connected
-        setSupabaseStatus('connected');
-      } catch (error) {
-        console.error('Supabase connection test failed:', error);
-        setSupabaseStatus('disconnected');
-      }
-    };
-
-    checkConnection();
-  }, []);
-
   return (
     <header className="bg-white px-6 py-4">
       <div className="flex items-center justify-between">
@@ -96,21 +73,6 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
         
         <div className="flex items-center space-x-4">
-          {/* Supabase Status Indicator */}
-          <div className="flex items-center space-x-2 px-3 py-1 rounded-lg border border-gray-400 bg-gray-100">
-            {supabaseStatus === 'checking' ? (
-              <div className="w-2 h-2 bg-gray-500 rounded-full animate-pulse" />
-            ) : supabaseStatus === 'connected' ? (
-              <Zap className="w-4 h-4 text-green-600" />
-            ) : (
-              <ZapOff className="w-4 h-4 text-red-600" />
-            )}
-            <span className="text-xs text-gray-700">
-              {supabaseStatus === 'checking' ? 'Checking...' : 
-               supabaseStatus === 'connected' ? 'AI Connected' : 'AI Disconnected'}
-            </span>
-          </div>
-
           {/* Bolt Badge */}
           <BoltBadge />
         </div>
