@@ -1,6 +1,7 @@
 import React from 'react';
 import { Agent } from '../types';
 import { Settings, Trash2, BookOpen } from 'lucide-react';
+import { OpenPeepsAvatar } from './OpenPeepsAvatar';
 
 interface AgentCardProps {
   agent: Agent;
@@ -41,7 +42,7 @@ export const AgentCard: React.FC<AgentCardProps> = ({
 
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center space-x-3">
-          <div className="text-3xl">{agent.avatar}</div>
+          <OpenPeepsAvatar variant={agent.avatar} size={48} />
           <div>
             <h3 className="font-semibold text-lg text-gray-800">{agent.name}</h3>
             <p className="text-sm text-gray-600">{agent.personality}</p>

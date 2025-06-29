@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Upload, BookOpen, FileText, Check, Settings, TrendingUp } from 'lucide-react';
 import { Agent, WritingSample, TrainingData } from '../types';
+import { OpenPeepsAvatar } from './OpenPeepsAvatar';
 
 interface CreateAgentModalProps {
   isOpen: boolean;
@@ -10,9 +11,11 @@ interface CreateAgentModalProps {
 }
 
 const avatarOptions = [
-  '👩‍💼', '👨‍💼', '🧑‍🎨', '👩‍🎨', '👨‍🎨', '🎯', '👩‍🏫', '👨‍🏫', 
-  '🌙', '⭐', '🚀', '💡', '👩‍💻', '👨‍💻', '🧑‍💻', '📝', '✍️', '📚',
-  '🎭', '🎪', '🎨', '🔬', '⚡', '🌟', '💫', '🦋', '🌺', '🍃', '🌀'
+  'sophia', 'marcus', 'professor-chen', 'holden', 'billy', 'david',
+  'creative-writer', 'technical-writer', 'journalist', 'poet', 'novelist', 'blogger',
+  'copywriter', 'editor', 'researcher', 'analyst', 'consultant', 'teacher',
+  'student', 'entrepreneur', 'designer', 'developer', 'manager', 'assistant',
+  'advisor', 'mentor', 'coach', 'critic', 'reviewer', 'default'
 ];
 
 export const CreateAgentModal: React.FC<CreateAgentModalProps> = ({
@@ -28,7 +31,7 @@ export const CreateAgentModal: React.FC<CreateAgentModalProps> = ({
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    avatar: '👤',
+    avatar: 'default',
     personality: '',
     writingStyle: '',
     customInstructions: '',
@@ -81,7 +84,7 @@ export const CreateAgentModal: React.FC<CreateAgentModalProps> = ({
         setFormData({
           name: '',
           description: '',
-          avatar: '👤',
+          avatar: 'default',
           personality: '',
           writingStyle: '',
           customInstructions: '',
@@ -180,7 +183,7 @@ export const CreateAgentModal: React.FC<CreateAgentModalProps> = ({
         {/* Header - Fixed */}
         <div className="flex items-center justify-between p-4 sm:p-6 border-b-2 border-black flex-shrink-0">
           <div className="flex items-center space-x-3">
-            <span className="text-2xl">{formData.avatar}</span>
+            <OpenPeepsAvatar variant={formData.avatar} size={48} />
             <div>
               <h2 className="text-lg sm:text-xl font-semibold text-black">
                 {editingAgent ? `Edit ${editingAgent.name}` : 'Create New Agent'}
@@ -219,7 +222,7 @@ export const CreateAgentModal: React.FC<CreateAgentModalProps> = ({
             }`}
           >
             <div className="flex items-center space-x-2">
-              <span className="text-lg">{formData.avatar}</span>
+              <OpenPeepsAvatar variant={formData.avatar} size={24} />
               <span>Basic Settings</span>
             </div>
           </button>
@@ -281,21 +284,21 @@ export const CreateAgentModal: React.FC<CreateAgentModalProps> = ({
                     <label className="block text-sm font-medium text-black mb-3">
                       Choose Avatar
                     </label>
-                    <div className="grid grid-cols-8 sm:grid-cols-10 gap-2">
+                    <div className="grid grid-cols-6 sm:grid-cols-8 gap-3">
                       {avatarOptions.map((avatar) => (
                         <button
                           key={avatar}
                           type="button"
                           onClick={() => setFormData({ ...formData, avatar })}
                           className={`
-                            p-2 text-xl sm:text-2xl rounded-lg border-2 transition-all hover:scale-110
+                            p-2 rounded-lg border-2 transition-all hover:scale-110 flex items-center justify-center
                             ${formData.avatar === avatar 
                               ? 'border-black bg-gray-100' 
                               : 'border-gray-400 hover:border-black'
                             }
                           `}
                         >
-                          {avatar}
+                          <OpenPeepsAvatar variant={avatar} size={32} />
                         </button>
                       ))}
                     </div>
@@ -701,7 +704,7 @@ export const CreateAgentModal: React.FC<CreateAgentModalProps> = ({
                     {/* Agent Information */}
                     <div className="bg-white rounded-lg p-6 border-2 border-gray-400">
                       <h4 className="font-medium text-black mb-4 flex items-center space-x-2">
-                        <span className="text-lg">{editingAgent.avatar}</span>
+                        <OpenPeepsAvatar variant={editingAgent.avatar} size={24} />
                         <span>Agent Information</span>
                       </h4>
                       <div className="space-y-3 text-sm">
