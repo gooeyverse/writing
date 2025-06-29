@@ -189,14 +189,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
     }
   };
 
-  // Quick action suggestions
-  const quickActions = [
-    { text: "Can you give me feedback on this?", icon: MessageSquare },
-    { text: "Please rewrite this to be more professional", icon: Edit3 },
-    { text: "Make this more casual and friendly", icon: MessageCircle },
-    { text: "How can I improve this writing?", icon: Sparkles }
-  ];
-
   // Calculate border weight - 2px default, 3px on hover (1px increase)
   const borderWeight = isInputHovered ? 3 : 2;
 
@@ -255,42 +247,9 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
             </div>
           )}
 
+          {/* Messages or Empty State */}
           {messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-center">
-              <Bot className="w-12 h-12 text-gray-500 mb-4" />
-              <h3 className="text-lg font-medium text-black mb-2">Start a conversation</h3>
-              <p className="text-gray-600 mb-6 max-w-sm">
-                Chat naturally with your agents. Ask for feedback, request rewrites, or have conversations about your writing.
-              </p>
-              
-              {/* Quick action buttons */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-md mb-6">
-                {quickActions.map((action, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setInputMessage(action.text)}
-                    className="flex items-center space-x-2 px-3 py-2 bg-white border-2 border-gray-400 rounded-lg hover:border-black hover:bg-gray-100 transition-colors text-sm text-left"
-                  >
-                    <action.icon className="w-4 h-4 text-gray-600" />
-                    <span className="text-black">{action.text}</span>
-                  </button>
-                ))}
-              </div>
-              
-              <div className="flex flex-wrap gap-2 justify-center">
-                {selectedAgents.slice(0, 3).map(agent => (
-                  <div key={agent.id} className="flex items-center space-x-2 px-3 py-1 bg-gray-100 rounded-full text-sm text-black border border-gray-400">
-                    <span>{agent.avatar}</span>
-                    <span>{agent.name}</span>
-                  </div>
-                ))}
-                {selectedAgents.length > 3 && (
-                  <div className="px-3 py-1 bg-gray-200 rounded-full text-sm text-gray-700 border border-gray-400">
-                    +{selectedAgents.length - 3} more
-                  </div>
-                )}
-              </div>
-            </div>
+            <div className="flex-1" />
           ) : (
             <>
               {messages.map((message) => (
