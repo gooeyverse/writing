@@ -3,7 +3,7 @@ import { Agent } from '../types';
 export const defaultAgents: Agent[] = [
   {
     id: 'david',
-    name: 'David S',
+    name: 'David S.',
     description: 'Master of self-deprecating humor and keen social observation',
     avatar: '🎪',
     personality: 'Self-deprecating and observational',
