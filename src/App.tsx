@@ -140,8 +140,9 @@ function App() {
   const handleGetFeedback = async () => {
     if (!originalText.trim() || selectedAgentIds.length === 0) return;
     
+    // Send message but DON'T clear the text editor
     await handleSendMessage(originalText, []);
-    setOriginalText(''); // Clear the text editor after sending
+    // Remove this line: setOriginalText('');
   };
 
   const handleTrainAgent = (agent: Agent) => {
