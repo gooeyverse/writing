@@ -8,7 +8,7 @@ import { ResizablePanel } from './components/ResizablePanel';
 import { defaultAgents } from './data/agents';
 import { TextRewriter } from './utils/rewriter';
 import { Agent, TrainingData, ChatMessage } from './types';
-import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Plus, MessageCircle, ChevronDoubleLeft, ChevronDoubleRight } from 'lucide-react';
+import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Plus, MessageCircle, ChevronLeft as ChevronDoubleLeft, ChevronRight as ChevronDoubleRight } from 'lucide-react';
 
 function App() {
   const [agents, setAgents] = useState<Agent[]>(defaultAgents);
