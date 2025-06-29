@@ -53,9 +53,7 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="bg-white border-b-2 border-black px-6 py-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <div className="p-3">
-            <CustomIcon className="w-8 h-8 text-black" />
-          </div>
+          <CustomIcon className="w-8 h-8 text-black" />
           <div>
             <h1 className="text-2xl font-bold text-black typewriter-effect">Writing Agents</h1>
             <p className="text-sm text-gray-600">Train personalized AI agents to rewrite your text</p>
