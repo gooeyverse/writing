@@ -78,8 +78,8 @@ export const AgentCard: React.FC<AgentCardProps> = ({
         </div>
       )}
 
-      {/* Hover Action Buttons - Bottom Right */}
-      <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
+      {/* Hover Action Buttons - Bottom Left */}
+      <div className="absolute bottom-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
         <button
           onClick={(e) => {
             e.stopPropagation();
