@@ -192,12 +192,8 @@ export const TextEditor: React.FC<TextEditorProps> = ({
 
   // Handle toolbar context menu button click
   const handleToolbarContextMenu = () => {
-    if (selectedAgents.length === 0) return;
+    if (selectedAgents.length === 0 || !selectedText.trim()) return;
     
-    // Use selected text if available, otherwise use full text
-    const textToUse = selectedText.trim() || originalText.trim();
-    if (!textToUse) return;
-
     // Position the context menu in the center of the viewport
     const centerX = window.innerWidth / 2;
     const centerY = window.innerHeight / 2;
@@ -205,7 +201,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     setContextMenu({
       show: true,
       position: { x: centerX - 100, y: centerY - 100 }, // Offset to center the menu
-      selectedText: textToUse,
+      selectedText: selectedText.trim(),
       hoveredAgent: null,
       submenuPosition: null,
       showQuestionInput: false,
@@ -598,8 +594,8 @@ export const TextEditor: React.FC<TextEditorProps> = ({
   const selectionWithinHighlight = selectionRange ? 
     findContainingHighlight(selectionRange.start, selectionRange.end) !== null : false;
 
-  // Determine if we should show the context menu button
-  const showContextMenuButton = (selectedText.trim() || originalText.trim()) && selectedAgents.length > 0;
+  // Determine if we should show the context menu button - ONLY when text is selected
+  const showContextMenuButton = selectedText.trim() && selectedAgents.length > 0;
 
   return (
     <div className="flex flex-col h-full">
@@ -680,7 +676,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
               )}
             </button>
 
-            {/* Context Menu Button - Only show when text is available and agents are selected */}
+            {/* Context Menu Button - Only show when text is SELECTED and agents are available */}
             {showContextMenuButton && (
               <>
                 {/* Divider */}
@@ -689,10 +685,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
                 <button
                   onClick={handleToolbarContextMenu}
                   className="p-2 text-purple-600 hover:text-purple-800 hover:bg-purple-100 rounded transition-colors"
-                  title={selectedText.trim() 
-                    ? `Ask agents about selected text: "${selectedText.length > 20 ? selectedText.substring(0, 20) + '...' : selectedText}"`
-                    : 'Ask agents about your writing'
-                  }
+                  title={`Ask agents about selected text: "${selectedText.length > 20 ? selectedText.substring(0, 20) + '...' : selectedText}"`}
                 >
                   <Sparkles className="w-4 h-4" />
                 </button>
@@ -760,7 +753,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
                       <span>buttons for undo/redo</span>
                     </li>
                     <li className="flex items-center space-x-1">
-                      <span>• Click the</span>
+                      <span>• Select text and click the</span>
                       <Sparkles className="w-3 h-3 text-purple-400" />
                       <span>button or right-click to ask agents for help</span>
                     </li>
