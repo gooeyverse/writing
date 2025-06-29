@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, ThumbsUp, ThumbsDown, Copy, Download, MessageCircle, Bot, Sparkles, Edit3, MessageSquare, Trash2, FileText } from 'lucide-react';
+import { Send, ThumbsUp, ThumbsDown, Copy, Download, MessageCircle, Sparkles, Edit3, MessageSquare, Trash2, FileText } from 'lucide-react';
 import { Agent, ChatMessage } from '../types';
 
 interface ChatPanelProps {
@@ -306,7 +306,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                 <div className="w-full max-w-md space-y-4">
                   <div className="mb-6 text-center">
                     <h3 className="text-lg font-medium text-gray-800 mb-2">Selected Text Ready</h3>
-                    <p className="text-gray-600 text-sm">
+                    <p className="text-gray-500 text-sm">
                       "{selectedText.length > 50 ? selectedText.substring(0, 50) + '...' : selectedText}"
                     </p>
                   </div>
@@ -342,9 +342,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                 </div>
               ) : (
                 <div className="text-center">
-                  <Bot className="w-12 h-12 text-gray-500 mb-4 mx-auto" />
-                  <h3 className="text-lg font-medium text-gray-800 mb-2">Ready to Help</h3>
-                  <p className="text-gray-600 max-w-sm mx-auto">
+                  <h3 className="text-lg font-medium text-gray-500 mb-2">Ready to Help</h3>
+                  <p className="text-gray-500 max-w-sm mx-auto">
                     {selectedAgents.length === 0 
                       ? 'Select agents from the panel above to get started.'
                       : 'Select text in the editor or type a message below to begin.'
