@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, ThumbsUp, ThumbsDown, Copy, Download, MessageCircle, Bot, Sparkles, Edit3, MessageSquare, Trash2, FileText } from 'lucide-react';
 import { Agent, ChatMessage } from '../types';
-import { OpenPeepsAvatar } from './OpenPeepsAvatar';
 
 interface ChatPanelProps {
   messages: ChatMessage[];
@@ -313,7 +312,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                   {selectedAgents.map(agent => (
                     <div key={agent.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                       <div className="flex items-center space-x-2 mb-3">
-                        <OpenPeepsAvatar variant={agent.avatar} size={24} />
+                        <span className="text-lg">{agent.avatar}</span>
                         <span className="font-medium text-gray-800">{agent.name}</span>
                         <span className="text-xs text-gray-600 bg-gray-200 px-2 py-1 rounded-full">
                           {agent.personality}
@@ -381,7 +380,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                               {message.mentionedAgents.map(agentId => {
                                 const agent = agents.find(a => a.id === agentId);
                                 return agent ? (
-                                  <OpenPeepsAvatar key={agentId} variant={agent.avatar} size={16} />
+                                  <span key={agentId} className="text-xs">{agent.avatar}</span>
                                 ) : null;
                               })}
                             </div>
@@ -392,10 +391,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                       <div className="bg-white border-2 border-gray-400 rounded-2xl rounded-bl-md shadow-sm">
                         <div className="px-4 py-3">
                           <div className="flex items-center space-x-2 mb-2">
-                            <OpenPeepsAvatar 
-                              variant={agents.find(a => a.id === message.agentId)?.avatar || 'default'} 
-                              size={24} 
-                            />
+                            <span className="text-lg">{agents.find(a => a.id === message.agentId)?.avatar}</span>
                             <span className="font-medium text-gray-800">
                               {agents.find(a => a.id === message.agentId)?.name}
                             </span>
@@ -519,7 +515,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                   onClick={() => insertMention(agent.name)}
                   className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center space-x-3 border-b border-gray-200 last:border-b-0"
                 >
-                  <OpenPeepsAvatar variant={agent.avatar} size={24} />
+                  <span className="text-lg">{agent.avatar}</span>
                   <div>
                     <div className="font-medium text-gray-800">{agent.name}</div>
                     <div className="text-xs text-gray-600">{agent.personality}</div>
@@ -554,7 +550,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                     <span>Available agents:</span>
                     {selectedAgents.slice(0, 3).map(agent => (
                       <span key={agent.id} className="flex items-center space-x-1">
-                        <OpenPeepsAvatar variant={agent.avatar} size={16} />
+                        <span>{agent.avatar}</span>
                         <span>{agent.name}</span>
                       </span>
                     ))}
