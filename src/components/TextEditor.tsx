@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, Users, Highlighter, Undo, Redo, HelpCircle, Edit3, FileText } from 'lucide-react';
+import { MessageSquare, Users, Highlighter, Undo, Redo, HelpCircle, Edit3, FileText, Type, Sparkles } from 'lucide-react';
 import { Agent } from '../types';
 
 interface TextEditorProps {
@@ -27,6 +27,8 @@ export const TextEditor: React.FC<TextEditorProps> = ({
   const [selectedText, setSelectedText] = useState('');
   const [selectionRange, setSelectionRange] = useState<{ start: number; end: number } | null>(null);
   const [showTooltip, setShowTooltip] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ show: boolean; position: ContextMenuPosition; selectedText: string }>({
     show: false,
     position: { x: 0, y: 0 },
@@ -181,76 +183,62 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     }).join('');
   };
 
-  // Calculate position mapping between raw text and display text
-  const getDisplayPosition = (rawPosition: number): number => {
-    let displayPos = 0;
-    let rawPos = 0;
-    
-    while (rawPos < rawPosition && rawPos < originalText.length) {
-      if (originalText.substring(rawPos, rawPos + 2) === '==') {
-        // Skip the opening ==
-        rawPos += 2;
-        // Find the closing ==
-        const closePos = originalText.indexOf('==', rawPos);
-        if (closePos !== -1) {
-          // Add the content between == markers
-          const contentLength = closePos - rawPos;
-          displayPos += contentLength;
-          rawPos = closePos + 2; // Skip the closing ==
-        } else {
-          // No closing ==, treat as regular text
-          displayPos++;
-          rawPos++;
+  // Quick start suggestions
+  const quickStartSuggestions = [
+    "Write a professional email to a client...",
+    "Draft a blog post about...",
+    "Create a product description for...",
+    "Write a social media caption for...",
+    "Compose a cover letter for...",
+    "Draft a press release about..."
+  ];
+
+  const handleQuickStart = (suggestion: string) => {
+    onOriginalChange(suggestion);
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+      // Position cursor at the end
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.setSelectionRange(suggestion.length, suggestion.length);
         }
-      } else {
-        displayPos++;
-        rawPos++;
-      }
+      }, 0);
     }
-    
-    return displayPos;
   };
 
-  const getRawPosition = (displayPosition: number): number => {
-    let displayPos = 0;
-    let rawPos = 0;
-    
-    while (displayPos < displayPosition && rawPos < originalText.length) {
-      if (originalText.substring(rawPos, rawPos + 2) === '==') {
-        // Skip the opening ==
-        rawPos += 2;
-        // Find the closing ==
-        const closePos = originalText.indexOf('==', rawPos);
-        if (closePos !== -1) {
-          // Add the content between == markers
-          const contentLength = closePos - rawPos;
-          if (displayPos + contentLength >= displayPosition) {
-            // Position is within this highlighted section
-            return rawPos + (displayPosition - displayPos);
-          }
-          displayPos += contentLength;
-          rawPos = closePos + 2; // Skip the closing ==
-        } else {
-          // No closing ==, treat as regular text
-          displayPos++;
-          rawPos++;
-        }
-      } else {
-        displayPos++;
-        rawPos++;
-      }
-    }
-    
-    return rawPos;
-  };
-
+  // Calculate dynamic styling based on state
+  const isEmpty = !originalText.trim();
+  const isInteractive = isFocused || isHovered;
+  
   return (
     <div className="flex flex-col h-full">
       {/* Rich Text Editor - Takes full height without header */}
       <div className="bg-white flex-1 flex flex-col min-h-0">
-        {/* Simplified Toolbar */}
+        {/* Enhanced Toolbar with Writing Indicator */}
         <div className="toolbar-container px-4 py-3 border-b border-gray-300 flex items-center justify-between bg-gray-50 flex-shrink-0">
           <div className="flex items-center space-x-1">
+            {/* Writing Indicator */}
+            <div className="flex items-center space-x-2 mr-4">
+              <div className={`p-2 rounded-lg transition-all duration-200 ${
+                isEmpty ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'
+              }`}>
+                <Type className="w-4 h-4" />
+              </div>
+              <div className="text-sm">
+                <div className={`font-medium transition-colors ${
+                  isEmpty ? 'text-blue-600' : 'text-green-600'
+                }`}>
+                  {isEmpty ? 'Ready to Write' : 'Writing in Progress'}
+                </div>
+                <div className="text-xs text-gray-500">
+                  {isEmpty ? 'Click below to start typing' : `${originalText.length} characters`}
+                </div>
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div className="w-px h-8 bg-gray-300 mx-2" />
+
             {/* Undo/Redo */}
             <button
               onClick={handleUndo}
@@ -333,18 +321,64 @@ export const TextEditor: React.FC<TextEditorProps> = ({
           </div>
         </div>
         
-        {/* Text Area Container - Takes remaining height */}
-        <div className="p-6 flex-1 flex flex-col relative min-h-0">
-          {/* Always-visible Text Editor with Rich Text Background */}
-          <div className="relative flex-1 min-h-0">
+        {/* Enhanced Text Area Container with Visual Cues */}
+        <div 
+          className={`p-6 flex-1 flex flex-col relative min-h-0 transition-all duration-200 ${
+            isEmpty && !isFocused ? 'bg-gradient-to-br from-blue-50 to-indigo-50' : 'bg-white'
+          }`}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
+          {/* Empty State with Quick Start Options */}
+          {isEmpty && !isFocused && (
+            <div className="absolute inset-6 flex flex-col items-center justify-center text-center z-5 pointer-events-none">
+              <div className="mb-6">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4 mx-auto">
+                  <Type className="w-8 h-8 text-blue-600" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">Start Writing Here</h3>
+                <p className="text-gray-600 max-w-md">
+                  Click anywhere in this area to begin typing. Your selected agents will help you improve your writing.
+                </p>
+              </div>
+              
+              {/* Quick Start Suggestions */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl pointer-events-auto">
+                {quickStartSuggestions.slice(0, 4).map((suggestion, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleQuickStart(suggestion)}
+                    className="flex items-center space-x-2 px-4 py-3 bg-white border-2 border-blue-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-all duration-200 text-left group"
+                  >
+                    <Sparkles className="w-4 h-4 text-blue-500 group-hover:text-blue-600" />
+                    <span className="text-gray-700 group-hover:text-gray-900 text-sm">{suggestion}</span>
+                  </button>
+                ))}
+              </div>
+              
+              <div className="mt-4 text-xs text-gray-500">
+                Or just click and start typing your own content
+              </div>
+            </div>
+          )}
+
+          {/* Enhanced Text Editor with Dynamic Styling */}
+          <div 
+            className={`relative flex-1 min-h-0 transition-all duration-200 ${
+              isInteractive ? 'transform scale-[1.002]' : ''
+            }`}
+          >
             {/* Rich Text Background Layer - Shows highlighted text without == markers */}
             <div 
-              className="absolute inset-0 p-4 rounded-lg pointer-events-none overflow-hidden whitespace-pre-wrap break-words z-0"
+              className={`absolute inset-0 p-4 rounded-lg pointer-events-none overflow-hidden whitespace-pre-wrap break-words z-0 transition-all duration-200 ${
+                isFocused ? 'ring-2 ring-blue-500 ring-opacity-50' : isHovered ? 'ring-1 ring-blue-300 ring-opacity-30' : ''
+              }`}
               style={{ 
                 fontFamily: 'JetBrains Mono, Courier New, monospace',
                 fontSize: '14px',
                 lineHeight: '1.6',
-                color: 'transparent'
+                color: 'transparent',
+                backgroundColor: isFocused ? 'rgba(59, 130, 246, 0.02)' : 'transparent'
               }}
             >
               {originalText.split(/(==.*?==)/g).map((part, index) => {
@@ -359,7 +393,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
               })}
             </div>
 
-            {/* Editable Textarea Overlay - Shows raw text with == markers for editing */}
+            {/* Editable Textarea Overlay with Enhanced Styling */}
             <textarea
               ref={textareaRef}
               value={originalText}
@@ -369,20 +403,51 @@ export const TextEditor: React.FC<TextEditorProps> = ({
               onKeyUp={handleTextSelection}
               onKeyDown={handleKeyDown}
               onContextMenu={handleContextMenu}
-              placeholder="Start writing here... Select text and click the highlight button to apply yellow highlighting."
-              className="relative w-full h-full p-4 rounded-lg resize-none focus:ring-2 focus:ring-black focus:border-black bg-transparent text-black font-mono leading-relaxed focus:outline-none z-10 border-0"
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              placeholder={`Start writing here... ${selectedAgents.length > 0 ? `Your ${selectedAgents.length} selected agent${selectedAgents.length > 1 ? 's' : ''} will help you improve your writing.` : 'Select agents to get writing assistance.'}`}
+              className={`relative w-full h-full p-4 rounded-lg resize-none bg-transparent text-black font-mono leading-relaxed focus:outline-none z-10 border-0 transition-all duration-200 ${
+                isFocused 
+                  ? 'ring-2 ring-blue-500 ring-opacity-50 bg-blue-50 bg-opacity-30' 
+                  : isHovered 
+                    ? 'ring-1 ring-blue-300 ring-opacity-30 bg-blue-50 bg-opacity-10' 
+                    : isEmpty 
+                      ? 'bg-transparent cursor-text' 
+                      : 'bg-transparent'
+              }`}
               style={{ 
                 fontFamily: 'JetBrains Mono, Courier New, monospace',
                 fontSize: '14px',
                 lineHeight: '1.6',
-                color: 'rgba(0, 0, 0, 0.8)' // Slightly transparent so background highlights show through
+                color: isEmpty && !isFocused ? 'rgba(0, 0, 0, 0.4)' : 'rgba(0, 0, 0, 0.8)'
               }}
             />
+
+            {/* Typing Indicator */}
+            {isFocused && (
+              <div className="absolute top-2 right-2 flex items-center space-x-2 bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs z-20">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                <span>Ready to type</span>
+              </div>
+            )}
           </div>
 
-          {/* Bottom Controls */}
+          {/* Enhanced Bottom Controls */}
           <div className="flex justify-between items-center mt-4 flex-shrink-0">
-            <div className="flex items-center space-x-3 text-sm text-gray-600">
+            <div className="flex items-center space-x-4 text-sm text-gray-600">
+              {/* Character Count with Visual Indicator */}
+              <div className="flex items-center space-x-2">
+                <div className={`w-2 h-2 rounded-full ${
+                  originalText.length === 0 ? 'bg-gray-400' :
+                  originalText.length < 100 ? 'bg-yellow-400' :
+                  originalText.length < 500 ? 'bg-green-400' : 'bg-blue-400'
+                }`} />
+                <span>{originalText.length} characters</span>
+                {originalText.length > 0 && (
+                  <span className="text-gray-400">• {Math.ceil(originalText.split(' ').length / 200)} min read</span>
+                )}
+              </div>
+
               {selectedAgents.length > 1 && (
                 <div className="flex items-center space-x-2">
                   <Users className="w-4 h-4" />
@@ -391,10 +456,17 @@ export const TextEditor: React.FC<TextEditorProps> = ({
               )}
             </div>
             
+            {/* Enhanced Get Feedback Button */}
             <button
               onClick={onGetFeedback}
               disabled={!originalText.trim() || isProcessing || selectedAgents.length === 0}
-              className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 transition-colors border-2 border-black"
+              className={`px-6 py-2 rounded-lg flex items-center space-x-2 transition-all duration-200 border-2 ${
+                !originalText.trim() || selectedAgents.length === 0
+                  ? 'bg-gray-200 text-gray-500 border-gray-300 cursor-not-allowed'
+                  : isProcessing
+                    ? 'bg-blue-600 text-white border-blue-600 cursor-wait'
+                    : 'bg-black text-white border-black hover:bg-gray-800 hover:scale-105 shadow-lg hover:shadow-xl'
+              }`}
             >
               {isProcessing ? (
                 <MessageSquare className="w-4 h-4 animate-pulse" />
@@ -404,9 +476,13 @@ export const TextEditor: React.FC<TextEditorProps> = ({
               <span>
                 {isProcessing 
                   ? 'Getting feedback...' 
-                  : selectedAgents.length === 1 
-                    ? `Get feedback from ${selectedAgents[0].name}`
-                    : `Get feedback from ${selectedAgents.length} agents`
+                  : !originalText.trim()
+                    ? 'Write something first'
+                    : selectedAgents.length === 0
+                      ? 'Select agents first'
+                      : selectedAgents.length === 1 
+                        ? `Get feedback from ${selectedAgents[0].name}`
+                        : `Get feedback from ${selectedAgents.length} agents`
                 }
               </span>
             </button>
