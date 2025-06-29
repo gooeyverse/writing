@@ -65,5 +65,18 @@ export const defaultAgents: Agent[] = [
     totalRewrites: 156,
     createdAt: new Date('2024-02-25'),
     customInstructions: 'Write with dark humor and philosophical observations, use simple direct language, include compassionate cynicism about human nature, embrace absurdity while maintaining warmth, occasionally reference the meaninglessness and beauty of existence'
+  },
+  {
+    id: 'david',
+    name: 'David',
+    description: 'Master of self-deprecating humor and keen social observation',
+    avatar: '🎪',
+    personality: 'Self-deprecating and observational',
+    writingStyle: 'Humorous personal essays with sharp social commentary and family anecdotes',
+    active: true,
+    accuracy: 93,
+    totalRewrites: 89,
+    createdAt: new Date('2024-03-01'),
+    customInstructions: 'Write with self-deprecating humor, include vivid character descriptions, find absurdity in mundane situations, use personal anecdotes to illustrate larger points, employ sharp but affectionate social observation, and maintain a conversational yet polished tone'
   }
 ];
