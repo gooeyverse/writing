@@ -16,6 +16,12 @@ interface ContextMenuPosition {
   y: number;
 }
 
+interface HighlightRange {
+  start: number;
+  end: number;
+  id: string;
+}
+
 export const TextEditor: React.FC<TextEditorProps> = ({
   originalText,
   onOriginalChange,
@@ -26,6 +32,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
 }) => {
   const [selectedText, setSelectedText] = useState('');
   const [selectionRange, setSelectionRange] = useState<{ start: number; end: number } | null>(null);
+  const [highlights, setHighlights] = useState<HighlightRange[]>([]);
   const [showTooltip, setShowTooltip] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -123,20 +130,21 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     if (!selectionRange || !textareaRef.current) return;
 
     const { start, end } = selectionRange;
-    const beforeText = originalText.substring(0, start);
-    const selectedText = originalText.substring(start, end);
-    const afterText = originalText.substring(end);
-
-    const formattedText = `==${selectedText}==`;
-    const newText = beforeText + formattedText + afterText;
-    onOriginalChange(newText);
+    
+    // Add highlight range to our highlights array
+    const newHighlight: HighlightRange = {
+      start,
+      end,
+      id: Date.now().toString()
+    };
+    
+    setHighlights(prev => [...prev, newHighlight]);
 
     // Restore focus and selection
     setTimeout(() => {
       if (textareaRef.current) {
         textareaRef.current.focus();
-        const newEnd = start + formattedText.length;
-        textareaRef.current.setSelectionRange(newEnd, newEnd);
+        textareaRef.current.setSelectionRange(end, end);
       }
     }, 0);
   };
@@ -170,17 +178,46 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     }
   };
 
-  // Convert text with ==highlight== to rich text display for preview
-  const renderRichTextPreview = (text: string) => {
-    if (!text) return '';
+  // Render text with highlights (no markdown syntax)
+  const renderHighlightedText = (text: string) => {
+    if (!text || highlights.length === 0) return text;
 
-    const parts = text.split(/(==.*?==)/g);
-    return parts.map((part) => {
-      if (part.startsWith('==') && part.endsWith('==')) {
-        return part.slice(2, -2); // Remove highlight markers for preview
+    // Sort highlights by start position
+    const sortedHighlights = [...highlights].sort((a, b) => a.start - b.start);
+    
+    let result = [];
+    let lastIndex = 0;
+
+    sortedHighlights.forEach((highlight, index) => {
+      // Add text before highlight
+      if (highlight.start > lastIndex) {
+        result.push(
+          <span key={`text-${index}`}>
+            {text.substring(lastIndex, highlight.start)}
+          </span>
+        );
       }
-      return part;
-    }).join('');
+
+      // Add highlighted text
+      result.push(
+        <span key={highlight.id} className="bg-yellow-200 rounded px-1">
+          {text.substring(highlight.start, highlight.end)}
+        </span>
+      );
+
+      lastIndex = highlight.end;
+    });
+
+    // Add remaining text
+    if (lastIndex < text.length) {
+      result.push(
+        <span key="text-end">
+          {text.substring(lastIndex)}
+        </span>
+      );
+    }
+
+    return result;
   };
 
   // Calculate dynamic styling based on state
@@ -290,7 +327,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
                     </li>
                     <li>• Right-click to ask agents for feedback or rewriting help</li>
                     <li>• Highlighted text is preserved when sharing with agents</li>
-                    <li>• Use ==text== syntax for manual highlighting</li>
+                    <li>• Highlights are visual only - no special syntax added to text</li>
                   </ul>
                 </div>
               )}
@@ -312,7 +349,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
               isInteractive ? 'transform scale-[1.002]' : ''
             }`}
           >
-            {/* Rich Text Background Layer - Shows highlighted text without == markers */}
+            {/* Rich Text Background Layer - Shows highlighted text */}
             <div 
               className={`absolute inset-0 p-4 rounded-lg pointer-events-none overflow-hidden whitespace-pre-wrap break-words z-0 transition-all duration-200`}
               style={{ 
@@ -323,16 +360,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
                 backgroundColor: 'transparent'
               }}
             >
-              {originalText.split(/(==.*?==)/g).map((part, index) => {
-                if (part.startsWith('==') && part.endsWith('==')) {
-                  return (
-                    <span key={index} className="bg-yellow-200 rounded px-1">
-                      {part.slice(2, -2)}
-                    </span>
-                  );
-                }
-                return <span key={index}>{part}</span>;
-              })}
+              {renderHighlightedText(originalText)}
             </div>
 
             {/* Editable Textarea Overlay with Minimal Styling */}
@@ -420,8 +448,8 @@ export const TextEditor: React.FC<TextEditorProps> = ({
           <div className="px-4 py-2 border-b border-gray-300 bg-gray-50">
             <div className="text-xs text-gray-600 font-medium">
               {contextMenu.selectedText.length > 30 
-                ? `"${renderRichTextPreview(contextMenu.selectedText).substring(0, 30)}..."` 
-                : `"${renderRichTextPreview(contextMenu.selectedText)}"`
+                ? `"${contextMenu.selectedText.substring(0, 30)}..."` 
+                : `"${contextMenu.selectedText}"`
               }
             </div>
             <div className="text-xs text-gray-500 mt-1">
