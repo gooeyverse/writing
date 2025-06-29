@@ -156,7 +156,10 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     }
 
     const textarea = textareaRef.current;
-    const textBeforeSelection = originalText.substring(0, selectionRange.end);
+    const textareaRect = textarea.getBoundingClientRect();
+    
+    // Get the text before the selection start to calculate line position
+    const textBeforeSelection = originalText.substring(0, selectionRange.start);
     
     // Create a temporary element to measure text position
     const temp = document.createElement('div');
@@ -172,12 +175,35 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     
     document.body.appendChild(temp);
     
-    const textareaRect = textarea.getBoundingClientRect();
-    const tempRect = temp.getBoundingClientRect();
+    // Calculate the position of the selection start
+    const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight);
+    const lines = textBeforeSelection.split('\n');
+    const currentLineIndex = lines.length - 1;
+    const currentLineText = lines[currentLineIndex] || '';
     
-    // Calculate position relative to the textarea
-    const x = textareaRect.left + (tempRect.width % textarea.clientWidth) + 8; // Small offset
-    const y = textareaRect.top + Math.floor(tempRect.width / textarea.clientWidth) * parseInt(window.getComputedStyle(textarea).lineHeight) - 8; // Above the line
+    // Calculate Y position (top of the selection line)
+    const y = textareaRect.top + (currentLineIndex * lineHeight) + 8; // 8px padding from textarea
+    
+    // For X position, we want the right edge of the selection
+    // Get text up to selection end to find the right edge
+    const textUpToSelectionEnd = originalText.substring(0, selectionRange.end);
+    const selectionEndLines = textUpToSelectionEnd.split('\n');
+    const selectionEndLineText = selectionEndLines[selectionEndLines.length - 1] || '';
+    
+    // Create another temp element to measure the selection end position
+    const tempEnd = document.createElement('span');
+    tempEnd.style.position = 'absolute';
+    tempEnd.style.visibility = 'hidden';
+    tempEnd.style.whiteSpace = 'pre';
+    tempEnd.style.font = window.getComputedStyle(textarea).font;
+    tempEnd.textContent = selectionEndLineText;
+    
+    document.body.appendChild(tempEnd);
+    const selectionEndWidth = tempEnd.getBoundingClientRect().width;
+    document.body.removeChild(tempEnd);
+    
+    // Calculate X position (right edge of selection + small offset)
+    const x = textareaRect.left + 16 + selectionEndWidth + 8; // 16px padding + selection width + 8px offset
     
     document.body.removeChild(temp);
     
@@ -186,7 +212,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     const buttonHeight = 40; // Approximate button height
     
     const adjustedX = Math.min(Math.max(x, 10), window.innerWidth - buttonWidth - 10);
-    const adjustedY = Math.max(y, 10);
+    const adjustedY = Math.max(y - 8, 10); // Position slightly above the line
     
     setMagicWandPosition({ x: adjustedX, y: adjustedY });
   };
@@ -894,7 +920,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
         </div>
       </div>
 
-      {/* Magic Wand Button - Appears when text is selected */}
+      {/* Magic Wand Button - Appears at top right of selected text */}
       {magicWandPosition && selectedText.trim() && selectedAgents.length > 0 && (
         <button
           ref={magicWandRef}
