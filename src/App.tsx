@@ -339,6 +339,7 @@ function App() {
               onGetFeedback={handleGetFeedback}
               isProcessing={isProcessing}
               selectedAgents={selectedAgents}
+              onSendMessage={handleSendMessage}
             />
           </div>
         </ResizablePanel>

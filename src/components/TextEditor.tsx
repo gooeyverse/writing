@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, Users, Highlighter, Undo, Redo, HelpCircle } from 'lucide-react';
+import { MessageSquare, Users, Highlighter, Undo, Redo, HelpCircle, Edit3, FileText } from 'lucide-react';
 import { Agent } from '../types';
 
 interface TextEditorProps {
@@ -8,6 +8,12 @@ interface TextEditorProps {
   onGetFeedback: () => void;
   isProcessing: boolean;
   selectedAgents: Agent[];
+  onSendMessage?: (message: string, mentionedAgentIds: string[], messageType?: 'feedback' | 'chat') => void;
+}
+
+interface ContextMenuPosition {
+  x: number;
+  y: number;
 }
 
 export const TextEditor: React.FC<TextEditorProps> = ({
@@ -15,14 +21,21 @@ export const TextEditor: React.FC<TextEditorProps> = ({
   onOriginalChange,
   onGetFeedback,
   isProcessing,
-  selectedAgents
+  selectedAgents,
+  onSendMessage
 }) => {
   const [selectedText, setSelectedText] = useState('');
   const [selectionRange, setSelectionRange] = useState<{ start: number; end: number } | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
+  const [contextMenu, setContextMenu] = useState<{ show: boolean; position: ContextMenuPosition; selectedText: string }>({
+    show: false,
+    position: { x: 0, y: 0 },
+    selectedText: ''
+  });
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const displayRef = useRef<HTMLDivElement>(null);
+  const contextMenuRef = useRef<HTMLDivElement>(null);
   const [history, setHistory] = useState<string[]>([originalText]);
   const [historyIndex, setHistoryIndex] = useState(0);
 
@@ -36,6 +49,20 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     }
   }, [originalText]);
 
+  // Close context menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (contextMenuRef.current && !contextMenuRef.current.contains(event.target as Node)) {
+        setContextMenu({ show: false, position: { x: 0, y: 0 }, selectedText: '' });
+      }
+    };
+
+    if (contextMenu.show) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [contextMenu.show]);
+
   const handleTextSelection = () => {
     if (textareaRef.current) {
       const start = textareaRef.current.selectionStart;
@@ -45,6 +72,44 @@ export const TextEditor: React.FC<TextEditorProps> = ({
       setSelectedText(selected);
       setSelectionRange({ start, end });
     }
+  };
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    
+    // Get selected text from either textarea or display
+    let selected = '';
+    if (isEditing && textareaRef.current) {
+      const start = textareaRef.current.selectionStart;
+      const end = textareaRef.current.selectionEnd;
+      selected = originalText.substring(start, end);
+    } else if (!isEditing && window.getSelection) {
+      selected = window.getSelection()?.toString() || '';
+    }
+
+    // Only show context menu if we have selected agents and either selected text or full text
+    if (selectedAgents.length > 0 && (selected.trim() || originalText.trim())) {
+      const textToUse = selected.trim() || originalText;
+      
+      setContextMenu({
+        show: true,
+        position: { x: e.clientX, y: e.clientY },
+        selectedText: textToUse
+      });
+    }
+  };
+
+  const handleAgentAction = (agent: Agent, action: 'feedback' | 'rewrite') => {
+    if (!onSendMessage || !contextMenu.selectedText) return;
+
+    const message = action === 'feedback' 
+      ? `Can you give me feedback on this text?\n\n"${contextMenu.selectedText}"`
+      : `Can you help me rewrite this text?\n\n"${contextMenu.selectedText}"`;
+
+    const messageType = action === 'feedback' ? 'feedback' : 'chat';
+    
+    onSendMessage(message, [agent.id], messageType);
+    setContextMenu({ show: false, position: { x: 0, y: 0 }, selectedText: '' });
   };
 
   const applyHighlight = () => {
@@ -224,6 +289,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
                       <span>buttons for undo/redo</span>
                     </li>
                     <li>• Press Escape to finish editing and see rich text formatting</li>
+                    <li>• Right-click to ask agents for feedback or rewriting help</li>
                     <li>• Highlighted text is preserved when sharing with agents</li>
                   </ul>
                 </div>
@@ -239,7 +305,8 @@ export const TextEditor: React.FC<TextEditorProps> = ({
             <div
               ref={displayRef}
               onClick={handleDisplayClick}
-              className="w-full flex-1 p-4 border-2 border-gray-400 rounded-lg min-h-64 bg-white text-black font-mono leading-relaxed cursor-text overflow-y-auto whitespace-pre-wrap"
+              onContextMenu={handleContextMenu}
+              className="w-full flex-1 p-4 border-2 border-gray-400 rounded-lg min-h-64 bg-white text-black font-mono leading-relaxed cursor-text overflow-y-auto whitespace-pre-wrap select-text"
               style={{ 
                 fontFamily: 'JetBrains Mono, Courier New, monospace',
                 fontSize: '14px',
@@ -261,6 +328,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
               onKeyUp={handleTextSelection}
               onKeyDown={handleKeyDown}
               onBlur={handleTextareaBlur}
+              onContextMenu={handleContextMenu}
               placeholder="Start writing here... Select text and click the highlight button to apply yellow highlighting."
               className="w-full flex-1 p-4 border-2 border-black rounded-lg resize-none focus:ring-2 focus:ring-black focus:border-black min-h-64 bg-white text-black font-mono leading-relaxed focus:outline-none"
               style={{ 
@@ -319,6 +387,70 @@ export const TextEditor: React.FC<TextEditorProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Context Menu */}
+      {contextMenu.show && (
+        <div
+          ref={contextMenuRef}
+          className="fixed bg-white border-2 border-black rounded-lg shadow-lg py-2 z-50 min-w-64"
+          style={{
+            left: `${Math.min(contextMenu.position.x, window.innerWidth - 280)}px`,
+            top: `${Math.min(contextMenu.position.y, window.innerHeight - 200)}px`
+          }}
+        >
+          {/* Context Menu Header */}
+          <div className="px-4 py-2 border-b border-gray-300 bg-gray-50">
+            <div className="text-xs text-gray-600 font-medium">
+              {contextMenu.selectedText.length > 30 
+                ? `"${contextMenu.selectedText.substring(0, 30)}..."` 
+                : `"${contextMenu.selectedText}"`
+              }
+            </div>
+            <div className="text-xs text-gray-500 mt-1">
+              Ask selected agents for help
+            </div>
+          </div>
+
+          {/* Agent Actions */}
+          <div className="max-h-64 overflow-y-auto">
+            {selectedAgents.map((agent) => (
+              <div key={agent.id} className="border-b border-gray-200 last:border-b-0">
+                {/* Agent Header */}
+                <div className="px-4 py-2 bg-gray-50 flex items-center space-x-2">
+                  <span className="text-lg">{agent.avatar}</span>
+                  <span className="font-medium text-black text-sm">{agent.name}</span>
+                  <span className="text-xs text-gray-600">({agent.personality})</span>
+                </div>
+                
+                {/* Action Buttons */}
+                <div className="px-4 py-2 space-y-1">
+                  <button
+                    onClick={() => handleAgentAction(agent, 'feedback')}
+                    className="w-full flex items-center space-x-2 px-3 py-2 text-left text-sm text-black hover:bg-gray-100 rounded transition-colors"
+                  >
+                    <FileText className="w-4 h-4 text-blue-600" />
+                    <span>Ask {agent.name} for feedback</span>
+                  </button>
+                  <button
+                    onClick={() => handleAgentAction(agent, 'rewrite')}
+                    className="w-full flex items-center space-x-2 px-3 py-2 text-left text-sm text-black hover:bg-gray-100 rounded transition-colors"
+                  >
+                    <Edit3 className="w-4 h-4 text-green-600" />
+                    <span>Ask {agent.name} to help me rewrite</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Footer */}
+          <div className="px-4 py-2 border-t border-gray-300 bg-gray-50">
+            <div className="text-xs text-gray-500">
+              Right-click anywhere to access this menu
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
