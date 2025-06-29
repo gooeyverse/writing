@@ -264,8 +264,8 @@ function App() {
         onCreateAgent={() => setCreateModalOpen(true)}
       />
       
-      {/* Agents Accordion Section - Darker Gray Background */}
-      <div className="bg-gray-200 flex-shrink-0">
+      {/* Agents Accordion Section - Light Gray Background */}
+      <div className="bg-gray-100 flex-shrink-0">
         {/* Accordion Header - Always Visible */}
         <div className="px-6 py-4">
           <button
@@ -273,7 +273,7 @@ function App() {
             className="flex items-center justify-between w-full group"
           >
             <div className="flex items-center space-x-4">
-              <h2 className={`${agentsSectionCollapsed ? 'text-base font-normal' : 'text-xl font-semibold'} text-black transition-all duration-200`}>
+              <h2 className={`${agentsSectionCollapsed ? 'text-base font-normal' : 'text-xl font-semibold'} text-gray-800 transition-all duration-200`}>
                 Your Writing Agents
               </h2>
               <span className="text-sm text-gray-600">
@@ -282,11 +282,11 @@ function App() {
             </div>
             
             {/* Simple Chevron Button */}
-            <div className="p-1 rounded-lg group-hover:bg-gray-300 transition-colors">
+            <div className="p-1 rounded-lg group-hover:bg-gray-200 transition-colors">
               {agentsSectionCollapsed ? (
-                <ChevronDown className="w-5 h-5 text-gray-600 group-hover:text-black transition-colors" />
+                <ChevronDown className="w-5 h-5 text-gray-600 group-hover:text-gray-800 transition-colors" />
               ) : (
-                <ChevronUp className="w-5 h-5 text-gray-600 group-hover:text-black transition-colors" />
+                <ChevronUp className="w-5 h-5 text-gray-600 group-hover:text-gray-800 transition-colors" />
               )}
             </div>
           </button>
@@ -319,13 +319,13 @@ function App() {
                 <div className="flex-shrink-0 w-80">
                   <div
                     onClick={() => setCreateModalOpen(true)}
-                    className="h-48 p-5 rounded-xl border-2 border-dashed border-gray-400 cursor-pointer transition-all duration-200 hover:border-black hover:bg-gray-50 group flex flex-col items-center justify-center bg-white"
+                    className="h-48 p-5 rounded-xl border-2 border-dashed border-gray-400 cursor-pointer transition-all duration-200 hover:border-gray-700 hover:bg-gray-50 group flex flex-col items-center justify-center bg-white"
                   >
-                    <div className="w-16 h-16 rounded-full border-2 border-gray-400 group-hover:border-black flex items-center justify-center transition-colors bg-gray-100 group-hover:bg-gray-200 mb-4">
-                      <Plus className="w-8 h-8 text-gray-600 group-hover:text-black transition-colors" />
+                    <div className="w-16 h-16 rounded-full border-2 border-gray-400 group-hover:border-gray-700 flex items-center justify-center transition-colors bg-gray-100 group-hover:bg-gray-200 mb-4">
+                      <Plus className="w-8 h-8 text-gray-600 group-hover:text-gray-800 transition-colors" />
                     </div>
                     <div className="text-center">
-                      <h3 className="text-lg font-semibold text-gray-700 group-hover:text-black transition-colors mb-1">
+                      <h3 className="text-lg font-semibold text-gray-700 group-hover:text-gray-800 transition-colors mb-1">
                         New Agent
                       </h3>
                       <p className="text-sm text-gray-500 group-hover:text-gray-700 transition-colors">
@@ -344,7 +344,7 @@ function App() {
                 className="w-8 h-8 bg-white rounded-lg shadow-sm flex items-center justify-center hover:bg-gray-100 transition-colors"
                 title="Scroll left"
               >
-                <ChevronLeft className="w-4 h-4 text-black" />
+                <ChevronLeft className="w-4 h-4 text-gray-800" />
               </button>
               
               <button
@@ -352,7 +352,7 @@ function App() {
                 className="w-8 h-8 bg-white rounded-lg shadow-sm flex items-center justify-center hover:bg-gray-100 transition-colors"
                 title="Scroll right"
               >
-                <ChevronRight className="w-4 h-4 text-black" />
+                <ChevronRight className="w-4 h-4 text-gray-800" />
               </button>
             </div>
           </div>
@@ -385,7 +385,7 @@ function App() {
         </ResizablePanel>
 
         {/* Right Panel - Chat Interface (Resizable) */}
-        <div className="flex-1 border-l border-black bg-white flex flex-col overflow-hidden min-w-0">
+        <div className="flex-1 border-l border-gray-800 bg-white flex flex-col overflow-hidden min-w-0">
           {/* Chat Messages Area (Resizable) */}
           <ResizablePanel
             direction="vertical"
@@ -408,7 +408,7 @@ function App() {
           </ResizablePanel>
 
           {/* Chat Input Area (Fixed at bottom) */}
-          <div className="flex-shrink-0 border-t-2 border-black bg-white">
+          <div className="flex-shrink-0 border-t-2 border-gray-800 bg-white">
             <ChatPanel
               messages={[]}
               agents={agents}
