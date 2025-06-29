@@ -3,7 +3,7 @@ import { Agent } from '../types';
 export const defaultAgents: Agent[] = [
   {
     id: 'david',
-    name: 'David',
+    name: 'David S',
     description: 'Master of self-deprecating humor and keen social observation',
     avatar: '🎪',
     personality: 'Self-deprecating and observational',
@@ -16,7 +16,7 @@ export const defaultAgents: Agent[] = [
   },
   {
     id: 'billy',
-    name: 'Billy',
+    name: 'Kurt V.',
     description: 'Darkly humorous philosopher with compassionate cynicism',
     avatar: '🌀',
     personality: 'Darkly humorous and philosophical',
@@ -29,7 +29,7 @@ export const defaultAgents: Agent[] = [
   },
   {
     id: 'holden',
-    name: 'Holden',
+    name: 'Holden C.',
     description: 'Captures authentic voice with stream-of-consciousness style',
     avatar: '🎭',
     personality: 'Authentic and introspective',
