@@ -30,6 +30,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
   const [mentionQuery, setMentionQuery] = useState('');
   const [cursorPosition, setCursorPosition] = useState(0);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [isInputHovered, setIsInputHovered] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -195,6 +196,9 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
     { text: "Make this more casual and friendly", icon: MessageCircle },
     { text: "How can I improve this writing?", icon: Sparkles }
   ];
+
+  // Calculate border weight - 2px default, 3px on hover (1px increase)
+  const borderWeight = isInputHovered ? 3 : 2;
 
   return (
     <div className="flex flex-col h-full">
@@ -418,7 +422,15 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
 
       {/* Input Area - Only show if input area is visible */}
       {showInputArea && (
-        <div className="flex flex-col p-4 bg-white relative">
+        <div 
+          className="flex flex-col p-4 bg-white relative transition-all duration-200"
+          style={{
+            borderTop: `${borderWeight}px solid ${isInputHovered ? '#6b7280' : 'transparent'}`,
+            backgroundColor: isInputHovered ? '#f9fafb' : 'white'
+          }}
+          onMouseEnter={() => setIsInputHovered(true)}
+          onMouseLeave={() => setIsInputHovered(false)}
+        >
           {/* Mention Suggestions - Only show selected agents */}
           {showSuggestions && filteredAgents.length > 0 && (
             <div className="absolute bottom-full left-4 right-4 mb-2 bg-white border-2 border-black rounded-lg shadow-lg max-h-40 overflow-y-auto z-10">
