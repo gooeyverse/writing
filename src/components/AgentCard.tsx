@@ -1,6 +1,6 @@
 import React from 'react';
 import { Agent } from '../types';
-import { Settings, Trash2, BookOpen, Check } from 'lucide-react';
+import { Settings, Trash2, BookOpen } from 'lucide-react';
 
 interface AgentCardProps {
   agent: Agent;
@@ -26,24 +26,16 @@ export const AgentCard: React.FC<AgentCardProps> = ({
       className={`
         relative p-5 rounded-xl border-2 cursor-pointer transition-all duration-200 hover:shadow-lg group
         ${isSelected 
-          ? 'border-black bg-gray-100 shadow-lg' 
-          : 'border-gray-400 bg-white hover:border-black hover:shadow-md'
+          ? 'border-4 border-black bg-gray-100 shadow-lg' 
+          : 'border-2 border-gray-400 bg-white hover:border-black hover:shadow-md'
         }
       `}
       onClick={onSelect}
     >
-      {/* Selection indicator for multi-select */}
-      {multiSelect && (
-        <div className="absolute top-3 right-3 z-10">
-          <div className={`
-            w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all
-            ${isSelected 
-              ? 'bg-black border-black text-white' 
-              : 'border-gray-400 bg-white group-hover:border-black'
-            }
-          `}>
-            {isSelected && <Check className="w-4 h-4" />}
-          </div>
+      {/* Selection indicator for multi-select - only show circle on hover when not selected */}
+      {multiSelect && !isSelected && (
+        <div className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="w-6 h-6 rounded-full border-2 border-gray-400 bg-white group-hover:border-black" />
         </div>
       )}
 
