@@ -93,9 +93,11 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
     
     mentions.forEach(mention => {
       const agentName = mention.substring(1); // Remove @
-      // Allow mentions of ANY agent, not just selected ones
-      const agent = agents.find(a => a.name.toLowerCase().replace(/\s+/g, '').includes(agentName.toLowerCase()) || 
-                                     a.name.toLowerCase().includes(agentName.toLowerCase()));
+      // Only allow mentions of selected agents
+      const agent = selectedAgents.find(a => 
+        a.name.toLowerCase() === agentName.toLowerCase() ||
+        a.name.toLowerCase().replace(/\s+/g, '') === agentName.toLowerCase()
+      );
       if (agent) {
         mentionedAgentIds.push(agent.id);
       }
@@ -191,8 +193,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
     }
   };
 
-  // Filter agents for mentions - show ALL agents, not just selected ones
-  const filteredAgents = agents.filter(agent => 
+  // Only show selected agents in mention suggestions
+  const filteredAgents = selectedAgents.filter(agent => 
     agent.name.toLowerCase().includes(mentionQuery) ||
     agent.name.toLowerCase().replace(/\s+/g, '').includes(mentionQuery)
   );
@@ -500,11 +502,11 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
           onMouseEnter={() => setIsInputHovered(true)}
           onMouseLeave={() => setIsInputHovered(false)}
         >
-          {/* Mention Suggestions - Show ALL agents */}
+          {/* Mention Suggestions - Only show selected agents */}
           {showSuggestions && filteredAgents.length > 0 && (
             <div className="absolute bottom-full left-4 right-4 mb-2 bg-white border-2 border-gray-800 rounded-lg shadow-lg max-h-40 overflow-y-auto z-10">
               <div className="px-3 py-2 text-xs text-gray-600 border-b border-gray-300 bg-gray-100">
-                Mention any agent with @
+                Selected agents only
               </div>
               {filteredAgents.map(agent => (
                 <button
@@ -517,11 +519,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                     <div className="font-medium text-gray-800">{agent.name}</div>
                     <div className="text-xs text-gray-600">{agent.personality}</div>
                   </div>
-                  {selectedAgents.some(sa => sa.id === agent.id) && (
-                    <div className="ml-auto">
-                      <div className="w-2 h-2 bg-gray-700 rounded-full" title="Currently selected" />
-                    </div>
-                  )}
                 </button>
               ))}
             </div>
@@ -538,7 +535,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                 onKeyPress={handleKeyPress}
                 onFocus={() => setIsInputFocused(true)}
                 onBlur={() => setIsInputFocused(false)}
-                placeholder={`Ask for feedback, request rewrites, or chat naturally... Use @AgentName to mention specific agents (e.g., @Gwen, @Sophia, @Marcus)`}
+                placeholder={`Ask for feedback, request rewrites, or chat naturally... Use @AgentName to mention specific agents (${selectedAgents.map(a => a.name.replace(/\s+/g, '')).join(', ')})`}
                 className="w-full h-24 p-4 border-2 border-gray-400 rounded-lg resize-none focus:ring-2 focus:ring-gray-800 focus:border-gray-800 bg-white text-gray-700"
               />
             </div>
