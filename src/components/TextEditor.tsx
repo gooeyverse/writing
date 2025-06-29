@@ -78,22 +78,22 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     }
   }, [originalText]);
 
-  // Close context menu when clicking outside
+  // Close context menu when clicking outside (but keep magic wand visible)
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (contextMenuRef.current && !contextMenuRef.current.contains(event.target as Node) &&
           (!submenuRef.current || !submenuRef.current.contains(event.target as Node)) &&
           (!magicWandRef.current || !magicWandRef.current.contains(event.target as Node))) {
-        setContextMenu({ 
+        setContextMenu(prev => ({ 
+          ...prev,
           show: false, 
           position: { x: 0, y: 0 }, 
-          selectedText: '',
           hoveredAgent: null,
           submenuPosition: null,
           showQuestionInput: false,
           questionText: '',
           questionAgent: null
-        });
+        }));
       }
     };
 
@@ -108,17 +108,17 @@ export const TextEditor: React.FC<TextEditorProps> = ({
             questionAgent: null
           }));
         } else {
-          // Otherwise close the entire menu
-          setContextMenu({ 
+          // Otherwise close the entire menu (but keep magic wand)
+          setContextMenu(prev => ({ 
+            ...prev,
             show: false, 
             position: { x: 0, y: 0 }, 
-            selectedText: '',
             hoveredAgent: null,
             submenuPosition: null,
             showQuestionInput: false,
             questionText: '',
             questionAgent: null
-          });
+          }));
         }
       }
     };
@@ -160,6 +160,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     
     // Get the text before the selection start to calculate line position
     const textBeforeSelection = originalText.substring(0, selectionRange.start);
+    const selectedTextContent = originalText.substring(selectionRange.start, selectionRange.end);
     
     // Create a temporary element to measure text position
     const temp = document.createElement('div');
@@ -171,7 +172,8 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     temp.style.padding = window.getComputedStyle(textarea).padding;
     temp.style.border = window.getComputedStyle(textarea).border;
     temp.style.lineHeight = window.getComputedStyle(textarea).lineHeight;
-    temp.textContent = textBeforeSelection;
+    temp.style.fontSize = window.getComputedStyle(textarea).fontSize;
+    temp.style.fontFamily = window.getComputedStyle(textarea).fontFamily;
     
     document.body.appendChild(temp);
     
@@ -179,13 +181,13 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight);
     const lines = textBeforeSelection.split('\n');
     const currentLineIndex = lines.length - 1;
-    const currentLineText = lines[currentLineIndex] || '';
     
-    // Calculate Y position (top of the selection line)
-    const y = textareaRect.top + (currentLineIndex * lineHeight) + 8; // 8px padding from textarea
+    // Calculate Y position (middle of the selection area)
+    const selectionLines = selectedTextContent.split('\n');
+    const selectionHeight = selectionLines.length * lineHeight;
+    const y = textareaRect.top + (currentLineIndex * lineHeight) + (selectionHeight / 2) + 16; // 16px padding from textarea
     
-    // For X position, we want the right edge of the selection
-    // Get text up to selection end to find the right edge
+    // For X position, calculate the end of the selection on its last line
     const textUpToSelectionEnd = originalText.substring(0, selectionRange.end);
     const selectionEndLines = textUpToSelectionEnd.split('\n');
     const selectionEndLineText = selectionEndLines[selectionEndLines.length - 1] || '';
@@ -196,14 +198,16 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     tempEnd.style.visibility = 'hidden';
     tempEnd.style.whiteSpace = 'pre';
     tempEnd.style.font = window.getComputedStyle(textarea).font;
+    tempEnd.style.fontSize = window.getComputedStyle(textarea).fontSize;
+    tempEnd.style.fontFamily = window.getComputedStyle(textarea).fontFamily;
     tempEnd.textContent = selectionEndLineText;
     
     document.body.appendChild(tempEnd);
     const selectionEndWidth = tempEnd.getBoundingClientRect().width;
     document.body.removeChild(tempEnd);
     
-    // Calculate X position (right edge of selection + small offset)
-    const x = textareaRect.left + 16 + selectionEndWidth + 8; // 16px padding + selection width + 8px offset
+    // Calculate X position (near the end of selection with some offset)
+    const x = textareaRect.left + 16 + selectionEndWidth + 12; // 16px padding + selection width + 12px offset
     
     document.body.removeChild(temp);
     
@@ -211,8 +215,32 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     const buttonWidth = 40; // Approximate button width
     const buttonHeight = 40; // Approximate button height
     
-    const adjustedX = Math.min(Math.max(x, 10), window.innerWidth - buttonWidth - 10);
-    const adjustedY = Math.max(y - 8, 10); // Position slightly above the line
+    let adjustedX = x;
+    let adjustedY = y;
+    
+    // If button would go off right edge, position it to the left of selection
+    if (x + buttonWidth > window.innerWidth - 10) {
+      const selectionStartLines = textBeforeSelection.split('\n');
+      const selectionStartLineText = selectionStartLines[selectionStartLines.length - 1] || '';
+      
+      // Measure start position
+      const tempStart = document.createElement('span');
+      tempStart.style.position = 'absolute';
+      tempStart.style.visibility = 'hidden';
+      tempStart.style.whiteSpace = 'pre';
+      tempStart.style.font = window.getComputedStyle(textarea).font;
+      tempStart.textContent = selectionStartLineText;
+      
+      document.body.appendChild(tempStart);
+      const selectionStartWidth = tempStart.getBoundingClientRect().width;
+      document.body.removeChild(tempStart);
+      
+      adjustedX = textareaRect.left + 16 + selectionStartWidth - buttonWidth - 12; // Position to the left
+    }
+    
+    // Ensure minimum distance from edges
+    adjustedX = Math.max(10, Math.min(adjustedX, window.innerWidth - buttonWidth - 10));
+    adjustedY = Math.max(10, Math.min(adjustedY, window.innerHeight - buttonHeight - 10));
     
     setMagicWandPosition({ x: adjustedX, y: adjustedY });
   };
@@ -226,10 +254,10 @@ export const TextEditor: React.FC<TextEditorProps> = ({
       setSelectedText(selected);
       setSelectionRange({ start, end });
       
-      // Calculate magic wand position
+      // Calculate magic wand position with a small delay to ensure DOM is updated
       setTimeout(() => {
         calculateMagicWandPosition();
-      }, 0);
+      }, 10);
       
       // Notify parent component about text selection
       if (onTextSelection) {
@@ -249,9 +277,24 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     const menuX = rect.right + 8;
     const menuY = rect.top;
     
+    // Adjust position if menu would go off screen
+    const menuWidth = 200; // Approximate menu width
+    const menuHeight = selectedAgents.length * 50 + 80; // Approximate menu height
+    
+    let adjustedX = menuX;
+    let adjustedY = menuY;
+    
+    if (menuX + menuWidth > window.innerWidth) {
+      adjustedX = rect.left - menuWidth - 8; // Show on left side
+    }
+    
+    if (menuY + menuHeight > window.innerHeight) {
+      adjustedY = window.innerHeight - menuHeight - 10;
+    }
+    
     setContextMenu({
       show: true,
-      position: { x: menuX, y: menuY },
+      position: { x: adjustedX, y: adjustedY },
       selectedText: selectedText,
       hoveredAgent: null,
       submenuPosition: null,
@@ -409,18 +452,17 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     
     onSendMessage(message, [contextMenu.questionAgent.id], 'chat');
     
-    // Close the entire context menu and hide magic wand
-    setContextMenu({ 
+    // Close the context menu but keep magic wand visible
+    setContextMenu(prev => ({ 
+      ...prev,
       show: false, 
       position: { x: 0, y: 0 }, 
-      selectedText: '',
       hoveredAgent: null,
       submenuPosition: null,
       showQuestionInput: false,
       questionText: '',
       questionAgent: null
-    });
-    setMagicWandPosition(null);
+    }));
   };
 
   const handleQuestionKeyPress = (e: React.KeyboardEvent) => {
@@ -443,17 +485,18 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     const messageType = action; // Use the action directly as the message type
     
     onSendMessage(message, [agent.id], messageType);
-    setContextMenu({ 
+    
+    // Close the context menu but keep magic wand visible
+    setContextMenu(prev => ({ 
+      ...prev,
       show: false, 
       position: { x: 0, y: 0 }, 
-      selectedText: '',
       hoveredAgent: null,
       submenuPosition: null,
       showQuestionInput: false,
       questionText: '',
       questionAgent: null
-    });
-    setMagicWandPosition(null);
+    }));
   };
 
   // Check if a range overlaps with any existing highlights
@@ -920,12 +963,12 @@ export const TextEditor: React.FC<TextEditorProps> = ({
         </div>
       </div>
 
-      {/* Magic Wand Button - Appears at top right of selected text */}
+      {/* Magic Wand Button - Always visible when text is selected and agents are available */}
       {magicWandPosition && selectedText.trim() && selectedAgents.length > 0 && (
         <button
           ref={magicWandRef}
           onClick={handleMagicWandClick}
-          className="fixed z-40 w-10 h-10 bg-purple-600 hover:bg-purple-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center transform hover:scale-110 animate-pulse"
+          className="fixed z-40 w-10 h-10 bg-purple-600 hover:bg-purple-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center transform hover:scale-110"
           style={{
             left: `${magicWandPosition.x}px`,
             top: `${magicWandPosition.y}px`
